@@ -147,11 +147,22 @@
 
       if (!category || !subcategory || !userPrompt) return;
 
+      const visualDirection = [
+        'BACKGROUND: Use a pure, clean white seamless studio background.',
+        'VISUAL STYLE: Minimalist, elegant, premium Apple-style advertising aesthetic.',
+        'LIGHTING: Professional soft studio lighting with subtle, realistic shadows.',
+        'COMPOSITION: Clean, balanced composition with generous negative space. Keep the relevant Apple product or educational subject as the clear main focus.',
+        'AVOID: Busy or colored backgrounds, clutter, unnecessary props, distracting textures, patterns, gradients, and excessive decorations.',
+        'IMPORTANT: Apply this visual direction consistently while preserving the specific subject, information, and creative intent in the user visual brief.'
+      ].join('\n');
+
       const prompt = [
         'Content Category: ' + category.name,
         'Content Objective: ' + category.objective,
         'Content Subcategory: ' + subcategory,
-        'Visual Brief: ' + userPrompt
+        'Visual Brief: ' + userPrompt,
+        'Mandatory Visual Direction:',
+        visualDirection
       ].join('\n');
 
       setLoadingState(true);
