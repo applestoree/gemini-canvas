@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI App Builder & Editor</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#312e81',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React 18 & ReactDOM -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- CodeMirror 5 Editor -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/dracula.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/xml/xml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/css/css.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/htmlmixed/htmlmixed.min.js"></script>
+
+  <style>
+    /* Custom Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    .CodeMirror {
+      height: 100% !important;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+      font-size: 13px;
+      border-radius: 0.375rem;
+    }
+    .glow-effect {
+      box-shadow: 0 0 20px -5px rgba(99, 102, 241, 0.3);
+    }
+  </style>
+</head>
+<body class="h-full font-sans antialiased bg-slate-950 text-slate-100 overflow-hidden">
+  <div id="root" class="h-full"></div>
+
+  <script type="text/babel">
+    
+    // Gemini Runtime Engine Client
+    const apiKey = ""; // API key populated by environment runtime
+    const GEMINI_MODEL = "gemini-3-flash-preview";
+
+    /**
+     * Executes AI request using Gemini Runtime API with exponential backoff & structured responses.
+     */
+    async function runGeminiAgent(prompt, currentCode, history = [], runtimeError = null, requestedMode = null) {
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+
+      // Build context payload
+      const systemInstruction = `You are an expert AI Web Application Builder & Engineer operating inside Gemini Canvas.
+Your primary job is to create, edit, refine, and fix client-side web applications written in a single index.html file.
+
+OPERATIONAL RULES:
+1. SOURCE OF TRUTH: The current index.html code provided is the existing codebase. 
+2. EDITING POLICY:
+   - If the existing code is empty or user requests a new app, operation is "CREATE".
+   - If the code exists, inspect it carefully. DO NOT erase existing features unless explicitly told to. Make surgical, additive, or refactoring edits.
+   - For runtime errors, operation is "FIX". Retain functionality while repairing bugs.
+3. TECH STACK SELECTION:
+   - Default to clean HTML5, Tailwind CSS (<script src="https://cdn.tailwindcss.com"><\/script>), and standard JavaScript or React 18 UMD.
+   - React scripts available when needed:
+     <script src="https://unpkg.com/react@18/umd/react.development.js"><\/script>
+     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"><\/script>
+     <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
+     Used with: <script type="text/babel">
+4. OUTPUT FORMAT:
+   You MUST respond with a valid JSON object matching this structure:
+   {
+     "operation": "CREATE" | "EDIT" | "ADD_FEATURE" | "FIX" | "IMPROVE" | "EXPLAIN",
+     "message": "Concise summary of changes made or explanation",
+     "code": "<!DOCTYPE html> ... FULL IMPLEMENTABLE HTML CODE ...",
+     "suggestedPrompts": ["Next prompt suggestion 1", "Next prompt suggestion 2", "Next prompt suggestion 3"]
+   }
+   IMPORTANT: The "code" field MUST contain the COMPLETE, runnable single-file HTML code. Do NOT output partial code snippets or placeholders. Ensure valid syntax with closing tags.`;
+
+      let contextMessage = `USER PROMPT: ${prompt}\n\n`;
+
+      if (requestedMode) {
+        contextMessage += `FORCED MODE: ${requestedMode}\n`;
+      }
+
+      if (runtimeError) {
+        contextMessage += `RUNTIME ERROR OCCURRED IN PREVIEW:\n${runtimeError}\nPlease fix this error specifically.\n\n`;
+      }
+
+      if (currentCode && currentCode.trim().length > 0) {
+        contextMessage += `CURRENT INDEX.HTML STATE:\n\`\`\`html\n${currentCode}\n\`\`\`\n\n`;
+      } else {
+        contextMessage += `PROJECT STATE: Empty project. Create from scratch.\n\n`;
+      }
+
+      if (history.length > 0) {
+        const recentHistory = history.slice(-4).map(h => `${h.role.toUpperCase()}: ${h.content}`).join('\n');
+        contextMessage += `RECENT INTERACTION HISTORY:\n${recentHistory}\n\n`;
+      }
+
+      const payload = {
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: contextMessage }]
+          }
+        ],
+        systemInstruction: {
+          parts: [{ text: systemInstruction }]
+        },
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.2
+        }
+      };
+
+      let attempts = 0;
+      const maxAttempts = 3;
+      let delay = 1000;
+
+      while (attempts < maxAttempts) {
+        try {
+          attempts++;
+          const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errText}`);
+          }
+
+          const result = await response.json();
+          const candidatePart = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+          if (!candidatePart) {
+            throw new Error("Empty response received from Gemini Runtime.");
+          }
+
+          // Parse JSON structured output
+          let parsed;
+          try {
+            parsed = JSON.parse(candidatePart);
+          } catch (e) {
+            // Fallback: search for JSON block or extract code directly
+            const jsonMatch = candidatePart.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              parsed = JSON.parse(jsonMatch[0]);
+            } else {
+              // Raw fallback
+              parsed = {
+                operation: currentCode ? "EDIT" : "CREATE",
+                message: "Generated code based on instruction.",
+                code: candidatePart,
+                suggestedPrompts: ["Add dark mode", "Make responsive", "Refine UI design"]
+              };
+            }
+          }
+
+          // Clean code output if embedded in markdown backticks
+          if (parsed.code) {
+            parsed.code = parsed.code.replace(/^```html\n?/i, '').replace(/^```\n?/i, '').replace(/\n?```$/i, '').trim();
+          }
+
+          return parsed;
+
+        } catch (error) {
+          console.warn(`Gemini API Call attempt ${attempts} failed:`, error);
+          if (attempts >= maxAttempts) {
+            throw error;
+          }
+          await new Promise(res => setTimeout(res, delay));
+          delay *= 2; // Exponential backoff
+        }
+      }
+    }
+
+    const STARTER_PROMPTS = [
+      {
+        title: "SaaS Analytics Dashboard",
+        icon: "fa-chart-line",
+        color: "from-blue-500 to-indigo-600",
+        prompt: "Build a sleek SaaS analytics dashboard with interactive charts, stat cards, recent transactions table, and light/dark toggle."
+      },
+      {
+        title: "Kanban Task Board",
+        icon: "fa-columns",
+        color: "from-purple-500 to-pink-600",
+        prompt: "Create a modern Kanban Board app with drag-and-drop or click column moving, task priorities, search filtering, and local task creation."
+      },
+      {
+        title: "Pomodoro Focus Timer",
+        icon: "fa-clock",
+        color: "from-emerald-500 to-teal-600",
+        prompt: "Build a minimal Pomodoro focus timer with ambient sound generators (white noise/rain synth), session stats, and task list."
+      },
+      {
+        title: "Crypto & FX Converter",
+        icon: "fa-coins",
+        color: "from-amber-500 to-orange-600",
+        prompt: "Create a live currency and cryptocurrency converter with rate calculator, historic trend charts, and favorite pairs list."
+      }
+    ];
+
+    function App() {
+      // Core State
+      const [project, setProject] = React.useState({
+        name: "My AI App",
+        files: {
+          "index.html": ""
+        },
+        activeFile: "index.html"
+      });
+
+      const [promptInput, setPromptInput] = React.useState("");
+      const [aiStatus, setAiStatus] = React.useState("idle"); // idle, analyzing, generating, validating, error
+      const [statusMessage, setStatusMessage] = React.useState("");
+      const [aiExplanation, setAiExplanation] = React.useState("");
+      const [suggestedPrompts, setSuggestedPrompts] = React.useState([]);
+
+      // View & Editor State
+      const [activeTab, setActiveTab] = React.useState("split"); // split, preview, code
+      const [viewportSize, setViewportSize] = React.useState("desktop"); // desktop, tablet, mobile
+      const [editorInstance, setEditorInstance] = React.useState(null);
+      const editorRef = React.useRef(null);
+      const iframeRef = React.useRef(null);
+
+      // History & Snapshots
+      const [promptHistory, setPromptHistory] = React.useState([]);
+      const [versions, setVersions] = React.useState([]);
+      const [runtimeErrors, setRuntimeErrors] = React.useState([]);
+      const [consoleLogs, setConsoleLogs] = React.useState([]);
+
+      // UI Panels
+      const [showHistoryModal, setShowHistoryModal] = React.useState(false);
+      const [showLogsPanel, setShowLogsPanel] = React.useState(false);
+
+      const currentCode = project.files["index.html"] || "";
+
+      React.useEffect(() => {
+        if (editorRef.current && !editorInstance) {
+          const cm = CodeMirror.fromTextArea(editorRef.current, {
+            mode: "htmlmixed",
+            theme: "dracula",
+            lineNumbers: true,
+            autoCloseTags: true,
+            autoCloseBrackets: true,
+            lineWrapping: true,
+            tabSize: 2
+          });
+
+          cm.on("change", (instance) => {
+            const val = instance.getValue();
+            setProject(prev => ({
+              ...prev,
+              files: { ...prev.files, "index.html": val }
+            }));
+          });
+
+          setEditorInstance(cm);
+        }
+      }, []);
+
+      // Keep CodeMirror synced when project code updates programmatically
+      React.useEffect(() => {
+        if (editorInstance && editorInstance.getValue() !== currentCode) {
+          editorInstance.setValue(currentCode);
+        }
+      }, [currentCode, editorInstance]);
+
+      const updateIframeContent = React.useCallback((code) => {
+        if (!iframeRef.current) return;
+
+        // Reset console logs & errors for clean run
+        setRuntimeErrors([]);
+
+        // Inject runtime error & console interceptor script into preview iframe
+        const errorInterceptorScript = `
+          <script>
+            (function() {
+              window.onerror = function(msg, url, line, col, error) {
+                window.parent.postMessage({
+                  type: 'PREVIEW_RUNTIME_ERROR',
+                  error: {
+                    message: msg,
+                    line: line,
+                    col: col,
+                    stack: error ? error.stack : ''
+                  }
+                }, '*');
+                return false;
+              };
+
+              const originalLog = console.log;
+              const originalError = console.error;
+              const originalWarn = console.warn;
+
+              console.log = function(...args) {
+                originalLog.apply(console, args);
+                window.parent.postMessage({ type: 'PREVIEW_CONSOLE_LOG', level: 'info', text: args.join(' ') }, '*');
+              };
+              console.error = function(...args) {
+                originalError.apply(console, args);
+                window.parent.postMessage({ type: 'PREVIEW_CONSOLE_LOG', level: 'error', text: args.join(' ') }, '*');
+              };
+              console.warn = function(...args) {
+                originalWarn.apply(console, args);
+                window.parent.postMessage({ type: 'PREVIEW_CONSOLE_LOG', level: 'warn', text: args.join(' ') }, '*');
+              };
+            })();
+          <\/script>
+        `;
+
+        const fullHTML = code.includes('<head>') 
+          ? code.replace('<head>', `<head>${errorInterceptorScript}`)
+          : `${errorInterceptorScript}${code}`;
+
+        const blob = new Blob([fullHTML], { type: 'text/html' });
+        const blobUrl = URL.createObjectURL(blob);
+        iframeRef.current.src = blobUrl;
+
+      }, []);
+
+      // Update iframe whenever code changes
+      React.useEffect(() => {
+        const timer = setTimeout(() => {
+          if (currentCode) {
+            updateIframeContent(currentCode);
+          }
+        }, 300);
+        return () => clearTimeout(timer);
+      }, [currentCode, updateIframeContent]);
+
+      React.useEffect(() => {
+        const handleMessage = (event) => {
+          if (!event.data) return;
+
+          if (event.data.type === 'PREVIEW_RUNTIME_ERROR') {
+            const err = event.data.error;
+            setRuntimeErrors(prev => [...prev, `${err.message} (Line ${err.line})`]);
+          } else if (event.data.type === 'PREVIEW_CONSOLE_LOG') {
+            setConsoleLogs(prev => [
+              ...prev.slice(-49), // Keep last 50 logs
+              { level: event.data.level, text: event.data.text, time: new Date().toLocaleTimeString() }
+            ]);
+          }
+        };
+
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+      }, []);
+
+      const handleGenerate = async (forcedPrompt = null, forcedMode = null, isFixRequest = false) => {
+        const promptToRun = forcedPrompt || promptInput;
+        if (!promptToRun.trim() && !isFixRequest) return;
+
+        setAiStatus("analyzing");
+        setStatusMessage("Analyzing prompt & understanding app requirements...");
+        setAiExplanation("");
+
+        try {
+          await new Promise(r => setTimeout(r, 400)); // Smooth UI transition
+          setAiStatus("generating");
+          setStatusMessage("Gemini Runtime is synthesizing HTML, CSS & JavaScript...");
+
+          const errorContext = isFixRequest && runtimeErrors.length > 0 ? runtimeErrors.join('\n') : null;
+
+          const result = await runGeminiAgent(
+            promptToRun,
+            currentCode,
+            promptHistory,
+            errorContext,
+            forcedMode
+          );
+
+          setAiStatus("validating");
+          setStatusMessage("Validating generated source code & rendering live preview...");
+
+          // Update Project Code
+          const newCode = result.code || currentCode;
+          setProject(prev => ({
+            ...prev,
+            files: { ...prev.files, "index.html": newCode }
+          }));
+
+          // Record Version History
+          const newVersion = {
+            id: Date.now(),
+            timestamp: new Date().toLocaleTimeString(),
+            operation: result.operation || "EDIT",
+            prompt: promptToRun,
+            code: newCode,
+            message: result.message
+          };
+
+          setVersions(prev => [newVersion, ...prev]);
+
+          // Update Prompt History
+          setPromptHistory(prev => [
+            ...prev,
+            { role: "user", content: promptToRun, timestamp: new Date().toLocaleTimeString() },
+            { role: "assistant", content: result.message || "Updated application code.", operation: result.operation }
+          ]);
+
+          setAiExplanation(result.message || "Application successfully generated.");
+          if (result.suggestedPrompts && Array.isArray(result.suggestedPrompts)) {
+            setSuggestedPrompts(result.suggestedPrompts);
+          }
+
+          setPromptInput("");
+          setAiStatus("idle");
+
+        } catch (err) {
+          console.error("AI Generation Error:", err);
+          setAiStatus("error");
+          setStatusMessage(`Generation Failed: ${err.message || 'Unknown error'}`);
+        }
+      };
+
+      const handleRestoreVersion = (ver) => {
+        setProject(prev => ({
+          ...prev,
+          files: { ...prev.files, "index.html": ver.code }
+        }));
+        setAiExplanation(`Restored version from ${ver.timestamp} (${ver.operation})`);
+        setShowHistoryModal(false);
+      };
+
+      const handleCopyCode = () => {
+        if (!currentCode) return;
+        const textarea = document.createElement('textarea');
+        textarea.value = currentCode;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        alert("Code copied to clipboard!");
+      };
+
+      const handleDownloadCode = () => {
+        const blob = new Blob([currentCode], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'index.html';
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+
+      const handleOpenNewWindow = () => {
+        const blob = new Blob([currentCode], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      };
+
+      return (
+        <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-950 text-slate-100">
+          
+          {/* Header Bar */}
+          <header className="flex items-center justify-between px-4 py-2.5 bg-slate-900 border-b border-slate-800 shrink-0">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/20">
+                <i className="fa-solid fa-wand-magic-sparkles text-sm"></i>
+              </div>
+              <div>
+                <h1 className="text-sm font-semibold tracking-wide flex items-center gap-2">
+                  <span>AI App Builder & Editor</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono">
+                    Gemini Runtime
+                  </span>
+                </h1>
+                <p className="text-[11px] text-slate-400">Describe → Generate → Live Preview → Iterate</p>
+              </div>
+            </div>
+
+            {/* View Mode Controls */}
+            <div className="flex items-center space-x-2">
+              <div className="bg-slate-950 p-1 rounded-lg border border-slate-800 flex space-x-1 text-xs">
+                <button
+                  onClick={() => setActiveTab("split")}
+                  className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
+                    activeTab === "split" ? "bg-indigo-600 text-white font-medium shadow" : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <i className="fa-solid fa-columns"></i>
+                  <span className="hidden sm:inline">Split View</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("preview")}
+                  className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
+                    activeTab === "preview" ? "bg-indigo-600 text-white font-medium shadow" : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <i className="fa-solid fa-eye"></i>
+                  <span>Preview</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("code")}
+                  className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1.5 ${
+                    activeTab === "code" ? "bg-indigo-600 text-white font-medium shadow" : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  <i className="fa-solid fa-code"></i>
+                  <span>Source Code</span>
+                </button>
+              </div>
+
+              {/* Utility Action Buttons */}
+              <button
+                onClick={() => setShowHistoryModal(true)}
+                className="px-2.5 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md border border-slate-700 flex items-center gap-1.5 transition"
+                title="Version History"
+              >
+                <i className="fa-solid fa-clock-rotate-left"></i>
+                <span className="hidden md:inline">History ({versions.length})</span>
+              </button>
+
+              <button
+                onClick={handleDownloadCode}
+                disabled={!currentCode}
+                className="px-2.5 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-300 rounded-md border border-slate-700 flex items-center gap-1.5 transition"
+                title="Export index.html"
+              >
+                <i className="fa-solid fa-download"></i>
+                <span className="hidden md:inline">Export</span>
+              </button>
+            </div>
+          </header>
+
+          {}
+          <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+            
+            {/* Left Prompt & Control Sidebar */}
+            <div className="w-full md:w-80 lg:w-96 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0">
+              
+              {/* Prompt Input Section */}
+              <div className="p-4 border-b border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <i className="fa-solid fa-terminal text-indigo-400"></i>
+                    AI Prompt
+                  </label>
+                  {currentCode && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-emerald-400 border border-emerald-500/20">
+                      Active Project
+                    </span>
+                  )}
+                </div>
+
+                <div className="relative">
+                  <textarea
+                    value={promptInput}
+                    onChange={(e) => setPromptInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                        handleGenerate();
+                      }
+                    }}
+                    placeholder={currentCode ? "Describe edits, new features, or bug fixes..." : "Describe the app you want to build..."}
+                    className="w-full h-32 p-3 text-xs bg-slate-950 text-slate-100 placeholder-slate-500 rounded-lg border border-slate-800 focus:outline-none focus:border-indigo-500 transition resize-none"
+                    disabled={aiStatus !== "idle"}
+                  ></textarea>
+
+                  <div className="absolute bottom-2.5 right-2.5 text-[10px] text-slate-500">
+                    Ctrl + Enter
+                  </div>
+                </div>
+
+                {/* Primary Action Buttons */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleGenerate()}
+                    disabled={aiStatus !== "idle" || !promptInput.trim()}
+                    className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 transition"
+                  >
+                    {aiStatus !== "idle" ? (
+                      <>
+                        <i className="fa-solid fa-circle-notch fa-spin"></i>
+                        <span>Processing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <i className="fa-solid fa-bolt"></i>
+                        <span>{currentCode ? "Apply AI Edits" : "Generate Application"}</span>
+                      </>
+                    )}
+                  </button>
+
+                  {currentCode && (
+                    <button
+                      onClick={() => {
+                        if (confirm("Clear current project code and start fresh?")) {
+                          setProject(prev => ({ ...prev, files: { "index.html": "" } }));
+                          setVersions([]);
+                          setAiExplanation("");
+                        }
+                      }}
+                      className="px-3 py-2.5 bg-slate-800 hover:bg-rose-900/40 hover:text-rose-400 text-slate-400 text-xs rounded-lg border border-slate-700 transition"
+                      title="Reset Project"
+                    >
+                      <i className="fa-solid fa-trash-can"></i>
+                    </button>
+                  )}
+                </div>
+
+                {/* Mode Shortcuts */}
+                {currentCode && (
+                  <div className="pt-1 flex flex-wrap gap-1.5">
+                    <span className="text-[10px] text-slate-500 w-full mb-0.5">Quick Actions:</span>
+                    <button
+                      onClick={() => handleGenerate("Improve the UI design, polish styling, margins, soft shadows, and dark colors.", "IMPROVE")}
+                      disabled={aiStatus !== "idle"}
+                      className="text-[11px] px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 flex items-center gap-1"
+                    >
+                      <i className="fa-solid fa-wand-magic text-purple-400 text-[10px]"></i>
+                      Polish UI
+                    </button>
+                    <button
+                      onClick={() => handleGenerate("Add a responsive dark/light mode toggle to the top navigation.", "ADD_FEATURE")}
+                      disabled={aiStatus !== "idle"}
+                      className="text-[11px] px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 flex items-center gap-1"
+                    >
+                      <i className="fa-solid fa-moon text-amber-400 text-[10px]"></i>
+                      Dark Mode
+                    </button>
+                    <button
+                      onClick={() => handleGenerate("Make the application layout fully responsive on mobile screens with touch-friendly controls.", "IMPROVE")}
+                      disabled={aiStatus !== "idle"}
+                      className="text-[11px] px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 flex items-center gap-1"
+                    >
+                      <i className="fa-solid fa-mobile-screen text-blue-400 text-[10px]"></i>
+                      Mobile Ready
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {}
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                
+                {/* AI Progress / Status Bar */}
+                {aiStatus !== "idle" && (
+                  <div className="p-3 bg-indigo-950/40 border border-indigo-500/30 rounded-lg space-y-2 animate-pulse">
+                    <div className="flex items-center space-x-2 text-indigo-400 text-xs font-medium">
+                      <i className="fa-solid fa-gear fa-spin"></i>
+                      <span>{statusMessage}</span>
+                    </div>
+                    <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                      <div className="bg-gradient-to-r from-indigo-500 to-purple-500 h-full w-2/3 animate-pulse"></div>
+                    </div>
+                  </div>
+                )}
+
+                {/* AI Explanation Result Box */}
+                {aiExplanation && (
+                  <div className="p-3 bg-slate-950 border border-slate-800 rounded-lg space-y-1.5">
+                    <div className="flex items-center text-xs font-semibold text-emerald-400 gap-1.5">
+                      <i className="fa-solid fa-circle-check"></i>
+                      <span>AI Engineer Note</span>
+                    </div>
+                    <p className="text-xs text-slate-300 leading-relaxed">{aiExplanation}</p>
+                  </div>
+                )}
+
+                {/* Suggested Prompts Followup */}
+                {suggestedPrompts.length > 0 && (
+                  <div className="space-y-1.5">
+                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Suggested Next Steps:</p>
+                    <div className="space-y-1">
+                      {suggestedPrompts.map((sugg, i) => (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            setPromptInput(sugg);
+                          }}
+                          className="w-full text-left p-2 text-xs bg-slate-800/50 hover:bg-slate-800 text-slate-300 rounded border border-slate-800/80 hover:border-indigo-500/40 transition flex items-center justify-between group"
+                        >
+                          <span className="truncate pr-2">{sugg}</span>
+                          <i className="fa-solid fa-arrow-right text-[10px] text-slate-500 group-hover:text-indigo-400 transition"></i>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Empty State Templates */}
+                {!currentCode && (
+                  <div className="space-y-3">
+                    <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Or Start with a Template:</p>
+                    <div className="grid grid-cols-1 gap-2">
+                      {STARTER_PROMPTS.map((tpl, idx) => (
+                        <div
+                          key={idx}
+                          onClick={() => {
+                            setPromptInput(tpl.prompt);
+                            handleGenerate(tpl.prompt, "CREATE");
+                          }}
+                          className="p-3 bg-slate-950 hover:bg-slate-800/60 border border-slate-800 hover:border-slate-700 rounded-lg cursor-pointer transition group"
+                        >
+                          <div className="flex items-center space-x-2.5">
+                            <div className={`w-7 h-7 rounded bg-gradient-to-tr ${tpl.color} flex items-center justify-center text-white text-xs`}>
+                              <i className={`fa-solid ${tpl.icon}`}></i>
+                            </div>
+                            <div>
+                              <h3 className="text-xs font-semibold text-slate-200 group-hover:text-indigo-300 transition">{tpl.title}</h3>
+                              <p className="text-[10px] text-slate-400 line-clamp-1">{tpl.prompt}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              </div>
+
+              {/* Console Logs Footer Bar */}
+              <div className="p-2.5 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                <button
+                  onClick={() => setShowLogsPanel(!showLogsPanel)}
+                  className="flex items-center space-x-1.5 hover:text-slate-200"
+                >
+                  <i className="fa-solid fa-terminal text-[10px]"></i>
+                  <span>Logs & Console ({consoleLogs.length})</span>
+                  {runtimeErrors.length > 0 && (
+                    <span className="px-1.5 py-0.2 rounded-full bg-rose-500/20 text-rose-400 text-[10px] border border-rose-500/30">
+                      {runtimeErrors.length} err
+                    </span>
+                  )}
+                </button>
+              </div>
+
+            </div>
+
+            {}
+            <div className="flex-1 flex flex-col bg-slate-950 overflow-hidden">
+              
+              {/* Workspace Split Content Area */}
+              <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+                
+                {/* Code Editor Column */}
+                {(activeTab === "split" || activeTab === "code") && (
+                  <div className={`flex-1 flex flex-col border-r border-slate-800 bg-slate-950 min-h-[300px] ${activeTab === "code" ? "w-full" : "lg:w-1/2"}`}>
+                    
+                    {/* Code Header Bar */}
+                    <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900 border-b border-slate-800 text-xs shrink-0">
+                      <div className="flex items-center space-x-2">
+                        <i className="fa-brands fa-html5 text-orange-500"></i>
+                        <span className="font-mono text-slate-300 font-medium">index.html</span>
+                        <span className="text-[10px] text-slate-500">Single File App</span>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={handleCopyCode}
+                          className="px-2 py-1 text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-300 rounded border border-slate-700 flex items-center gap-1"
+                        >
+                          <i className="fa-regular fa-copy text-[10px]"></i>
+                          Copy
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* CodeMirror Mounting Box */}
+                    <div className="flex-1 relative overflow-hidden">
+                      <textarea ref={editorRef} defaultValue={currentCode}></textarea>
+                    </div>
+                  </div>
+                )}
+
+                {}
+                {(activeTab === "split" || activeTab === "preview") && (
+                  <div className={`flex-1 flex flex-col bg-slate-900 overflow-hidden ${activeTab === "preview" ? "w-full" : "lg:w-1/2"}`}>
+                    
+                    {/* Preview Toolbar */}
+                    <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900 border-b border-slate-800 text-xs shrink-0">
+                      <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-1 text-slate-400">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                          <span className="font-semibold text-slate-300">Live Preview</span>
+                        </div>
+
+                        {/* Viewport Resize Toggles */}
+                        <div className="hidden sm:flex items-center space-x-1 bg-slate-950 p-0.5 rounded border border-slate-800 text-[11px]">
+                          <button
+                            onClick={() => setViewportSize("desktop")}
+                            className={`px-2 py-0.5 rounded ${viewportSize === "desktop" ? "bg-slate-800 text-indigo-400" : "text-slate-500"}`}
+                            title="Desktop View"
+                          >
+                            <i className="fa-solid fa-desktop"></i>
+                          </button>
+                          <button
+                            onClick={() => setViewportSize("tablet")}
+                            className={`px-2 py-0.5 rounded ${viewportSize === "tablet" ? "bg-slate-800 text-indigo-400" : "text-slate-500"}`}
+                            title="Tablet View"
+                          >
+                            <i className="fa-solid fa-tablet-screen-button"></i>
+                          </button>
+                          <button
+                            onClick={() => setViewportSize("mobile")}
+                            className={`px-2 py-0.5 rounded ${viewportSize === "mobile" ? "bg-slate-800 text-indigo-400" : "text-slate-500"}`}
+                            title="Mobile View"
+                          >
+                            <i className="fa-solid fa-mobile-screen"></i>
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => updateIframeContent(currentCode)}
+                          className="p-1 px-2 text-slate-400 hover:text-slate-200 text-xs"
+                          title="Refresh Preview"
+                        >
+                          <i className="fa-solid fa-rotate-right"></i>
+                        </button>
+                        <button
+                          onClick={handleOpenNewWindow}
+                          className="p-1 px-2 text-slate-400 hover:text-slate-200 text-xs"
+                          title="Open in new tab"
+                        >
+                          <i className="fa-solid fa-arrow-up-right-from-square"></i>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Runtime Error Banner with Auto-Fix with AI Button */}
+                    {runtimeErrors.length > 0 && (
+                      <div className="p-3 bg-rose-950/80 border-b border-rose-800/80 text-xs text-rose-200 flex items-center justify-between shrink-0">
+                        <div className="flex items-center space-x-2 overflow-hidden pr-2">
+                          <i className="fa-solid fa-triangle-exclamation text-rose-400 text-sm"></i>
+                          <div className="truncate">
+                            <p className="font-semibold text-rose-300">Runtime Error Detected</p>
+                            <p className="text-[11px] font-mono text-rose-200/80 truncate">{runtimeErrors[0]}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleGenerate("Fix the runtime error captured in the application.", "FIX", true)}
+                          disabled={aiStatus !== "idle"}
+                          className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-medium shrink-0 flex items-center gap-1.5 shadow"
+                        >
+                          <i className="fa-solid fa-wrench"></i>
+                          <span>Fix with AI</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Iframe Preview Canvas Container */}
+                    <div className="flex-1 bg-slate-950 flex items-center justify-center p-2 overflow-auto">
+                      <div
+                        className={`bg-white transition-all duration-300 shadow-2xl rounded-md overflow-hidden h-full ${
+                          viewportSize === "mobile" 
+                            ? "w-[375px] max-h-[667px]" 
+                            : viewportSize === "tablet" 
+                            ? "w-[768px] max-h-[1024px]" 
+                            : "w-full h-full"
+                        }`}
+                      >
+                        <iframe
+                          ref={iframeRef}
+                          title="Application Preview"
+                          className="w-full h-full border-0"
+                          sandbox="allow-scripts allow-modals allow-forms allow-same-origin"
+                        ></iframe>
+                      </div>
+                    </div>
+
+                  </div>
+                )}
+
+              </div>
+
+              {}
+              {showLogsPanel && (
+                <div className="h-40 bg-slate-950 border-t border-slate-800 flex flex-col shrink-0 font-mono text-xs">
+                  <div className="flex items-center justify-between px-3 py-1 bg-slate-900 border-b border-slate-800 text-[11px] text-slate-400">
+                    <span>Console Output & Runtime Diagnostics</span>
+                    <button onClick={() => setConsoleLogs([])} className="hover:text-slate-200">Clear Logs</button>
+                  </div>
+                  <div className="flex-1 p-2 overflow-y-auto space-y-1">
+                    {consoleLogs.length === 0 ? (
+                      <span className="text-slate-600 italic">No logs recorded...</span>
+                    ) : (
+                      consoleLogs.map((log, idx) => (
+                        <div key={idx} className={`flex space-x-2 ${log.level === 'error' ? 'text-rose-400' : log.level === 'warn' ? 'text-amber-400' : 'text-slate-300'}`}>
+                          <span className="text-slate-600 text-[10px]">{log.time}</span>
+                          <span>[{log.level.toUpperCase()}]</span>
+                          <span className="whitespace-pre-wrap">{log.text}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+          </div>
+
+          {}
+          {showHistoryModal && (
+            <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-xl max-h-[80vh] flex flex-col shadow-2xl">
+                <div className="flex items-center justify-between p-4 border-b border-slate-800">
+                  <div className="flex items-center space-x-2">
+                    <i className="fa-solid fa-clock-rotate-left text-indigo-400"></i>
+                    <h2 className="text-sm font-semibold">Version Snapshot History</h2>
+                  </div>
+                  <button onClick={() => setShowHistoryModal(false)} className="text-slate-400 hover:text-slate-200">
+                    <i className="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {versions.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500 text-xs">
+                      No versions saved yet. Generate code to create snapshots.
+                    </div>
+                  ) : (
+                    versions.map((ver, idx) => (
+                      <div key={ver.id} className="p-3 bg-slate-950 border border-slate-800 rounded-lg flex items-center justify-between hover:border-slate-700 transition">
+                        <div className="space-y-1 pr-3">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs font-semibold text-slate-200">Version #{versions.length - idx}</span>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                              {ver.operation}
+                            </span>
+                            <span className="text-[10px] text-slate-500">{ver.timestamp}</span>
+                          </div>
+                          <p className="text-xs text-slate-400 line-clamp-1">{ver.prompt}</p>
+                          {ver.message && <p className="text-[11px] text-slate-500 italic">{ver.message}</p>}
+                        </div>
+
+                        <button
+                          onClick={() => handleRestoreVersion(ver)}
+                          className="px-3 py-1.5 bg-slate-800 hover:bg-indigo-600 text-slate-200 hover:text-white rounded text-xs transition font-medium shrink-0"
+                        >
+                          Restore
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<App />);
+  </script>
+</body>
+</html>
