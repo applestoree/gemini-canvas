@@ -506,7 +506,7 @@
 
 
     // Dynamic Visual Direction: subcategory configuration replaces category configuration.
-    const visualElement = (id,name,value,description) => ({id,name,value,description,enabled:true});
+    const visualElement = (id,name,value,description,options={}) => ({id,name,value,description,enabled:options.enabled !== false,prompt_instruction:options.prompt_instruction || ''});
     const visualSet = (background,composition,lighting,visualStyle,negativeConstraints) => [
       visualElement('background','Background',background,'Latar dan lingkungan utama.'),
       visualElement('composition','Composition',composition,'Tata letak, framing, dan posisi objek.'),
@@ -539,7 +539,7 @@
     let activeVisualConfig = [];
     function currentVisualConfig() {
       const source = subcategoryVisualConfig[subcategorySelect.value] || categoryVisualConfig[categorySelect.value] || [];
-      return source.map(item => ({...item}));
+      return source;
     }
     function renderVisualDirection() {
       const container = document.getElementById('visualDirectionContainer');
@@ -557,8 +557,14 @@
         '<textarea data-visual-value="' + item.id + '" rows="2" class="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs">' + escapeAttr(item.value) + '</textarea></div>'
       ).join('');
       container.querySelectorAll('[data-visual-enabled]').forEach(toggle => toggle.addEventListener('change', () => {
+        const item = activeVisualConfig.find(entry => entry.id === toggle.dataset.visualEnabled);
+        if (item) item.enabled = toggle.checked;
         const status = container.querySelector('[data-visual-status="' + toggle.dataset.visualEnabled + '"]');
         if (status) status.textContent = toggle.checked ? 'DIGUNAKAN' : 'TIDAK DIGUNAKAN';
+      }));
+      container.querySelectorAll('[data-visual-value]').forEach(input => input.addEventListener('input', () => {
+        const item = activeVisualConfig.find(entry => entry.id === input.dataset.visualValue);
+        if (item) item.value = input.value;
       }));
     }
     function getActiveVisualValues() {
@@ -574,13 +580,10 @@
       const active = values.filter(item => item.enabled && item.value);
       const disabled = values.filter(item => !item.enabled);
       return ['DYNAMIC VISUAL DIRECTION:',
-        active.length ? active.map(item => item.name.toUpperCase() + ': ' + item.value).join('\\n') : 'No predefined visual direction; follow user visual brief without fixed styling.',
+        active.length ? active.map(item => item.name.toUpperCase() + ': ' + item.value + (item.prompt_instruction ? ' ' + item.prompt_instruction : '')).join('\\n') : 'No predefined visual direction; follow user visual brief without fixed styling.',
         disabled.length ? 'Do not apply disabled directions: ' + disabled.map(item => item.name).join(', ') + '.' : '',
         'Never reintroduce disabled directions through default styling.'
       ].filter(Boolean).join('\\n');
-    }
-    function validateActiveVisuals() {
-      if (!getActiveVisualValues().some(item => item.enabled && item.value)) throw new Error('Aktifkan dan isi minimal satu elemen Visual Direction.');
     }
 
     // Event Listener: Perubahan Kategori Konten
@@ -762,9 +765,7 @@
         return;
       }
 
-      let visualDirection;
-      try { validateActiveVisuals(); visualDirection = buildVisualDirectionPrompt(); }
-      catch (err) { showError(err.message); return; }
+      const visualDirection = buildVisualDirectionPrompt();
 
       const finalPrompt = [
         'Content Category: ' + category.name,
