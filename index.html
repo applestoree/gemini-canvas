@@ -6,71 +6,135 @@
   <title>AI Image Generator - Apple Store Malaysia</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+  </style>
 </head>
-<body class="min-h-screen bg-white text-neutral-900 flex flex-col items-center justify-center p-4">
-  <main class="max-w-md w-full bg-white p-6 rounded-2xl shadow-sm border border-neutral-200">
-    <h1 class="text-xl font-bold mb-2 flex items-center gap-2">
-      <i data-lucide="sparkles" class="text-yellow-400"></i> AI Image Generator
-    </h1>
-    <p class="text-sm text-neutral-500 mb-5">Pilih kategori konten dan subkategori sebelum membuat visual.</p>
+<body class="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col items-center justify-center p-4 sm:p-6">
+  <main class="max-w-lg w-full bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-neutral-200">
+    <!-- Header -->
+    <div class="mb-6">
+      <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-600 text-xs font-medium mb-3">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i>
+        <span>Apple Visual Studio</span>
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight text-neutral-900">
+        AI Image Generator
+      </h1>
+      <p class="text-sm text-neutral-500 mt-1">
+        Pilih kategori konten dan subkategori untuk menyusun arahan visual bergaya Apple.
+      </p>
+    </div>
 
     <form id="imageForm" class="space-y-4">
+      <!-- Kategori Konten -->
       <div>
-        <label for="categorySelect" class="block text-sm font-medium text-neutral-700 mb-1">Kategori Konten</label>
-        <select id="categorySelect" required class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:border-neutral-400">
+        <label for="categorySelect" class="block text-sm font-medium text-neutral-700 mb-1.5">Kategori Konten</label>
+        <select id="categorySelect" required class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 transition">
           <option value="">Pilih kategori konten</option>
           <option value="product">Product Content</option>
           <option value="education">Education Content</option>
         </select>
       </div>
 
-      <div id="objectivePanel" class="hidden rounded-xl border border-neutral-200 bg-neutral-50 p-3">
-        <p class="text-xs uppercase tracking-wide text-neutral-500 mb-1">Objective</p>
-        <p id="objectiveText" class="text-sm text-neutral-700"></p>
+      <!-- Panel Objective -->
+      <div id="objectivePanel" class="hidden rounded-2xl border border-neutral-200/80 bg-neutral-50/80 p-3.5 transition-all">
+        <p class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400 mb-1">Objective</p>
+        <p id="objectiveText" class="text-sm text-neutral-700 leading-relaxed"></p>
       </div>
 
+      <!-- Subkategori -->
       <div>
-        <label for="subcategorySelect" class="block text-sm text-neutral-300 mb-1">Subkategori</label>
-        <select id="subcategorySelect" required disabled class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:border-neutral-400 disabled:opacity-50">
+        <label for="subcategorySelect" class="block text-sm font-medium text-neutral-700 mb-1.5">Subkategori</label>
+        <select id="subcategorySelect" required disabled class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 disabled:opacity-50 disabled:cursor-not-allowed transition">
           <option value="">Pilih kategori terlebih dahulu</option>
         </select>
       </div>
 
+      <!-- Ide / Informasi Tambahan -->
       <div>
-        <label for="ideaInput" class="block text-sm font-medium text-neutral-700 mb-1">Ide atau Informasi Tambahan <span class="font-normal text-neutral-400">(opsional)</span></label>
-        <textarea id="ideaInput" rows="3" placeholder="Contoh: iPhone 17 Pro Max dengan fokus pada desain titanium dan kemampuan kamera..." class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:border-neutral-400 placeholder:text-neutral-400"></textarea>
-        <p class="text-xs text-neutral-400 mt-1">Generator otomatis menyusun ide berdasarkan kategori dan subkategori tanpa koneksi API.</p>
+        <label for="ideaInput" class="block text-sm font-medium text-neutral-700 mb-1.5">
+          Ide atau Informasi Tambahan <span class="font-normal text-neutral-400">(opsional)</span>
+        </label>
+        <textarea id="ideaInput" rows="3" placeholder="Contoh: iPhone 17 Pro Max dengan fokus pada desain titanium dan kemampuan kamera..." class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 placeholder:text-neutral-400 transition"></textarea>
+        <p class="text-xs text-neutral-400 mt-1.5">AI akan mengembangkan ide ini berdasarkan kategori dan subkategori yang dipilih.</p>
       </div>
 
-      <button type="button" id="generatePromptBtn" class="w-full py-3 bg-white hover:bg-neutral-50 text-neutral-900 border border-neutral-300 font-semibold rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer">
-        <i id="promptBtnIcon" data-lucide="bot" class="w-5 h-5"></i>
-        <span id="promptBtnText">Generate Detail Prompt Otomatis</span>
+      <!-- Tombol Generate Prompt AI -->
+      <button type="button" id="generatePromptBtn" class="w-full py-3 px-4 bg-white hover:bg-neutral-50 active:bg-neutral-100 text-neutral-900 border border-neutral-300 font-semibold text-sm rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs">
+        <i id="promptBtnIcon" data-lucide="bot" class="w-4 h-4"></i>
+        <span id="promptBtnText">Generate Detail Prompt dengan AI</span>
       </button>
 
+      <!-- Detail Prompt Visual -->
       <div>
-        <div class="flex items-center justify-between mb-1">
+        <div class="flex items-center justify-between mb-1.5">
           <label for="promptInput" class="block text-sm font-medium text-neutral-700">Detail Prompt Visual</label>
-          <span id="promptStatus" class="text-xs text-neutral-400">Bisa diedit</span>
+          <div class="flex items-center gap-2">
+            <span id="promptStatus" class="text-xs text-neutral-400">Bisa diedit</span>
+            <button type="button" id="copyPromptBtn" title="Salin Prompt" class="text-xs text-neutral-500 hover:text-neutral-900 flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-neutral-100 transition cursor-pointer">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              <span id="copyBtnText">Salin</span>
+            </button>
+          </div>
         </div>
-        <textarea id="promptInput" rows="9" placeholder="Klik Generate Detail Prompt Otomatis, atau tulis prompt secara manual..." class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:border-neutral-400 placeholder:text-neutral-400" required></textarea>
-        <p class="text-xs text-neutral-400 mt-1">Periksa dan edit hasil prompt sebelum membuat gambar.</p>
+        <textarea id="promptInput" rows="8" placeholder="Klik Generate Detail Prompt dengan AI, atau tulis prompt secara manual..." class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 placeholder:text-neutral-400 transition" required></textarea>
+        <p class="text-xs text-neutral-400 mt-1.5">Periksa dan sesuaikan hasil prompt sebelum membuat gambar.</p>
       </div>
 
-      <button type="button" id="copyPromptBtn" class="w-full py-3 bg-neutral-900 hover:bg-neutral-800 text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer">
-        <i data-lucide="copy" class="w-5 h-5"></i>
-        <span>Salin Prompt untuk Gemini Canvas</span>
+      <!-- Aspect Ratio Selector -->
+      <div>
+        <label for="aspectRatioSelect" class="block text-sm font-medium text-neutral-700 mb-1.5">Rasio Aspek Gambar</label>
+        <select id="aspectRatioSelect" class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 transition">
+          <option value="1:1">1:1 (Square - Instagram Feed)</option>
+          <option value="4:5">4:5 (Portrait - Social Media Post)</option>
+          <option value="9:16">9:16 (Vertical - Stories / Reels)</option>
+          <option value="16:9">16:9 (Landscape - Banner / Presentasi)</option>
+        </select>
+      </div>
+
+      <!-- Tombol Buat Gambar -->
+      <button type="submit" id="submitBtn" class="w-full py-3.5 px-4 bg-neutral-900 hover:bg-neutral-800 active:bg-neutral-950 text-white font-semibold text-sm rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm">
+        <i id="btnIcon" data-lucide="sparkles" class="w-4 h-4"></i>
+        <span id="btnText">Buat Gambar</span>
       </button>
-      <p class="text-xs text-neutral-500 text-center">Prompt dibuat otomatis tanpa API Key. Gunakan prompt yang sudah disalin pada fitur Generate Image di Gemini Canvas.</p>
     </form>
 
-    <p id="errorMsg" class="hidden text-red-600 text-sm mt-4 text-center"></p>
+    <!-- Pesan Error -->
+    <div id="errorBox" class="hidden mt-4 p-3.5 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2.5 text-red-700 text-sm">
+      <i data-lucide="alert-circle" class="w-4 h-4 shrink-0 mt-0.5"></i>
+      <p id="errorMsg" class="leading-snug"></p>
+    </div>
 
+    <!-- Loading Placeholder saat Membuat Gambar -->
+    <div id="imageLoadingSkeleton" class="hidden mt-6 flex flex-col items-center justify-center p-8 rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 space-y-3">
+      <i data-lucide="loader-2" class="w-8 h-8 text-neutral-400 animate-spin"></i>
+      <p class="text-sm font-medium text-neutral-600">Sedang merender visual studio...</p>
+      <p class="text-xs text-neutral-400 text-center">Proses ini membutuhkan beberapa detik untuk hasil detail terbaik.</p>
+    </div>
 
+    <!-- Hasil Gambar -->
+    <div id="resultContainer" class="hidden mt-6 pt-6 border-t border-neutral-100 flex flex-col items-center space-y-4">
+      <div class="w-full overflow-hidden rounded-2xl shadow-sm border border-neutral-200 bg-white">
+        <img id="resultImage" src="" alt="Generated Visual" class="w-full h-auto object-contain block" />
+      </div>
+      <a id="downloadBtn" href="" download="apple-store-visual.png" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200 px-5 py-2.5 rounded-xl text-sm font-medium transition">
+        <i data-lucide="download" class="w-4 h-4"></i> Download Gambar
+      </a>
+    </div>
   </main>
 
   <script>
+    // Inisialisasi ikon Lucide
     lucide.createIcons();
 
+    // Konfigurasi API (Key diisi otomatis oleh environment runtime)
+    const apiKey = "";
+
+    // Data Kategori & Subkategori
     const categories = {
       product: {
         name: 'Product Content',
@@ -102,6 +166,7 @@
       }
     };
 
+    // Referensi Elemen DOM
     const form = document.getElementById('imageForm');
     const categorySelect = document.getElementById('categorySelect');
     const subcategorySelect = document.getElementById('subcategorySelect');
@@ -109,12 +174,60 @@
     const objectiveText = document.getElementById('objectiveText');
     const ideaInput = document.getElementById('ideaInput');
     const promptInput = document.getElementById('promptInput');
+    const aspectRatioSelect = document.getElementById('aspectRatioSelect');
     const generatePromptBtn = document.getElementById('generatePromptBtn');
     const promptBtnText = document.getElementById('promptBtnText');
     const promptStatus = document.getElementById('promptStatus');
     const copyPromptBtn = document.getElementById('copyPromptBtn');
+    const copyBtnText = document.getElementById('copyBtnText');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+    const errorBox = document.getElementById('errorBox');
     const errorMsg = document.getElementById('errorMsg');
+    const imageLoadingSkeleton = document.getElementById('imageLoadingSkeleton');
+    const resultContainer = document.getElementById('resultContainer');
+    const resultImage = document.getElementById('resultImage');
+    const downloadBtn = document.getElementById('downloadBtn');
 
+    // Helper: Menampilkan dan menyembunyikan pesan error
+    function showError(message) {
+      errorMsg.textContent = message;
+      errorBox.classList.remove('hidden');
+    }
+
+    function hideError() {
+      errorBox.classList.add('hidden');
+      errorMsg.textContent = '';
+    }
+
+    // Helper: Fetch dengan Exponential Backoff untuk menangani throttling
+    async function fetchWithRetry(url, options, maxRetries = 4) {
+      let delay = 1000;
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          const response = await fetch(url, options);
+          if (response.ok) {
+            return response;
+          }
+          // Jika status 429 (Too Many Requests) atau 5xx (Server Error), lakukan retry
+          if ((response.status === 429 || response.status >= 500) && attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, delay));
+            delay *= 2;
+            continue;
+          }
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData?.error?.message || `Permintaan gagal dengan status ${response.status}`);
+        } catch (err) {
+          if (attempt === maxRetries) {
+            throw err;
+          }
+          await new Promise(resolve => setTimeout(resolve, delay));
+          delay *= 2;
+        }
+      }
+    }
+
+    // Event Listener: Perubahan Kategori Konten
     categorySelect.addEventListener('change', () => {
       const selected = categories[categorySelect.value];
       subcategorySelect.innerHTML = '';
@@ -133,6 +246,7 @@
       selected.subcategories.forEach(item => subcategorySelect.add(new Option(item, item)));
     });
 
+    // Validasi Pilihan Kategori & Subkategori
     function getSelectedContent() {
       const category = categories[categorySelect.value];
       const subcategory = subcategorySelect.value;
@@ -142,147 +256,200 @@
       return { category, subcategory };
     }
 
-    function buildVisualPrompt(category, subcategory, idea) {
-      const isProduct = category === 'product';
-      const subject = idea || (isProduct
-        ? 'An Apple product relevant to the selected content subcategory: ' + subcategory
-        : 'An educational visual explaining the Apple-related topic: ' + subcategory);
-
-      const conceptMap = {
-        'New Product Showcase': 'Present the product as a refined hero object, emphasizing its recognizable silhouette and supplied design details.',
-        'Product Features & Highlights': 'Visually communicate the selected product features using a clear hierarchy and restrained supporting visual cues.',
-        'Product Launch': 'Create a premium launch-campaign composition that introduces the product with confident, uncluttered visual storytelling.',
-        'Product Comparison': 'Create a clear side-by-side comparison layout. Show only differences supported by the user-provided information.',
-        'Product in Detail': 'Use a close-up product composition that highlights materials, craftsmanship, controls, and supplied details.',
-        'Best-Selling Products': 'Present the product as a featured popular choice in a polished retail editorial composition without inventing sales claims.',
-        'Apple Ecosystem Showcase': 'Show how the relevant Apple devices work together in a coherent, balanced ecosystem composition.',
-        'Product Recommendation': 'Create an inviting recommendation visual that makes the product benefit and intended audience immediately clear.',
-        'Tips & Tricks': 'Communicate one practical tip through a simple visual demonstration with a clear focal point.',
-        'How-to Tutorials': 'Show the process as a clear, easy-to-follow instructional visual with logically ordered steps.',
-        'Hidden Features': 'Reveal the selected feature through a focused visual explanation without inventing interface elements.',
-        'Product Knowledge': 'Explain the selected product concept with an accurate, approachable educational composition.',
-        'iPhone Photography Tips': 'Illustrate the photography technique with a relevant iPhone camera or photography scene.',
-        'Productivity Tips': 'Show a practical productivity workflow using relevant Apple devices and a clear visual hierarchy.',
-        'Apple Ecosystem Tips': 'Explain a useful cross-device workflow with the relevant Apple devices arranged coherently.',
-        'Frequently Asked Questions (FAQ)': 'Create a clear question-and-answer educational visual with concise, legible wording only when text is needed.'
-      };
-
-      const concept = conceptMap[subcategory] || 'Create a focused visual that clearly communicates the selected content topic.';
-      const contentType = isProduct ? 'premium Apple product advertising' : 'clear Apple product education';
-      const safeIdea = idea || 'No additional user details supplied; derive the visual direction only from the selected category and subcategory.';
-
-      return [
-        'SUBJECT',
-        subject,
-        '',
-        'ACTION / CONCEPT',
-        concept,
-        'Content purpose: ' + categoryData[category].objective,
-        '',
-        'ENVIRONMENT',
-        'A pure, seamless white studio environment. Keep the scene minimal and free from unrelated objects.',
-        '',
-        'COMPOSITION',
-        'Create a balanced editorial composition with the main subject as the unmistakable focal point. Use generous negative space, refined framing, and a clear visual hierarchy. ' + (isProduct ? 'Preserve the product silhouette and proportions.' : 'Make the educational idea immediately understandable.'),
-        '',
-        'VISUAL STYLE',
-        'Minimalist, elegant, premium Apple-inspired art direction for ' + contentType + '. Photorealistic product rendering or polished editorial-quality educational imagery, as appropriate to the subject.',
-        '',
-        'LIGHTING',
-        'Professional soft studio lighting, controlled highlights, natural contact shadows, and realistic material response. Avoid harsh glare and overexposure.',
-        '',
-        'CAMERA & QUALITY',
-        'High-resolution, crisp focus, refined details, realistic perspective, professional commercial photography quality, clean edges, and accurate proportions.',
-        '',
-        'COLOR & MOOD',
-        'Bright, calm, sophisticated, modern, and understated. Use a restrained palette that complements the actual subject without introducing distracting colors.',
-        '',
-        'DETAILS',
-        'Content category: ' + categoryData[category].name + '.',
-        'Content subcategory: ' + subcategory + '.',
-        'User direction: ' + safeIdea,
-        'Preserve only product specifications, features, interface details, and claims explicitly supplied by the user. Do not fabricate technical facts, product variants, or text.',
-        '',
-        'NEGATIVE CONSTRAINTS',
-        'No busy or colored background, no gradients, no patterns, no clutter, no unnecessary props, no distracting textures, no excessive decorations, no distorted product geometry, no incorrect logos, no invented ports or buttons, no misspelled text, and no unsupported product claims.'
-      ].join('\\n');
-    }
-
-    const categoryData = {
-      product: { name: categories.product.name, objective: categories.product.objective },
-      education: { name: categories.education.name, objective: categories.education.objective }
-    };
-
+    // State Loading Tombol Generate Prompt
     function setPromptLoadingState(isLoading) {
       generatePromptBtn.disabled = isLoading;
-      promptBtnText.textContent = isLoading ? 'Menyusun prompt...' : 'Generate Detail Prompt Otomatis';
+      promptBtnText.textContent = isLoading ? 'AI sedang menyusun prompt...' : 'Generate Detail Prompt dengan AI';
       const icon = document.getElementById('promptBtnIcon');
       icon.setAttribute('data-lucide', isLoading ? 'loader-2' : 'bot');
       icon.classList.toggle('animate-spin', isLoading);
       lucide.createIcons();
     }
 
-    generatePromptBtn.addEventListener('click', () => {
-      errorMsg.classList.add('hidden');
-      errorMsg.textContent = '';
+    // Event Listener: Salin Prompt ke Clipboard
+    copyPromptBtn.addEventListener('click', () => {
+      if (!promptInput.value.trim()) return;
+      promptInput.select();
+      document.execCommand('copy');
+      copyBtnText.textContent = 'Tersalin!';
+      setTimeout(() => {
+        copyBtnText.textContent = 'Salin';
+      }, 2000);
+    });
+
+    // Event Listener: Generate Detail Prompt dengan AI (gemini-3-flash-preview)
+    generatePromptBtn.addEventListener('click', async () => {
+      hideError();
 
       let selected;
       try {
         selected = getSelectedContent();
       } catch (err) {
-        errorMsg.textContent = err.message;
-        errorMsg.classList.remove('hidden');
+        showError(err.message);
         return;
       }
 
       setPromptLoadingState(true);
-      promptStatus.textContent = 'Menyusun otomatis...';
+      promptStatus.textContent = 'Sedang dibuat...';
 
       try {
-        const generatedPrompt = buildVisualPrompt(
-          categorySelect.value,
-          selected.subcategory,
-          ideaInput.value.trim()
-        );
+        const idea = ideaInput.value.trim() || 'Develop a strong visual concept based on the selected category and subcategory.';
+        const systemPrompt = [
+          'You are an expert Apple product advertising art director and visual prompt engineer.',
+          'Create one production-ready image-generation prompt based on the supplied content category, objective, subcategory, and user idea.',
+          'Write the final image prompt in clear, detailed English for an image generation model. Do not add commentary, explanations, markdown fences, or multiple alternatives.',
+          'Use these exact sections in the final prompt: SUBJECT; ACTION / CONCEPT; ENVIRONMENT; COMPOSITION; VISUAL STYLE; LIGHTING; CAMERA & QUALITY; COLOR & MOOD; DETAILS; NEGATIVE CONSTRAINTS.',
+          'Always apply this visual direction: pure clean white seamless studio background; minimalist, elegant, premium Apple-style aesthetic; professional soft studio lighting; subtle realistic shadows; balanced composition with generous negative space.',
+          'Avoid busy backgrounds, clutter, unnecessary props, distracting textures, patterns, gradients, and excessive decorations.',
+          'For Product Content, make the Apple product the clear hero subject and preserve its recognizable design. Do not invent product specifications, logos, ports, colors, or features that were not supplied.',
+          'For Education Content, communicate the selected educational topic clearly and accurately. Keep the visual focused on the relevant Apple product or educational subject. If text is essential, keep it concise, correctly spelled, and legible; do not fabricate technical facts.',
+          'Respect the user idea and selected subcategory. Improve visual specificity and composition without changing the intended message.',
+          'Return only the completed image prompt.'
+        ].join(' ');
+
+        const userQuery = [
+          'CONTENT CATEGORY: ' + selected.category.name,
+          'CONTENT OBJECTIVE: ' + selected.category.objective,
+          'CONTENT SUBCATEGORY: ' + selected.subcategory,
+          'USER IDEA / ADDITIONAL INFORMATION: ' + idea
+        ].join('\n');
+
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+        const response = await fetchWithRetry(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: userQuery }] }],
+            systemInstruction: {
+              parts: [{ text: systemPrompt }]
+            },
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 1800
+            }
+          })
+        });
+
+        const data = await response.json();
+        const generatedPrompt = data?.candidates?.[0]?.content?.parts
+          ?.map(part => part.text || '')
+          .join('\n')
+          .trim();
+
+        if (!generatedPrompt) {
+          throw new Error('AI tidak mengembalikan Detail Prompt Visual.');
+        }
+
         promptInput.value = generatedPrompt;
-        promptStatus.textContent = 'Prompt otomatis · Bisa diedit';
+        promptStatus.textContent = 'Dibuat oleh AI · Bisa diedit';
       } catch (err) {
-        promptStatus.textContent = 'Gagal dibuat';
-        errorMsg.textContent = err.message || 'Gagal menyusun prompt.';
-        errorMsg.classList.remove('hidden');
+        promptStatus.textContent = 'Belum dibuat';
+        showError(err.message || 'Terjadi kesalahan saat membuat prompt.');
       } finally {
         setPromptLoadingState(false);
       }
     });
 
-    promptInput.addEventListener('input', () => {
-      promptStatus.textContent = 'Prompt diedit manual';
-    });
+    // State Loading Tombol Submit Gambar
+    function setLoadingState(isLoading) {
+      submitBtn.disabled = isLoading;
+      const currentIcon = document.getElementById('btnIcon');
 
-    copyPromptBtn.addEventListener('click', async () => {
-      errorMsg.classList.add('hidden');
-      errorMsg.textContent = '';
-      const prompt = promptInput.value.trim();
+      if (isLoading) {
+        currentIcon.setAttribute('data-lucide', 'loader-2');
+        currentIcon.classList.add('animate-spin');
+        btnText.textContent = 'Membuat Gambar...';
+        imageLoadingSkeleton.classList.remove('hidden');
+      } else {
+        currentIcon.setAttribute('data-lucide', 'sparkles');
+        currentIcon.classList.remove('animate-spin');
+        btnText.textContent = 'Buat Gambar';
+        imageLoadingSkeleton.classList.add('hidden');
+      }
+      lucide.createIcons();
+    }
 
-      if (!prompt) {
-        errorMsg.textContent = 'Generate atau isi Detail Prompt Visual terlebih dahulu.';
-        errorMsg.classList.remove('hidden');
+    // Event Listener: Submit Form untuk Membuat Gambar (gemini-3.1-flash-image)
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError();
+
+      let selected;
+      try {
+        selected = getSelectedContent();
+      } catch (err) {
+        showError(err.message);
         return;
       }
 
+      const { category, subcategory } = selected;
+      const userPrompt = promptInput.value.trim();
+
+      if (!userPrompt) {
+        showError('Generate atau isi Detail Prompt Visual terlebih dahulu.');
+        return;
+      }
+
+      const visualDirection = [
+        'BACKGROUND: Use a pure, clean white seamless studio background.',
+        'VISUAL STYLE: Minimalist, elegant, premium Apple-style advertising aesthetic.',
+        'LIGHTING: Professional soft studio lighting with subtle, realistic shadows.',
+        'COMPOSITION: Clean, balanced composition with generous negative space. Keep the relevant Apple product or educational subject as the clear main focus.',
+        'AVOID: Busy or colored backgrounds, clutter, unnecessary props, distracting textures, patterns, gradients, and excessive decorations.',
+        'IMPORTANT: Apply this visual direction consistently while preserving the specific subject, information, and creative intent in the user visual brief.'
+      ].join('\n');
+
+      const finalPrompt = [
+        'Content Category: ' + category.name,
+        'Content Objective: ' + category.objective,
+        'Content Subcategory: ' + subcategory,
+        'Visual Brief: ' + userPrompt,
+        'Mandatory Visual Direction:',
+        visualDirection
+      ].join('\n');
+
+      setLoadingState(true);
+      resultContainer.classList.add('hidden');
+
       try {
-        await navigator.clipboard.writeText(prompt);
-        copyPromptBtn.innerHTML = '<i data-lucide="check" class="w-5 h-5"></i><span>Prompt berhasil disalin</span>';
-        lucide.createIcons();
-        setTimeout(() => {
-          copyPromptBtn.innerHTML = '<i data-lucide="copy" class="w-5 h-5"></i><span>Salin Prompt untuk Gemini Canvas</span>';
-          lucide.createIcons();
-        }, 1800);
+        const payload = {
+          contents: [{ role: 'user', parts: [{ text: finalPrompt }] }],
+          generationConfig: {
+            responseModalities: ['IMAGE'],
+            imageConfig: {
+              aspectRatio: aspectRatioSelect.value || '1:1'
+            }
+          }
+        };
+
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${apiKey}`;
+
+        const res = await fetchWithRetry(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        const part = data?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+
+        if (!part || !part.inlineData?.data) {
+          throw new Error('Tidak ada data gambar yang dikembalikan oleh model.');
+        }
+
+        const mimeType = part.inlineData.mimeType || 'image/png';
+        const imageUrl = `data:${mimeType};base64,${part.inlineData.data}`;
+
+        resultImage.src = imageUrl;
+        resultImage.alt = `${category.name} - ${subcategory}`;
+        downloadBtn.href = imageUrl;
+        downloadBtn.download = `apple-visual-${subcategory.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`;
+        resultContainer.classList.remove('hidden');
       } catch (err) {
-        promptInput.focus();
-        promptInput.select();
-        errorMsg.textContent = 'Clipboard tidak tersedia. Prompt sudah dipilih; salin secara manual.';
-        errorMsg.classList.remove('hidden');
+        showError(err.message || 'Terjadi kesalahan saat menghasilkan gambar.');
+      } finally {
+        setLoadingState(false);
       }
     });
   </script>
