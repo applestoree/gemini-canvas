@@ -7,51 +7,51 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body class="min-h-screen bg-neutral-900 text-white flex flex-col items-center justify-center p-4">
-  <main class="max-w-md w-full bg-neutral-800 p-6 rounded-2xl shadow-xl border border-neutral-700">
+<body class="min-h-screen bg-white text-neutral-900 flex flex-col items-center justify-center p-4">
+  <main class="max-w-md w-full bg-white p-6 rounded-2xl shadow-sm border border-neutral-200">
     <h1 class="text-xl font-bold mb-2 flex items-center gap-2">
       <i data-lucide="sparkles" class="text-yellow-400"></i> AI Image Generator
     </h1>
-    <p class="text-sm text-neutral-400 mb-5">Pilih kategori konten dan subkategori sebelum membuat visual.</p>
+    <p class="text-sm text-neutral-500 mb-5">Pilih kategori konten dan subkategori sebelum membuat visual.</p>
 
     <form id="imageForm" class="space-y-4">
       <div>
-        <label for="categorySelect" class="block text-sm text-neutral-300 mb-1">Kategori Konten</label>
-        <select id="categorySelect" required class="w-full bg-neutral-900 border border-neutral-700 rounded-xl p-3 text-sm focus:outline-none focus:border-yellow-400">
+        <label for="categorySelect" class="block text-sm font-medium text-neutral-700 mb-1">Kategori Konten</label>
+        <select id="categorySelect" required class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:border-neutral-400">
           <option value="">Pilih kategori konten</option>
           <option value="product">Product Content</option>
           <option value="education">Education Content</option>
         </select>
       </div>
 
-      <div id="objectivePanel" class="hidden rounded-xl border border-neutral-700 bg-neutral-900/70 p-3">
+      <div id="objectivePanel" class="hidden rounded-xl border border-neutral-200 bg-neutral-50 p-3">
         <p class="text-xs uppercase tracking-wide text-neutral-500 mb-1">Objective</p>
-        <p id="objectiveText" class="text-sm text-neutral-300"></p>
+        <p id="objectiveText" class="text-sm text-neutral-700"></p>
       </div>
 
       <div>
         <label for="subcategorySelect" class="block text-sm text-neutral-300 mb-1">Subkategori</label>
-        <select id="subcategorySelect" required disabled class="w-full bg-neutral-900 border border-neutral-700 rounded-xl p-3 text-sm focus:outline-none focus:border-yellow-400 disabled:opacity-50">
+        <select id="subcategorySelect" required disabled class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:border-neutral-400 disabled:opacity-50">
           <option value="">Pilih kategori terlebih dahulu</option>
         </select>
       </div>
 
       <div>
         <label for="promptInput" class="block text-sm text-neutral-300 mb-1">Detail Prompt Visual</label>
-        <textarea id="promptInput" rows="4" placeholder="Jelaskan konsep visual yang ingin dibuat..." class="w-full bg-neutral-900 border border-neutral-700 rounded-xl p-3 text-sm focus:outline-none focus:border-yellow-400" required></textarea>
+        <textarea id="promptInput" rows="4" placeholder="Jelaskan konsep visual yang ingin dibuat..." class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:border-neutral-400 placeholder:text-neutral-400" required></textarea>
       </div>
 
-      <button type="submit" id="submitBtn" class="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-neutral-950 font-semibold rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer">
+      <button type="submit" id="submitBtn" class="w-full py-3 bg-neutral-900 hover:bg-neutral-800 text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer">
         <i id="btnIcon" data-lucide="sparkles" class="w-5 h-5"></i>
         <span id="btnText">Buat Gambar</span>
       </button>
     </form>
 
-    <p id="errorMsg" class="hidden text-red-400 text-sm mt-4 text-center"></p>
+    <p id="errorMsg" class="hidden text-red-600 text-sm mt-4 text-center"></p>
 
     <div id="resultContainer" class="hidden mt-6 flex flex-col items-center space-y-3">
-      <img id="resultImage" src="" alt="" class="w-full rounded-xl shadow-lg border border-neutral-700" />
-      <a id="downloadBtn" href="" download="image.png" class="flex items-center gap-2 bg-neutral-700 hover:bg-neutral-600 px-4 py-2 rounded-xl text-sm font-medium transition">
+      <img id="resultImage" src="" alt="" class="w-full rounded-xl shadow-sm border border-neutral-200" />
+      <a id="downloadBtn" href="" download="image.png" class="flex items-center gap-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200 px-4 py-2 rounded-xl text-sm font-medium transition">
         <i data-lucide="download" class="w-4 h-4"></i> Download Gambar
       </a>
     </div>
