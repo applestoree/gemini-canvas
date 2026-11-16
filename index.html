@@ -492,8 +492,8 @@
     }
 
     function validateActiveElements() {
-      const invalid=getActiveElementValues().filter(item=>item.enabled&&item.required&&!item.rawValue);
-      if(invalid.length) throw new Error('Lengkapi elemen wajib: '+invalid.map(item=>item.name).join(', ')+'.');
+      const invalid=getActiveElementValues().filter(item=>item.enabled&&item.required&&!item.rawValue&&(item.exact_value||!item.allow_ai_generation));
+      if(invalid.length) throw new Error('Lengkapi elemen wajib yang tidak boleh dibuat AI: '+invalid.map(item=>item.name).join(', ')+'.');
       return getActiveElementValues();
     }
 
@@ -502,6 +502,8 @@
       const active=values.filter(item=>item.enabled&&item.rawValue);
       const off=values.filter(item=>!item.enabled);
       const blank=values.filter(item=>item.enabled&&!item.rawValue);
+      const generatableBlank=blank.filter(item=>!item.exact_value&&item.allow_ai_generation);
+      const eligible=active.concat(generatableBlank);
       const renderValue=item => typeof item.value==='string' ? item.value : JSON.stringify(item.value);
       const modeFor=item => item.exact_value
         ? 'EXACT VALUE: reproduce the supplied wording and data exactly; exact_value overrides allow_ai_generation.'
@@ -510,12 +512,13 @@
           : 'USER SUPPLIED ONLY: use the supplied value without expanding, rewriting, or inventing missing content.';
       return [
         'TEXT ELEMENT SKILLS — AUTHORITATIVE TEXT RULES:',
-        active.length?active.map(item=>'- '+item.name+' ['+item.type+']: '+renderValue(item)+' — '+modeFor(item)).join('\n'):'NO ACTIVE TEXT ELEMENTS: do not render any visible text, typography, labels, badges, numbers, logos-as-text, or captions.',
+        eligible.length ? active.map(item=>'- '+item.name+' ['+item.type+']: '+renderValue(item)+' — '+modeFor(item)).join('\\n') : 'NO ACTIVE TEXT ELEMENTS: do not render any visible text, typography, labels, badges, numbers, logos-as-text, or captions.',
+        generatableBlank.length?'ENABLED BLANK ELEMENTS — AI MAY GENERATE: '+generatableBlank.map(item=>item.name+' ['+item.type+']').join(', ')+'.':'',
+        blank.filter(item=>!generatableBlank.includes(item)).length?'ENABLED BLANK ELEMENTS — LEAVE ABSENT: '+blank.filter(item=>!generatableBlank.includes(item)).map(item=>item.name).join(', ')+'.':'',
         off.length?'DISABLED ELEMENTS: never render or reintroduce: '+off.map(item=>item.name).join(', ')+'.':'',
-        blank.length?'ENABLED BUT BLANK: '+blank.map(item=>item.name+' ('+(item.exact_value||!item.allow_ai_generation?'leave absent':'AI may generate a suitable value')+')').join('; ')+'.':'',
         'Never invent product specifications, prices, performance claims, dates, or factual disclaimers.',
         'Preserve the meaning and relationships in structured lists, tutorial steps, and comparison rows.'
-      ].filter(Boolean).join('\n');
+      ].filter(Boolean).join('\\n');
     }
 
     function buildFinalImagePrompt(category, subcategory, creativeBrief) {
