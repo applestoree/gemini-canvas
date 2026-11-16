@@ -406,8 +406,7 @@
 
     function currentElementConfig() {
       const subcategory = subcategorySelect.value;
-      const source = subcategoryElementConfig[subcategory] || categoryElementConfig[categorySelect.value] || [];
-      return source.map(item => ({...item, value: Array.isArray(item.value) ? [...item.value] : item.value}));
+      return subcategoryElementConfig[subcategory] || categoryElementConfig[categorySelect.value] || [];
     }
 
     function escapeAttr(value) {
@@ -467,8 +466,16 @@
       }).join('');
       textElementsContainer.querySelectorAll('[data-skill-enabled]').forEach(toggle=>{
         toggle.addEventListener('change',()=>{
+          const item=activeElementConfig.find(entry=>entry.id===toggle.dataset.skillEnabled);
+          if(item) item.enabled=toggle.checked;
           const status=textElementsContainer.querySelector('[data-element-status="'+toggle.dataset.skillEnabled+'"]');
           if(status) status.textContent=toggle.checked?'DIGUNAKAN':'TIDAK DIGUNAKAN';
+        });
+      });
+      textElementsContainer.querySelectorAll('[data-skill-value]').forEach(input=>{
+        input.addEventListener('input',()=>{
+          const item=activeElementConfig.find(entry=>entry.id===input.dataset.skillValue);
+          if(item) item.value=parseElementValue(input.value,item.type);
         });
       });
     }
@@ -478,7 +485,9 @@
         const toggle=textElementsContainer.querySelector('[data-skill-enabled="'+item.id+'"]');
         const input=textElementsContainer.querySelector('[data-skill-value="'+item.id+'"]');
         const raw=input ? input.value : formatElementValue(item.value,item.type);
-        return {...item,enabled:!!(toggle&&toggle.checked),value:parseElementValue(raw,item.type),rawValue:raw.trim()};
+        item.enabled = toggle ? toggle.checked : item.enabled;
+        item.value = parseElementValue(raw,item.type);
+        return {...item,rawValue:raw.trim()};
       });
     }
 
@@ -494,14 +503,32 @@
       const off=values.filter(item=>!item.enabled);
       const blank=values.filter(item=>item.enabled&&!item.rawValue);
       const renderValue=item => typeof item.value==='string' ? item.value : JSON.stringify(item.value);
+      const modeFor=item => item.exact_value
+        ? 'EXACT VALUE: reproduce the supplied wording and data exactly; exact_value overrides allow_ai_generation.'
+        : item.allow_ai_generation
+          ? 'AI GENERATION ALLOWED: preserve supplied facts and intent; AI may expand or refine wording, and may generate a value when blank, but must not invent factual claims.'
+          : 'USER SUPPLIED ONLY: use the supplied value without expanding, rewriting, or inventing missing content.';
       return [
-        'TEXT ELEMENT SKILLS / EXACT COPY:',
-        active.length?active.map(item=>'- '+item.name+' ['+item.type+']: '+renderValue(item)+(item.exact_value?' (REPRODUCE EXACTLY)':'')).join('\n'):'No text overlays. Keep the image free of visible text.',
-        off.length?'Do not render or introduce these disabled elements: '+off.map(item=>item.name).join(', ')+'.':'',
-        blank.length?'Enabled but blank; do not invent values for: '+blank.map(item=>item.name).join(', ')+'.':'',
-        'Only render text explicitly supplied in enabled elements. Do not invent product specifications, prices, claims, badges, or disclaimers.',
-        'Structured values such as lists, tutorial steps, and comparison rows must retain their meaning and relationships.'
+        'TEXT ELEMENT SKILLS — AUTHORITATIVE TEXT RULES:',
+        active.length?active.map(item=>'- '+item.name+' ['+item.type+']: '+renderValue(item)+' — '+modeFor(item)).join('\n'):'NO ACTIVE TEXT ELEMENTS: do not render any visible text, typography, labels, badges, numbers, logos-as-text, or captions.',
+        off.length?'DISABLED ELEMENTS: never render or reintroduce: '+off.map(item=>item.name).join(', ')+'.':'',
+        blank.length?'ENABLED BUT BLANK: '+blank.map(item=>item.name+' ('+(item.exact_value||!item.allow_ai_generation?'leave absent':'AI may generate a suitable value')+')').join('; ')+'.':'',
+        'Never invent product specifications, prices, performance claims, dates, or factual disclaimers.',
+        'Preserve the meaning and relationships in structured lists, tutorial steps, and comparison rows.'
       ].filter(Boolean).join('\n');
+    }
+
+    function buildFinalImagePrompt(category, subcategory, creativeBrief) {
+      return [
+        'CONTENT CATEGORY: '+category.name,
+        'CONTENT OBJECTIVE: '+category.objective,
+        'CONTENT SUBCATEGORY: '+subcategory,
+        'CREATIVE BRIEF: '+creativeBrief,
+        buildTextSkillPrompt(),
+        buildVisualDirectionPrompt(),
+        'ASPECT RATIO: '+(aspectRatioSelect.value||'1:1')+'. Adapt framing to this ratio while preserving the configured composition.',
+        'FINAL PRECEDENCE: user-enabled Text Element Skills and Visual Direction are authoritative. Do not add, duplicate, weaken, or contradict their instructions.'
+      ].join('\n');
     }
 
 
@@ -579,11 +606,11 @@
       const values = getActiveVisualValues();
       const active = values.filter(item => item.enabled && item.value);
       const disabled = values.filter(item => !item.enabled);
-      return ['DYNAMIC VISUAL DIRECTION:',
-        active.length ? active.map(item => item.name.toUpperCase() + ': ' + item.value + (item.prompt_instruction ? ' ' + item.prompt_instruction : '')).join('\\n') : 'No predefined visual direction; follow user visual brief without fixed styling.',
-        disabled.length ? 'Do not apply disabled directions: ' + disabled.map(item => item.name).join(', ') + '.' : '',
-        'Never reintroduce disabled directions through default styling.'
-      ].filter(Boolean).join('\\n');
+      return ['DYNAMIC VISUAL DIRECTION — AUTHORITATIVE:',
+        active.length ? active.map(item => item.name.toUpperCase() + ': ' + item.value + (item.prompt_instruction ? ' ' + item.prompt_instruction : '')).join('\n') : 'No predefined visual direction; follow the creative brief without imposing a fixed direction.',
+        disabled.length ? 'DISABLED VISUAL DIRECTIONS: do not apply or reintroduce ' + disabled.map(item => item.name).join(', ') + '.' : '',
+        'Treat enabled directions as authoritative. Negative Constraints apply only when enabled; do not restore disabled constraints from defaults.'
+      ].filter(Boolean).join('\n');
     }
 
     // Event Listener: Perubahan Kategori Konten
@@ -666,15 +693,14 @@
         const idea = ideaInput.value.trim() || 'Develop a strong visual concept based on the selected category and subcategory.';
         const systemPrompt = [
           'You are an expert Apple product advertising art director and visual prompt engineer.',
-          'Create one production-ready image-generation prompt based on the supplied content category, objective, subcategory, and user idea.',
-          'Write the final image prompt in clear, detailed English for an image generation model. Do not add commentary, explanations, markdown fences, or multiple alternatives.',
-          'Use these exact sections in the final prompt: SUBJECT; ACTION / CONCEPT; ENVIRONMENT; COMPOSITION; VISUAL STYLE; LIGHTING; CAMERA & QUALITY; COLOR & MOOD; DETAILS; NEGATIVE CONSTRAINTS.',
-          'Follow the supplied DYNAMIC VISUAL DIRECTION exactly. Do not impose fixed background, lighting, composition, or style.',
-          'For Product Content, make the Apple product the clear hero subject and preserve its recognizable design. Do not invent product specifications, logos, ports, colors, or features that were not supplied.',
-          'For Education Content, communicate the selected educational topic clearly and accurately. Keep the visual focused on the relevant Apple product or educational subject. If text is essential, keep it concise, correctly spelled, and legible; do not fabricate technical facts.',
-          'Respect the user idea and selected subcategory. Improve visual specificity and composition without changing the intended message.',
-          'Use only enabled text elements and reproduce their supplied values exactly. Never invent or paraphrase overlay copy.',
-          'Return only the completed image prompt.'
+          'Create a concise creative brief for the image concept, not the final assembled image prompt.',
+          'Return only these sections: SUBJECT; ACTION / CONCEPT; CAMERA & QUALITY; COLOR & MOOD; DETAILS.',
+          'Do not output or repeat environment, background, composition, visual style, lighting, typography, text overlay, or negative-constraint instructions. Those are assembled separately from the active user configuration.',
+          'Do not invent product specifications, logos, ports, colors, features, dates, prices, or factual claims.',
+          'For Product Content, keep the Apple product recognizable and central to the concept.',
+          'For Education Content, communicate the selected educational topic accurately without requesting visible text.',
+          'Respect the user idea and selected subcategory. Improve concept specificity without changing the intended message.',
+          'Return only the creative brief, with no commentary, markdown fences, or alternatives.'
         ].join(' ');
 
         const userQuery = [
@@ -682,9 +708,7 @@
           'CONTENT OBJECTIVE: ' + selected.category.objective,
           'CONTENT SUBCATEGORY: ' + selected.subcategory,
           'USER IDEA / ADDITIONAL INFORMATION: ' + idea,
-          buildTextSkillPrompt(),
-          buildVisualDirectionPrompt(),
-          'ASPECT RATIO: ' + (aspectRatioSelect.value || '1:1') + '. Adapt composition to this ratio.'
+          'Generate a creative concept only. Controlled text, visual direction, and aspect ratio will be assembled once after generation.'
         ].join('\n');
 
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
@@ -765,17 +789,7 @@
         return;
       }
 
-      const visualDirection = buildVisualDirectionPrompt();
-
-      const finalPrompt = [
-        'Content Category: ' + category.name,
-        'Content Objective: ' + category.objective,
-        'Content Subcategory: ' + subcategory,
-        'Visual Brief: ' + userPrompt,
-        buildTextSkillPrompt(),
-        visualDirection,
-        'ASPECT RATIO: ' + (aspectRatioSelect.value || '1:1') + '. Adapt framing to this ratio while preserving configured composition.'
-      ].join('\n');
+      const finalPrompt = buildFinalImagePrompt(category, subcategory, userPrompt);
 
       setLoadingState(true);
       resultContainer.classList.add('hidden');
