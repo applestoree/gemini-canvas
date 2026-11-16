@@ -234,110 +234,267 @@
       }
     }
 
-    // Text Element Skills: 10 elemen dengan default use/value per kategori dan subkategori.
-    const textFields = [
-      ['headline','Headline','Pesan utama visual.'],
-      ['subheadline','Subheadline','Penjelas singkat headline.'],
-      ['bodyText','Body Text','Informasi pendukung.'],
-      ['highlightText','Highlight Text','Manfaat atau pesan utama.'],
-      ['featureText','Feature Text','Fitur, kemampuan, atau langkah.'],
-      ['ctaText','CTA Text','Ajakan tindakan.'],
-      ['priceText','Price Text','Harga yang harus dikonfirmasi pengguna.'],
-      ['badgeText','Badge Text','Label singkat seperti NEW atau FAQ.'],
-      ['disclaimerText','Disclaimer Text','Catatan atau syarat.'],
-      ['footerText','Footer Text','Identitas atau informasi penutup.']
-    ];
+    // Dynamic Element System: setiap Category dan Subcategory mempunyai daftar elemen sendiri.
+    // Jika Subcategory mempunyai konfigurasi, daftar tersebut menjadi daftar final (bukan merge).
+    const element = (id, name, type='text', description='', options={}) => ({
+      id, name, type, description,
+      enabled: options.enabled !== false,
+      required: options.required === true,
+      value: options.value ?? '',
+      allow_ai_generation: options.allow_ai_generation !== false,
+      exact_value: options.exact_value === true,
+      prompt_instruction: options.prompt_instruction || ''
+    });
 
-    const textPresets = {
-      product: {
-        base: {
-          headline:[true,'Discover [Product Name]'], subheadline:[true,'Designed to make everyday experiences better.'],
-          bodyText:[false,'Explore the design and experience of [Product Name].'], highlightText:[true,'[Main Product Benefit]'],
-          featureText:[true,'[Key Feature 1] · [Key Feature 2] · [Key Feature 3]'], ctaText:[true,'Discover More'],
-          priceText:[false,'[Price] [Currency]'], badgeText:[false,'NEW'],
-          disclaimerText:[false,'Product details and availability may vary.'], footerText:[true,'Apple Store Malaysia']
-        },
-        bySubcategory: {
-          'New Product Showcase':{headline:'Meet [Product Name]',subheadline:'A new perspective on what’s possible.',badgeText:'NEW',badgeTextUse:true},
-          'Product Features & Highlights':{headline:'Made for More',subheadline:'Explore what makes [Product Name] stand out.',bodyTextUse:true,highlightText:'[Top Feature or Benefit]'},
-          'Product Launch':{headline:'Introducing [Product Name]',subheadline:'The next chapter starts here.',badgeText:'JUST LAUNCHED',badgeTextUse:true},
-          'Product Comparison':{headline:'Find Your Best Fit',subheadline:'Compare [Product A] and [Product B].',bodyTextUse:true,highlightText:'[Key Difference]',featureText:'[Comparison Point 1] · [Comparison Point 2]',disclaimerText:'Comparison is based on information supplied.',disclaimerTextUse:true},
-          'Product in Detail':{headline:'Every Detail Matters',subheadline:'A closer look at [Product Name].',bodyTextUse:true,featureText:'[Material] · [Design Detail] · [Feature]'},
-          'Best-Selling Products':{headline:'Customer Favorites',subheadline:'Explore selected Apple favorites.',badgeText:'BEST SELLER',badgeTextUse:true},
-          'Apple Ecosystem Showcase':{headline:'Better Together',subheadline:'Discover how Apple devices work together.',highlightText:'One connected experience',featureText:'[Device 1] · [Device 2] · [Device 3]'},
-          'Product Recommendation':{headline:'A Great Match for You',subheadline:'Discover [Product Name].',highlightText:'[Main Reason to Choose]',ctaText:'Explore Your Options'}
-        }
-      },
-      education: {
-        base: {
-          headline:[true,'Get More from Your Apple Device'], subheadline:[true,'Simple guidance for everyday use.'],
-          bodyText:[true,'[Brief explanation of the selected topic.]'], highlightText:[true,'[Key Takeaway]'],
-          featureText:[true,'[Step or Feature 1] · [Step or Feature 2]'], ctaText:[true,'Learn More'],
-          priceText:[false,''], badgeText:[false,''], disclaimerText:[false,''], footerText:[true,'Apple Store Malaysia']
-        },
-        bySubcategory: {
-          'Tips & Tricks':{headline:'Make Your iPhone Work Smarter',subheadline:'A simple tip worth trying.',bodyTextUse:false,badgeText:'QUICK TIP',badgeTextUse:true},
-          'How-to Tutorials':{headline:'How to [Complete a Task]',subheadline:'Follow these simple steps.',featureText:'01 [Step One] · 02 [Step Two] · 03 [Step Three]'},
-          'Hidden Features':{headline:'A Feature You Might Have Missed',subheadline:'Explore more ways to use your Apple device.',badgeText:'DID YOU KNOW?',badgeTextUse:true},
-          'Product Knowledge':{headline:'Understand [Product or Feature]',subheadline:'The essentials, explained clearly.',disclaimerText:'Verify details against official product documentation.',disclaimerTextUse:true},
-          'iPhone Photography Tips':{headline:'Take Better iPhone Photos',subheadline:'Small techniques. More expressive shots.',featureText:'[Photography Tip 1] · [Photography Tip 2] · [Photography Tip 3]'},
-          'Productivity Tips':{headline:'Make Time for What Matters',subheadline:'A smarter workflow with Apple devices.',featureText:'[Workflow Tip 1] · [Workflow Tip 2] · [Workflow Tip 3]'},
-          'Apple Ecosystem Tips':{headline:'Your Devices, Working Together',subheadline:'Discover a more connected workflow.',featureText:'[Device Feature 1] · [Device Feature 2]'},
-          'Frequently Asked Questions (FAQ)':{headline:'Your Questions, Answered',subheadline:'[Question about an Apple product or feature]',bodyText:'[Short, verified answer.]',highlightText:'QUICK ANSWER',badgeText:'FAQ',badgeTextUse:true,disclaimerText:'Check official Apple documentation for the latest details.',disclaimerTextUse:true}
-        }
-      }
+    const categoryElementConfig = {
+      product: [
+        element('headline','Headline','text','Pesan utama konten.',{required:true}),
+        element('product_name','Product Name','text','Nama produk Apple yang dibahas.',{required:true,allow_ai_generation:false,exact_value:true}),
+        element('subheadline','Subheadline','text','Penjelas singkat headline.'),
+        element('feature_text','Feature Text','list','Daftar fitur produk.'),
+        element('highlight_text','Highlight Text','text','Keunggulan utama.'),
+        element('price_text','Price Text','price','Harga produk yang diberikan pengguna.',{allow_ai_generation:false,exact_value:true}),
+        element('cta_text','CTA Text','text','Ajakan tindakan.'),
+        element('footer_text','Footer Text','text','Informasi penutup.')
+      ],
+      education: [
+        element('headline','Headline','text','Topik edukasi.',{required:true}),
+        element('subheadline','Subheadline','text','Penjelasan singkat topik.'),
+        element('introduction_text','Introduction Text','textarea','Pengantar materi.'),
+        element('key_takeaway','Key Takeaway','text','Pesan utama yang perlu diingat.'),
+        element('example_text','Example Text','textarea','Contoh penggunaan atau penerapan.'),
+        element('cta_text','CTA Text','text','Ajakan tindakan.'),
+        element('footer_text','Footer Text','text','Informasi penutup.')
+      ]
     };
 
-    function currentTextProfile() {
-      const preset=textPresets[categorySelect.value];
-      const profile={};
-      textFields.forEach(([key])=>{profile[key]={enabled:preset.base[key][0],value:preset.base[key][1]};});
-      const overrides=preset.bySubcategory[subcategorySelect.value]||{};
-      textFields.forEach(([key])=>{
-        if(Object.prototype.hasOwnProperty.call(overrides,key)) profile[key].value=overrides[key];
-        if(Object.prototype.hasOwnProperty.call(overrides,key+'Use')) profile[key].enabled=overrides[key+'Use'];
-      });
-      if(categorySelect.value==='education') profile.priceText.enabled=false;
-      return profile;
+    const subcategoryElementConfig = {
+      'New Product Showcase': [
+        element('headline','Headline','text','Judul peluncuran atau pengenalan.',{required:true}),
+        element('product_name','Product Name','text','Nama produk.',{required:true,allow_ai_generation:false,exact_value:true}),
+        element('launch_badge','Launch Badge','text','Label seperti NEW atau JUST ARRIVED.'),
+        element('hero_feature','Hero Feature','text','Fitur unggulan utama.'),
+        element('supporting_features','Supporting Features','list','Fitur pendukung.'),
+        element('cta_text','CTA Text','text','Ajakan untuk mengenal produk.')
+      ],
+      'Product Features & Highlights': [
+        element('headline','Headline','text','Judul fitur.',{required:true}),
+        element('product_name','Product Name','text','Nama produk.',{required:true,allow_ai_generation:false,exact_value:true}),
+        element('feature_title','Feature Title','text','Nama fitur utama.',{required:true}),
+        element('feature_description','Feature Description','textarea','Penjelasan fitur.'),
+        element('key_benefits','Key Benefits','list','Manfaat utama fitur.'),
+        element('highlight_text','Highlight Text','text','Poin yang paling menonjol.')
+      ],
+      'Product Launch': [
+        element('launch_headline','Launch Headline','text','Judul pengumuman peluncuran.',{required:true}),
+        element('product_name','Product Name','text','Nama produk.',{required:true,allow_ai_generation:false,exact_value:true}),
+        element('launch_date','Launch Date','text','Tanggal peluncuran jika tersedia.',{allow_ai_generation:false,exact_value:true}),
+        element('launch_badge','Launch Badge','text','Label peluncuran.'),
+        element('launch_message','Launch Message','textarea','Pesan utama peluncuran.'),
+        element('cta_text','CTA Text','text','Ajakan tindakan.')
+      ],
+      'Product Comparison': [
+        element('headline','Headline','text','Judul perbandingan.',{required:true}),
+        element('product_a_name','Product A Name','text','Nama produk pertama.',{required:true,allow_ai_generation:false,exact_value:true}),
+        element('product_b_name','Product B Name','text','Nama produk kedua.',{required:true,allow_ai_generation:false,exact_value:true}),
+        element('comparison_rows','Comparison Rows','comparison','Format setiap baris: fitur | nilai produk A | nilai produk B.',{required:true}),
+        element('comparison_result','Comparison Result','textarea','Ringkasan perbedaan atau kesimpulan.'),
+        element('cta_text','CTA Text','text','Ajakan untuk memilih atau membandingkan.')
+      ],
+      'Product in Detail': [
+        element('headline','Headline','text','Judul pembahasan detail.',{required:true}),
+        element('product_name','Product Name','text','Nama produk.',{required:true,allow_ai_generation:false,exact_value:true}),
+        element('design_details','Design Details','list','Detail desain dan material.'),
+        element('technical_specs','Technical Specifications','list','Spesifikasi terverifikasi.'),
+        element('feature_explanation','Feature Explanation','textarea','Penjelasan fitur secara mendalam.'),
+        element('detail_highlight','Detail Highlight','text','Detail paling penting.')
+      ],
+      'Best-Selling Products': [
+        element('headline','Headline','text','Judul daftar produk.',{required:true}),
+        element('ranking_label','Ranking Label','text','Label seperti BEST SELLER atau CUSTOMER FAVORITE.'),
+        element('product_list','Product List','list','Daftar nama produk yang direkomendasikan.',{required:true,allow_ai_generation:false}),
+        element('reason_to_buy','Reasons to Choose','list','Alasan produk diminati.'),
+        element('cta_text','CTA Text','text','Ajakan melihat produk.')
+      ],
+      'Apple Ecosystem Showcase': [
+        element('headline','Headline','text','Pesan utama ekosistem.',{required:true}),
+        element('ecosystem_devices','Ecosystem Devices','list','Perangkat yang ditampilkan.',{required:true,allow_ai_generation:false}),
+        element('connected_features','Connected Features','list','Fitur lintas perangkat.'),
+        element('workflow_example','Workflow Example','textarea','Contoh alur kerja antarperangkat.'),
+        element('ecosystem_benefit','Ecosystem Benefit','text','Manfaat utama ekosistem.')
+      ],
+      'Product Recommendation': [
+        element('headline','Headline','text','Judul rekomendasi.',{required:true}),
+        element('recommended_product','Recommended Product','text','Nama produk rekomendasi.',{required:true,allow_ai_generation:false,exact_value:true}),
+        element('target_user','Ideal For','text','Pengguna yang cocok.'),
+        element('recommendation_reasons','Reasons to Recommend','list','Alasan rekomendasi.',{required:true}),
+        element('key_benefit','Key Benefit','text','Manfaat utama.'),
+        element('cta_text','CTA Text','text','Ajakan melihat rekomendasi.')
+      ],
+      'Tips & Tricks': [
+        element('headline','Headline','text','Judul tips.',{required:true}),
+        element('problem_text','Problem / Context','text','Masalah atau konteks yang dibantu.'),
+        element('tip_text','Tip','textarea','Tips utama.',{required:true}),
+        element('quick_steps','Quick Steps','steps','Format setiap baris: judul langkah | deskripsi langkah.'),
+        element('benefit_text','Benefit','text','Manfaat setelah mengikuti tips.')
+      ],
+      'How-to Tutorials': [
+        element('headline','Headline','text','Judul tutorial.',{required:true}),
+        element('introduction_text','Introduction','textarea','Pengantar tutorial.'),
+        element('required_items','What You Need','list','Perangkat atau persiapan.'),
+        element('tutorial_steps','Tutorial Steps','steps','Format setiap baris: judul langkah | deskripsi langkah.',{required:true}),
+        element('expected_result','Expected Result','textarea','Hasil akhir yang diharapkan.'),
+        element('cta_text','CTA Text','text','Ajakan mencoba tutorial.')
+      ],
+      'Hidden Features': [
+        element('headline','Headline','text','Judul fitur tersembunyi.',{required:true}),
+        element('feature_name','Hidden Feature','text','Nama fitur.',{required:true}),
+        element('supported_device','Supported Device','text','Perangkat atau versi yang didukung.',{allow_ai_generation:false}),
+        element('how_to_access','How to Access','steps','Format setiap baris: judul langkah | deskripsi langkah.'),
+        element('why_it_matters','Why It Matters','textarea','Manfaat fitur.'),
+        element('discovery_badge','Discovery Badge','text','Label seperti DID YOU KNOW?')
+      ],
+      'Product Knowledge': [
+        element('headline','Headline','text','Judul pengetahuan produk.',{required:true}),
+        element('subject_name','Product / Feature','text','Nama produk atau fitur.',{required:true,allow_ai_generation:false}),
+        element('definition','Definition','textarea','Definisi yang akurat.',{required:true}),
+        element('key_facts','Key Facts','list','Fakta utama yang telah diverifikasi.'),
+        element('common_misconception','Common Misconception','textarea','Kesalahpahaman yang perlu diluruskan.'),
+        element('source_note','Source / Verification Note','text','Catatan sumber atau verifikasi.')
+      ],
+      'iPhone Photography Tips': [
+        element('headline','Headline','text','Judul tips fotografi.',{required:true}),
+        element('photography_goal','Photography Goal','text','Hasil foto yang ingin dicapai.',{required:true}),
+        element('camera_setting','Camera Setting','list','Pengaturan kamera yang relevan.'),
+        element('shooting_steps','Shooting Steps','steps','Format setiap baris: judul langkah | deskripsi langkah.'),
+        element('composition_tip','Composition Tip','text','Tips komposisi.'),
+        element('final_result','Expected Photo Result','text','Gambaran hasil foto.')
+      ],
+      'Productivity Tips': [
+        element('headline','Headline','text','Judul produktivitas.',{required:true}),
+        element('productivity_goal','Productivity Goal','text','Tujuan workflow.',{required:true}),
+        element('apps_features','Apps & Features','list','Aplikasi atau fitur yang digunakan.'),
+        element('workflow_steps','Workflow Steps','steps','Format setiap baris: judul langkah | deskripsi langkah.'),
+        element('time_saving_benefit','Time-saving Benefit','text','Manfaat produktivitas.'),
+        element('pro_tip','Pro Tip','textarea','Tips tambahan.')
+      ],
+      'Apple Ecosystem Tips': [
+        element('headline','Headline','text','Judul tips ekosistem.',{required:true}),
+        element('devices_involved','Devices Involved','list','Perangkat yang terlibat.',{required:true,allow_ai_generation:false}),
+        element('ecosystem_feature','Ecosystem Feature','text','Fitur lintas perangkat.'),
+        element('setup_steps','Setup Steps','steps','Format setiap baris: judul langkah | deskripsi langkah.'),
+        element('use_case','Use Case','textarea','Contoh penggunaan sehari-hari.'),
+        element('ecosystem_benefit','Ecosystem Benefit','text','Manfaat penggunaan.')
+      ],
+      'Frequently Asked Questions (FAQ)': [
+        element('headline','Headline','text','Judul FAQ.',{required:true}),
+        element('question','Question','text','Pertanyaan pengguna.',{required:true}),
+        element('short_answer','Short Answer','textarea','Jawaban singkat dan langsung.',{required:true}),
+        element('answer_details','Answer Details','textarea','Penjelasan tambahan.'),
+        element('related_tip','Related Tip','text','Tips terkait.'),
+        element('verification_note','Verification Note','text','Catatan verifikasi informasi.')
+      ]
+    };
+
+    let activeElementConfig = [];
+
+    function currentElementConfig() {
+      const subcategory = subcategorySelect.value;
+      const source = subcategoryElementConfig[subcategory] || categoryElementConfig[categorySelect.value] || [];
+      return source.map(item => ({...item, value: Array.isArray(item.value) ? [...item.value] : item.value}));
     }
 
     function escapeAttr(value) {
-      return String(value||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      return String(value ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function formatElementValue(value, type) {
+      if (Array.isArray(value)) {
+        if (type === 'steps') return value.map(item => typeof item === 'object' ? (item.title || '') + ' | ' + (item.description || '') : item).join('\n');
+        if (type === 'comparison') return value.map(item => [item.feature,item.product_a,item.product_b].join(' | ')).join('\n');
+        return value.join('\n');
+      }
+      return value ?? '';
+    }
+
+    function parseElementValue(raw, type) {
+      const lines = raw.split('\n').map(line => line.trim()).filter(Boolean);
+      if (type === 'list') return lines;
+      if (type === 'steps') return lines.map((line,index) => {
+        const [title,...description] = line.split('|').map(part=>part.trim());
+        return {step_number:index+1,title,description:description.join(' | ')};
+      });
+      if (type === 'comparison') return lines.map(line => {
+        const [feature,product_a,product_b] = line.split('|').map(part=>part.trim());
+        return {feature:feature||'',product_a:product_a||'',product_b:product_b||''};
+      });
+      return raw.trim();
     }
 
     function renderTextSkills() {
       if(!categorySelect.value||!subcategorySelect.value) {
-        textElementsContainer.innerHTML='<p class="text-xs text-neutral-400">Pilih kategori dan subkategori terlebih dahulu.</p>'; return;
+        activeElementConfig = [];
+        textElementsContainer.innerHTML='<p class="text-xs text-neutral-400">Pilih kategori dan subkategori terlebih dahulu.</p>';
+        return;
       }
-      const profile=currentTextProfile();
-      textElementsContainer.innerHTML=textFields.map(([key,label,description])=>{
-        const item=profile[key];
-        return `<div class="rounded-xl border border-neutral-200 bg-neutral-50/70 p-3 space-y-2">
+      activeElementConfig = currentElementConfig();
+      if (!activeElementConfig.length) {
+        textElementsContainer.innerHTML='<p class="text-xs text-neutral-400">Belum ada konfigurasi elemen untuk pilihan ini.</p>';
+        return;
+      }
+      textElementsContainer.innerHTML=activeElementConfig.map(item=>{
+        const isLong = ['textarea','list','steps','comparison'].includes(item.type);
+        const value = escapeAttr(formatElementValue(item.value,item.type));
+        const input = isLong
+          ? `<textarea data-skill-value="${item.id}" rows="3" placeholder="${escapeAttr(item.description || item.name)}" class="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-900/10">${value}</textarea>`
+          : `<input type="text" data-skill-value="${item.id}" value="${value}" placeholder="Value untuk ${escapeAttr(item.name)}" class="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-900/10">`;
+        const typeHint = item.type==='steps' ? 'Format: Judul langkah | Deskripsi langkah' : item.type==='comparison' ? 'Format: Fitur | Nilai produk A | Nilai produk B' : item.type==='list' ? 'Satu item per baris' : item.type;
+        return `<div class="rounded-xl border border-neutral-200 bg-neutral-50/70 p-3 space-y-2" data-element-card="${item.id}">
           <div class="flex items-start gap-2">
-            <input type="checkbox" id="skill-${key}" data-skill-enabled="${key}" ${item.enabled?'checked':''} class="mt-0.5 h-4 w-4 rounded border-neutral-300 text-neutral-900">
-            <div class="min-w-0 flex-1"><label for="skill-${key}" class="block text-sm font-medium text-neutral-800">${label}</label><p class="text-[11px] text-neutral-500">${description}</p></div>
-            <span class="text-[10px] text-neutral-400">${item.enabled?'DIGUNAKAN':'TIDAK DIGUNAKAN'}</span>
+            <input type="checkbox" id="skill-${item.id}" data-skill-enabled="${item.id}" ${item.enabled?'checked':''} class="mt-0.5 h-4 w-4 rounded border-neutral-300 text-neutral-900">
+            <div class="min-w-0 flex-1"><label for="skill-${item.id}" class="block text-sm font-medium text-neutral-800">${escapeAttr(item.name)} ${item.required?'<span class="text-red-500">*</span>':''}</label><p class="text-[11px] text-neutral-500">${escapeAttr(item.description)}</p></div>
+            <span data-element-status="${item.id}" class="text-[10px] text-neutral-400">${item.enabled?'DIGUNAKAN':'TIDAK DIGUNAKAN'}</span>
           </div>
-          <input type="text" data-skill-value="${key}" value="${escapeAttr(item.value)}" placeholder="Value untuk ${label}" class="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-900/10">
+          ${input}
+          <p class="text-[10px] text-neutral-400">${escapeAttr(typeHint)} · ${item.required?'Wajib':'Opsional'} · ${item.allow_ai_generation?'AI boleh mengembangkan':'Value dari pengguna'}</p>
         </div>`;
       }).join('');
+      textElementsContainer.querySelectorAll('[data-skill-enabled]').forEach(toggle=>{
+        toggle.addEventListener('change',()=>{
+          const status=textElementsContainer.querySelector('[data-element-status="'+toggle.dataset.skillEnabled+'"]');
+          if(status) status.textContent=toggle.checked?'DIGUNAKAN':'TIDAK DIGUNAKAN';
+        });
+      });
+    }
+
+    function getActiveElementValues() {
+      return activeElementConfig.map(item=>{
+        const toggle=textElementsContainer.querySelector('[data-skill-enabled="'+item.id+'"]');
+        const input=textElementsContainer.querySelector('[data-skill-value="'+item.id+'"]');
+        const raw=input ? input.value : formatElementValue(item.value,item.type);
+        return {...item,enabled:!!(toggle&&toggle.checked),value:parseElementValue(raw,item.type),rawValue:raw.trim()};
+      });
+    }
+
+    function validateActiveElements() {
+      const invalid=getActiveElementValues().filter(item=>item.enabled&&item.required&&!item.rawValue);
+      if(invalid.length) throw new Error('Lengkapi elemen wajib: '+invalid.map(item=>item.name).join(', ')+'.');
+      return getActiveElementValues();
     }
 
     function buildTextSkillPrompt() {
-      const values=textFields.map(([key,label])=>{
-        const toggle=textElementsContainer.querySelector('[data-skill-enabled="'+key+'"]');
-        const input=textElementsContainer.querySelector('[data-skill-value="'+key+'"]');
-        return {label,enabled:!!(toggle&&toggle.checked),value:input?input.value.trim():''};
-      });
-      const active=values.filter(x=>x.enabled&&x.value);
-      const off=values.filter(x=>!x.enabled);
-      const blank=values.filter(x=>x.enabled&&!x.value);
+      const values=getActiveElementValues();
+      const active=values.filter(item=>item.enabled&&item.rawValue);
+      const off=values.filter(item=>!item.enabled);
+      const blank=values.filter(item=>item.enabled&&!item.rawValue);
+      const renderValue=item => typeof item.value==='string' ? item.value : JSON.stringify(item.value);
       return [
         'TEXT ELEMENT SKILLS / EXACT COPY:',
-        active.length?active.map(x=>'- '+x.label+': "'+x.value+'" (render exactly as written)').join('\n'):'No text overlays. Keep the image free of visible text.',
-        off.length?'Do not render: '+off.map(x=>x.label).join(', ')+'.':'',
-        blank.length?'Enabled but blank; do not invent values for: '+blank.map(x=>x.label).join(', ')+'.':'',
-        'Do not create additional text, prices, badges, disclaimers, or footers that were not enabled and supplied.'
+        active.length?active.map(item=>'- '+item.name+' ['+item.type+']: '+renderValue(item)+(item.exact_value?' (REPRODUCE EXACTLY)':'')).join('\n'):'No text overlays. Keep the image free of visible text.',
+        off.length?'Do not render or introduce these disabled elements: '+off.map(item=>item.name).join(', ')+'.':'',
+        blank.length?'Enabled but blank; do not invent values for: '+blank.map(item=>item.name).join(', ')+'.':'',
+        'Only render text explicitly supplied in enabled elements. Do not invent product specifications, prices, claims, badges, or disclaimers.',
+        'Structured values such as lists, tutorial steps, and comparison rows must retain their meaning and relationships.'
       ].filter(Boolean).join('\n');
     }
 
@@ -406,6 +563,8 @@
         showError(err.message);
         return;
       }
+
+      try { validateActiveElements(); } catch (err) { showError(err.message); return; }
 
       setPromptLoadingState(true);
       promptStatus.textContent = 'Sedang dibuat...';
@@ -504,6 +663,7 @@
       }
 
       const { category, subcategory } = selected;
+      try { validateActiveElements(); } catch (err) { showError(err.message); return; }
       const userPrompt = promptInput.value.trim();
 
       if (!userPrompt) {
