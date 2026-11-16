@@ -3,63 +3,99 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Image Generator</title>
-  <!-- Tailwind CSS via CDN -->
+  <title>AI Image Generator - Apple Store Malaysia</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons via CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="min-h-screen bg-neutral-900 text-white flex flex-col items-center justify-center p-4">
-
-  <div class="max-w-md w-full bg-neutral-800 p-6 rounded-2xl shadow-xl border border-neutral-700">
-    <h1 class="text-xl font-bold mb-4 flex items-center gap-2">
+  <main class="max-w-md w-full bg-neutral-800 p-6 rounded-2xl shadow-xl border border-neutral-700">
+    <h1 class="text-xl font-bold mb-2 flex items-center gap-2">
       <i data-lucide="sparkles" class="text-yellow-400"></i> AI Image Generator
     </h1>
+    <p class="text-sm text-neutral-400 mb-5">Pilih kategori konten dan subkategori sebelum membuat visual.</p>
 
     <form id="imageForm" class="space-y-4">
       <div>
-        <label for="promptInput" class="block text-sm text-neutral-400 mb-1">Masukkan Prompt:</label>
-        <textarea
-          id="promptInput"
-          rows="3"
-          placeholder="Contoh: Kucing astronot di luar angkasa..."
-          class="w-full bg-neutral-900 border border-neutral-700 rounded-xl p-3 text-sm focus:outline-none focus:border-yellow-400"
-          required
-        ></textarea>
+        <label for="categorySelect" class="block text-sm text-neutral-300 mb-1">Kategori Konten</label>
+        <select id="categorySelect" required class="w-full bg-neutral-900 border border-neutral-700 rounded-xl p-3 text-sm focus:outline-none focus:border-yellow-400">
+          <option value="">Pilih kategori konten</option>
+          <option value="product">Product Content</option>
+          <option value="education">Education Content</option>
+        </select>
       </div>
 
-      <button
-        type="submit"
-        id="submitBtn"
-        class="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-neutral-950 font-semibold rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer"
-      >
+      <div id="objectivePanel" class="hidden rounded-xl border border-neutral-700 bg-neutral-900/70 p-3">
+        <p class="text-xs uppercase tracking-wide text-neutral-500 mb-1">Objective</p>
+        <p id="objectiveText" class="text-sm text-neutral-300"></p>
+      </div>
+
+      <div>
+        <label for="subcategorySelect" class="block text-sm text-neutral-300 mb-1">Subkategori</label>
+        <select id="subcategorySelect" required disabled class="w-full bg-neutral-900 border border-neutral-700 rounded-xl p-3 text-sm focus:outline-none focus:border-yellow-400 disabled:opacity-50">
+          <option value="">Pilih kategori terlebih dahulu</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="promptInput" class="block text-sm text-neutral-300 mb-1">Detail Prompt Visual</label>
+        <textarea id="promptInput" rows="4" placeholder="Jelaskan konsep visual yang ingin dibuat..." class="w-full bg-neutral-900 border border-neutral-700 rounded-xl p-3 text-sm focus:outline-none focus:border-yellow-400" required></textarea>
+      </div>
+
+      <button type="submit" id="submitBtn" class="w-full py-3 bg-yellow-500 hover:bg-yellow-400 text-neutral-950 font-semibold rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer">
         <i id="btnIcon" data-lucide="sparkles" class="w-5 h-5"></i>
         <span id="btnText">Buat Gambar</span>
       </button>
     </form>
 
-    <!-- Pesan Error -->
     <p id="errorMsg" class="hidden text-red-400 text-sm mt-4 text-center"></p>
 
-    <!-- Hasil Gambar -->
     <div id="resultContainer" class="hidden mt-6 flex flex-col items-center space-y-3">
       <img id="resultImage" src="" alt="" class="w-full rounded-xl shadow-lg border border-neutral-700" />
-      <a
-        id="downloadBtn"
-        href=""
-        download="image.png"
-        class="flex items-center gap-2 bg-neutral-700 hover:bg-neutral-600 px-4 py-2 rounded-xl text-sm font-medium transition"
-      >
+      <a id="downloadBtn" href="" download="image.png" class="flex items-center gap-2 bg-neutral-700 hover:bg-neutral-600 px-4 py-2 rounded-xl text-sm font-medium transition">
         <i data-lucide="download" class="w-4 h-4"></i> Download Gambar
       </a>
     </div>
-  </div>
+  </main>
 
   <script>
-    // Inisialisasi ikon Lucide pertama kali
     lucide.createIcons();
 
+    const categories = {
+      product: {
+        name: 'Product Content',
+        objective: 'Memperkenalkan produk Apple dan meningkatkan product awareness.',
+        subcategories: [
+          'New Product Showcase',
+          'Product Features & Highlights',
+          'Product Launch',
+          'Product Comparison',
+          'Product in Detail',
+          'Best-Selling Products',
+          'Apple Ecosystem Showcase',
+          'Product Recommendation'
+        ]
+      },
+      education: {
+        name: 'Education Content',
+        objective: 'Memberikan edukasi kepada audiens mengenai fitur, fungsi, dan manfaat produk Apple.',
+        subcategories: [
+          'Tips & Tricks',
+          'How-to Tutorials',
+          'Hidden Features',
+          'Product Knowledge',
+          'iPhone Photography Tips',
+          'Productivity Tips',
+          'Apple Ecosystem Tips',
+          'Frequently Asked Questions (FAQ)'
+        ]
+      }
+    };
+
     const form = document.getElementById('imageForm');
+    const categorySelect = document.getElementById('categorySelect');
+    const subcategorySelect = document.getElementById('subcategorySelect');
+    const objectivePanel = document.getElementById('objectivePanel');
+    const objectiveText = document.getElementById('objectiveText');
     const promptInput = document.getElementById('promptInput');
     const submitBtn = document.getElementById('submitBtn');
     const btnText = document.getElementById('btnText');
@@ -68,7 +104,24 @@
     const resultImage = document.getElementById('resultImage');
     const downloadBtn = document.getElementById('downloadBtn');
 
-    // Fungsi untuk mengatur tampilan state loading
+    categorySelect.addEventListener('change', () => {
+      const selected = categories[categorySelect.value];
+      subcategorySelect.innerHTML = '';
+
+      if (!selected) {
+        objectivePanel.classList.add('hidden');
+        subcategorySelect.disabled = true;
+        subcategorySelect.add(new Option('Pilih kategori terlebih dahulu', ''));
+        return;
+      }
+
+      objectiveText.textContent = selected.objective;
+      objectivePanel.classList.remove('hidden');
+      subcategorySelect.disabled = false;
+      subcategorySelect.add(new Option('Pilih subkategori', ''));
+      selected.subcategories.forEach(item => subcategorySelect.add(new Option(item, item)));
+    });
+
     function setLoadingState(isLoading) {
       submitBtn.disabled = isLoading;
       const currentIcon = document.getElementById('btnIcon');
@@ -82,16 +135,25 @@
         currentIcon.classList.remove('animate-spin');
         btnText.textContent = 'Buat Gambar';
       }
-      // Render ulang ikon yang berubah
       lucide.createIcons();
     }
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const prompt = promptInput.value.trim();
-      if (!prompt) return;
 
-      // Reset UI
+      const category = categories[categorySelect.value];
+      const subcategory = subcategorySelect.value;
+      const userPrompt = promptInput.value.trim();
+
+      if (!category || !subcategory || !userPrompt) return;
+
+      const prompt = [
+        'Content Category: ' + category.name,
+        'Content Objective: ' + category.objective,
+        'Content Subcategory: ' + subcategory,
+        'Visual Brief: ' + userPrompt
+      ].join('\n');
+
       setLoadingState(true);
       errorMsg.classList.add('hidden');
       errorMsg.textContent = '';
@@ -100,7 +162,7 @@
       try {
         const payload = {
           contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: { responseModalities: ['IMAGE'] },
+          generationConfig: { responseModalities: ['IMAGE'] }
         };
 
         const apiKey = ''; // Masukkan API Key Gemini Anda di sini
@@ -109,10 +171,13 @@
         const res = await fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(payload)
         });
 
-        if (!res.ok) throw new Error('Gagal menghasilkan gambar');
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          throw new Error(errorData?.error?.message || 'Gagal menghasilkan gambar');
+        }
 
         const data = await res.json();
         const part = data?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
@@ -120,13 +185,10 @@
         if (!part) throw new Error('Tidak ada data gambar yang dikembalikan');
 
         const imageUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-
-        // Tampilkan gambar dan tombol download
         resultImage.src = imageUrl;
-        resultImage.alt = prompt;
+        resultImage.alt = category.name + ' - ' + subcategory;
         downloadBtn.href = imageUrl;
         resultContainer.classList.remove('hidden');
-
       } catch (err) {
         errorMsg.textContent = err.message || 'Terjadi kesalahan';
         errorMsg.classList.remove('hidden');
