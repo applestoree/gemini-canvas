@@ -91,6 +91,12 @@
         <div id="textElementsContainer" class="space-y-3"><p class="text-xs text-neutral-400">Pilih kategori dan subkategori terlebih dahulu.</p></div>
       </section>
 
+      <!-- Dynamic Visual Direction -->
+      <section class="rounded-2xl border border-neutral-200 p-4 space-y-3">
+        <div><h2 class="text-sm font-semibold text-neutral-900">Visual Direction</h2><p class="text-xs text-neutral-500 mt-1">Atur lima elemen visual secara independen berdasarkan Category dan Subcategory.</p></div>
+        <div id="visualDirectionContainer" class="space-y-3"><p class="text-xs text-neutral-400">Pilih kategori dan subkategori terlebih dahulu.</p></div>
+      </section>
+
       <!-- Aspect Ratio Selector -->
       <div>
         <label for="aspectRatioSelect" class="block text-sm font-medium text-neutral-700 mb-1.5">Rasio Aspek Gambar</label>
@@ -498,6 +504,85 @@
       ].filter(Boolean).join('\n');
     }
 
+
+    // Dynamic Visual Direction: subcategory configuration replaces category configuration.
+    const visualElement = (id,name,value,description) => ({id,name,value,description,enabled:true});
+    const visualSet = (background,composition,lighting,visualStyle,negativeConstraints) => [
+      visualElement('background','Background',background,'Latar dan lingkungan utama.'),
+      visualElement('composition','Composition',composition,'Tata letak, framing, dan posisi objek.'),
+      visualElement('lighting','Lighting',lighting,'Karakter pencahayaan.'),
+      visualElement('visual_style','Visual Style',visualStyle,'Karakter estetika.'),
+      visualElement('negative_constraints','Negative Constraints',negativeConstraints,'Hal yang harus dihindari.')
+    ];
+    const categoryVisualConfig = {
+      product: visualSet("Clean premium studio environment; product clearly visible.", "Hero product with clear hierarchy, accurate proportions, and negative space.", "Soft controlled studio lighting, realistic reflections and shadows.", "Premium minimalist Apple-style photorealistic product advertising.", "No distorted geometry, incorrect ports, invented features, incorrect logos, watermark, or clutter."),
+      education: visualSet("Clean contextual environment relevant to the educational topic.", "Clear instructional hierarchy with device or subject as focal point.", "Balanced soft lighting with clear device details.", "Modern, approachable, accurate technology education editorial.", "No misleading interface, fabricated technical details, clutter, watermark, or illegible text."),
+    };
+    const subcategoryVisualConfig = {
+      "New Product Showcase": visualSet("Premium seamless white or neutral studio.", "Centered hero product, three-quarter view, generous negative space.", "Soft high-end key light with subtle rim highlights.", "Photorealistic premium launch advertising, minimalist and refined.", "No extra devices, distorted silhouette, invented features, fake logos, watermark, clutter."),
+      "Product Features & Highlights": visualSet("Minimal neutral studio.", "Product hero with close-up detail emphasizing selected feature.", "Directional soft lighting revealing material and details.", "Premium technical editorial, photorealistic macro detail.", "No unrelated callouts, invented specifications, inaccurate details, watermark, clutter."),
+      "Product Launch": visualSet("Bold launch-stage environment, refined dark or neutral backdrop.", "Dramatic centered hero product with strong hierarchy.", "Cinematic controlled lighting and elegant rim light.", "High-end cinematic product launch campaign.", "No unannounced variants, invented launch details, fake event logos, watermark, clutter."),
+      "Product Comparison": visualSet("Neutral split background with balanced visual weight.", "Side-by-side products at consistent scale, angle, and prominence.", "Consistent even studio lighting across both products.", "Clean symmetrical editorial comparison graphic.", "No unequal scale, misleading differences, invented specifications, merged devices, watermark."),
+      "Product in Detail": visualSet("Quiet neutral studio for close-up photography.", "Macro composition focusing on selected materials, controls, ports, or design details.", "Soft directional macro lighting revealing texture.", "Photorealistic premium industrial design editorial.", "No fabricated components, inaccurate ports, distorted geometry, watermark, irrelevant props."),
+      "Best-Selling Products": visualSet("Clean premium retail-inspired neutral background.", "Organized product lineup or ranked grid with consistent scale.", "Bright balanced commercial lighting.", "Polished premium retail campaign photography.", "No invented rankings, unsupported claims, duplicated products, watermark, clutter."),
+      "Apple Ecosystem Showcase": visualSet("Minimal modern workspace or seamless studio.", "Multiple Apple devices in a cohesive ecosystem composition.", "Soft ambient studio lighting and natural contact shadows.", "Premium photorealistic lifestyle-meets-product advertising.", "No unsupported interactions, impossible connections, duplicate devices, watermark, clutter."),
+      "Product Recommendation": visualSet("Warm clean lifestyle setting or neutral studio.", "Recommended product as hero; supporting details secondary.", "Natural soft key light with commercial highlights.", "Approachable premium editorial advertising.", "No unsupported claims, misleading use, unrelated devices, watermark, clutter."),
+      "Tips & Tricks": visualSet("Simple everyday setting related to the tip.", "Device and interaction clearly visible; space for concise tip.", "Bright natural-looking soft light.", "Friendly modern educational editorial, realistic and practical.", "No confusing gestures, fabricated UI, unreadable screen, watermark, clutter."),
+      "How-to Tutorials": visualSet("Clean practical environment for the tutorial action.", "Sequential instructional composition with clearly separated steps.", "Even soft lighting keeping actions and interface visible.", "Clear modern step-by-step instructional visual.", "No skipped steps, fabricated interface, confusing hand placement, watermark, clutter."),
+      "Hidden Features": visualSet("Subtle modern technology setting with restrained background.", "Focused device close-up revealing one hidden feature.", "Controlled accent lighting while preserving screen clarity.", "Curiosity-driven premium technology editorial.", "No fictional features, unsupported interface, misleading indicators, watermark, clutter."),
+      "Product Knowledge": visualSet("Neutral educational studio with minimal context.", "Clear explanatory layout centered on exact product or feature.", "Balanced soft lighting for accurate color, shape, and detail.", "Precise factual photorealistic product editorial.", "No incorrect specifications, fabricated labels, misleading diagrams, watermark."),
+      "iPhone Photography Tips": visualSet("Realistic photography location suited to the intended subject.", "Show iPhone camera perspective and subject; demonstrate stated technique.", "Lighting appropriate to the photography goal.", "Premium natural photorealistic mobile photography editorial.", "No impossible camera results, fake lens hardware, misleading UI, watermark, clutter."),
+      "Productivity Tips": visualSet("Organized modern workspace with restrained lifestyle background.", "Relevant Apple devices and workflow in a clear arrangement.", "Soft natural daylight with balanced exposure.", "Modern clean practical premium productivity editorial.", "No fictional app interfaces, impossible workflows, unreadable screens, watermark, clutter."),
+      "Apple Ecosystem Tips": visualSet("Realistic home or workspace environment.", "Show involved devices and their relationship in a clear workflow.", "Consistent natural ambient lighting.", "Approachable premium realistic ecosystem lifestyle photography.", "No unsupported cross-device behavior, impossible connections, watermark, clutter."),
+      "Frequently Asked Questions (FAQ)": visualSet("Simple neutral background with subtle relevant context.", "One clear focal device or subject with structured information area.", "Even soft lighting prioritizing legibility and product clarity.", "Minimal modern trustworthy information-led editorial design.", "No fabricated answers, misleading symbols, illegible typography, watermark, clutter."),
+    };
+    let activeVisualConfig = [];
+    function currentVisualConfig() {
+      const source = subcategoryVisualConfig[subcategorySelect.value] || categoryVisualConfig[categorySelect.value] || [];
+      return source.map(item => ({...item}));
+    }
+    function renderVisualDirection() {
+      const container = document.getElementById('visualDirectionContainer');
+      if (!categorySelect.value || !subcategorySelect.value) {
+        activeVisualConfig = [];
+        container.innerHTML = '<p class="text-xs text-neutral-400">Pilih kategori dan subkategori terlebih dahulu.</p>';
+        return;
+      }
+      activeVisualConfig = currentVisualConfig();
+      container.innerHTML = activeVisualConfig.map(item =>
+        '<div class="rounded-xl border border-neutral-200 bg-neutral-50/70 p-3 space-y-2">' +
+        '<div class="flex items-start gap-2"><input type="checkbox" data-visual-enabled="' + item.id + '" checked class="mt-0.5 h-4 w-4">' +
+        '<div class="min-w-0 flex-1"><p class="text-sm font-medium">' + item.name + '</p><p class="text-[11px] text-neutral-500">' + item.description + '</p></div>' +
+        '<span data-visual-status="' + item.id + '" class="text-[10px] text-neutral-400">DIGUNAKAN</span></div>' +
+        '<textarea data-visual-value="' + item.id + '" rows="2" class="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs">' + escapeAttr(item.value) + '</textarea></div>'
+      ).join('');
+      container.querySelectorAll('[data-visual-enabled]').forEach(toggle => toggle.addEventListener('change', () => {
+        const status = container.querySelector('[data-visual-status="' + toggle.dataset.visualEnabled + '"]');
+        if (status) status.textContent = toggle.checked ? 'DIGUNAKAN' : 'TIDAK DIGUNAKAN';
+      }));
+    }
+    function getActiveVisualValues() {
+      const container = document.getElementById('visualDirectionContainer');
+      return activeVisualConfig.map(item => {
+        const toggle = container.querySelector('[data-visual-enabled="' + item.id + '"]');
+        const input = container.querySelector('[data-visual-value="' + item.id + '"]');
+        return {...item, enabled: !!(toggle && toggle.checked), value: input ? input.value.trim() : item.value};
+      });
+    }
+    function buildVisualDirectionPrompt() {
+      const values = getActiveVisualValues();
+      const active = values.filter(item => item.enabled && item.value);
+      const disabled = values.filter(item => !item.enabled);
+      return ['DYNAMIC VISUAL DIRECTION:',
+        active.length ? active.map(item => item.name.toUpperCase() + ': ' + item.value).join('\\n') : 'No predefined visual direction; follow user visual brief without fixed styling.',
+        disabled.length ? 'Do not apply disabled directions: ' + disabled.map(item => item.name).join(', ') + '.' : '',
+        'Never reintroduce disabled directions through default styling.'
+      ].filter(Boolean).join('\\n');
+    }
+    function validateActiveVisuals() {
+      if (!getActiveVisualValues().some(item => item.enabled && item.value)) throw new Error('Aktifkan dan isi minimal satu elemen Visual Direction.');
+    }
+
     // Event Listener: Perubahan Kategori Konten
     categorySelect.addEventListener('change', () => {
       const selected = categories[categorySelect.value];
@@ -508,6 +593,7 @@
         subcategorySelect.disabled = true;
         subcategorySelect.add(new Option('Pilih kategori terlebih dahulu', ''));
         renderTextSkills();
+        renderVisualDirection();
         return;
       }
 
@@ -517,9 +603,13 @@
       subcategorySelect.add(new Option('Pilih subkategori', ''));
       selected.subcategories.forEach(item => subcategorySelect.add(new Option(item, item)));
       renderTextSkills();
+      renderVisualDirection();
     });
 
-    subcategorySelect.addEventListener('change', renderTextSkills);
+    subcategorySelect.addEventListener('change', () => {
+      renderTextSkills();
+      renderVisualDirection();
+    });
 
     // Validasi Pilihan Kategori & Subkategori
     function getSelectedContent() {
@@ -576,8 +666,7 @@
           'Create one production-ready image-generation prompt based on the supplied content category, objective, subcategory, and user idea.',
           'Write the final image prompt in clear, detailed English for an image generation model. Do not add commentary, explanations, markdown fences, or multiple alternatives.',
           'Use these exact sections in the final prompt: SUBJECT; ACTION / CONCEPT; ENVIRONMENT; COMPOSITION; VISUAL STYLE; LIGHTING; CAMERA & QUALITY; COLOR & MOOD; DETAILS; NEGATIVE CONSTRAINTS.',
-          'Always apply this visual direction: pure clean white seamless studio background; minimalist, elegant, premium Apple-style aesthetic; professional soft studio lighting; subtle realistic shadows; balanced composition with generous negative space.',
-          'Avoid busy backgrounds, clutter, unnecessary props, distracting textures, patterns, gradients, and excessive decorations.',
+          'Follow the supplied DYNAMIC VISUAL DIRECTION exactly. Do not impose fixed background, lighting, composition, or style.',
           'For Product Content, make the Apple product the clear hero subject and preserve its recognizable design. Do not invent product specifications, logos, ports, colors, or features that were not supplied.',
           'For Education Content, communicate the selected educational topic clearly and accurately. Keep the visual focused on the relevant Apple product or educational subject. If text is essential, keep it concise, correctly spelled, and legible; do not fabricate technical facts.',
           'Respect the user idea and selected subcategory. Improve visual specificity and composition without changing the intended message.',
@@ -590,7 +679,9 @@
           'CONTENT OBJECTIVE: ' + selected.category.objective,
           'CONTENT SUBCATEGORY: ' + selected.subcategory,
           'USER IDEA / ADDITIONAL INFORMATION: ' + idea,
-          buildTextSkillPrompt()
+          buildTextSkillPrompt(),
+          buildVisualDirectionPrompt(),
+          'ASPECT RATIO: ' + (aspectRatioSelect.value || '1:1') + '. Adapt composition to this ratio.'
         ].join('\n');
 
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
@@ -671,14 +762,9 @@
         return;
       }
 
-      const visualDirection = [
-        'BACKGROUND: Use a pure, clean white seamless studio background.',
-        'VISUAL STYLE: Minimalist, elegant, premium Apple-style advertising aesthetic.',
-        'LIGHTING: Professional soft studio lighting with subtle, realistic shadows.',
-        'COMPOSITION: Clean, balanced composition with generous negative space. Keep the relevant Apple product or educational subject as the clear main focus.',
-        'AVOID: Busy or colored backgrounds, clutter, unnecessary props, distracting textures, patterns, gradients, and excessive decorations.',
-        'IMPORTANT: Apply this visual direction consistently while preserving the specific subject, information, and creative intent in the user visual brief.'
-      ].join('\n');
+      let visualDirection;
+      try { validateActiveVisuals(); visualDirection = buildVisualDirectionPrompt(); }
+      catch (err) { showError(err.message); return; }
 
       const finalPrompt = [
         'Content Category: ' + category.name,
@@ -686,8 +772,8 @@
         'Content Subcategory: ' + subcategory,
         'Visual Brief: ' + userPrompt,
         buildTextSkillPrompt(),
-        'Mandatory Visual Direction:',
-        visualDirection
+        visualDirection,
+        'ASPECT RATIO: ' + (aspectRatioSelect.value || '1:1') + '. Adapt framing to this ratio while preserving configured composition.'
       ].join('\n');
 
       setLoadingState(true);
