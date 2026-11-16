@@ -39,12 +39,12 @@
       <div>
         <label for="ideaInput" class="block text-sm font-medium text-neutral-700 mb-1">Ide atau Informasi Tambahan <span class="font-normal text-neutral-400">(opsional)</span></label>
         <textarea id="ideaInput" rows="3" placeholder="Contoh: iPhone 17 Pro Max dengan fokus pada desain titanium dan kemampuan kamera..." class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:border-neutral-400 placeholder:text-neutral-400"></textarea>
-        <p class="text-xs text-neutral-400 mt-1">AI akan mengembangkan ide ini berdasarkan kategori dan subkategori yang dipilih.</p>
+        <p class="text-xs text-neutral-400 mt-1">Generator otomatis menyusun ide berdasarkan kategori dan subkategori tanpa koneksi API.</p>
       </div>
 
       <button type="button" id="generatePromptBtn" class="w-full py-3 bg-white hover:bg-neutral-50 text-neutral-900 border border-neutral-300 font-semibold rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer">
         <i id="promptBtnIcon" data-lucide="bot" class="w-5 h-5"></i>
-        <span id="promptBtnText">Generate Detail Prompt dengan AI</span>
+        <span id="promptBtnText">Generate Detail Prompt Otomatis</span>
       </button>
 
       <div>
@@ -52,7 +52,7 @@
           <label for="promptInput" class="block text-sm font-medium text-neutral-700">Detail Prompt Visual</label>
           <span id="promptStatus" class="text-xs text-neutral-400">Bisa diedit</span>
         </div>
-        <textarea id="promptInput" rows="9" placeholder="Klik Generate Detail Prompt dengan AI, atau tulis prompt secara manual..." class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:border-neutral-400 placeholder:text-neutral-400" required></textarea>
+        <textarea id="promptInput" rows="9" placeholder="Klik Generate Detail Prompt Otomatis, atau tulis prompt secara manual..." class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-300 focus:border-neutral-400 placeholder:text-neutral-400" required></textarea>
         <p class="text-xs text-neutral-400 mt-1">Periksa dan edit hasil prompt sebelum membuat gambar.</p>
       </div>
 
