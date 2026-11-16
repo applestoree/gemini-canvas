@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Image Generator - Apple Store Malaysia</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col items-center justify-center p-4 sm:p-6">
+  <main class="max-w-lg w-full bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-neutral-200">
+    <!-- Header -->
+    <div class="mb-6">
+      <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-600 text-xs font-medium mb-3">
+        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i>
+        <span>Apple Visual Studio</span>
+      </div>
+      <h1 class="text-2xl font-bold tracking-tight text-neutral-900">
+        AI Image Generator
+      </h1>
+      <p class="text-sm text-neutral-500 mt-1">
+        Pilih kategori konten dan subkategori untuk menyusun arahan visual bergaya Apple.
+      </p>
+    </div>
+
+    <form id="imageForm" class="space-y-4">
+      <!-- Kategori Konten -->
+      <div>
+        <label for="categorySelect" class="block text-sm font-medium text-neutral-700 mb-1.5">Kategori Konten</label>
+        <select id="categorySelect" required class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 transition">
+          <option value="">Pilih kategori konten</option>
+          <option value="product">Product Content</option>
+          <option value="education">Education Content</option>
+        </select>
+      </div>
+
+      <!-- Panel Objective -->
+      <div id="objectivePanel" class="hidden rounded-2xl border border-neutral-200/80 bg-neutral-50/80 p-3.5 transition-all">
+        <p class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400 mb-1">Objective</p>
+        <p id="objectiveText" class="text-sm text-neutral-700 leading-relaxed"></p>
+      </div>
+
+      <!-- Subkategori -->
+      <div>
+        <label for="subcategorySelect" class="block text-sm font-medium text-neutral-700 mb-1.5">Subkategori</label>
+        <select id="subcategorySelect" required disabled class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 disabled:opacity-50 disabled:cursor-not-allowed transition">
+          <option value="">Pilih kategori terlebih dahulu</option>
+        </select>
+      </div>
+
+      <!-- Ide / Informasi Tambahan -->
+      <div>
+        <label for="ideaInput" class="block text-sm font-medium text-neutral-700 mb-1.5">
+          Ide atau Informasi Tambahan <span class="font-normal text-neutral-400">(opsional)</span>
+        </label>
+        <textarea id="ideaInput" rows="3" placeholder="Contoh: iPhone 17 Pro Max dengan fokus pada desain titanium dan kemampuan kamera, harga mulai RM 5,999..." class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 placeholder:text-neutral-400 transition"></textarea>
+        <p class="text-xs text-neutral-400 mt-1.5">AI Agent akan merancang arahan visual sekaligus menyusun copywriting teks yang relevan.</p>
+      </div>
+
+      <!-- Konfigurasi AI Agent -->
+      <div class="rounded-2xl border border-neutral-200 bg-neutral-50/70 p-3.5 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-neutral-800 flex items-center gap-1.5">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i>
+            <span>AI Creative Agent Mode</span>
+          </span>
+          <span class="text-[11px] text-neutral-400">Structured Output</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div>
+            <label for="agentModeSelect" class="block text-[11px] font-medium text-neutral-500 mb-1">Tugas Agent</label>
+            <select id="agentModeSelect" class="w-full bg-white text-neutral-800 border border-neutral-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-neutral-400">
+              <option value="full">Visual Prompt + Auto-Fill Teks</option>
+              <option value="visual_only">Hanya Visual Prompt</option>
+            </select>
+          </div>
+          <div>
+            <label for="copyLangSelect" class="block text-[11px] font-medium text-neutral-500 mb-1">Bahasa Copywriting Teks</label>
+            <select id="copyLangSelect" class="w-full bg-white text-neutral-800 border border-neutral-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-neutral-400">
+              <option value="Indonesian">Bahasa Indonesia (Natural & Premium)</option>
+              <option value="English">English (Apple Global Style)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tombol Generate Prompt AI -->
+      <button type="button" id="generatePromptBtn" class="w-full py-3 px-4 bg-white hover:bg-neutral-50 active:bg-neutral-100 text-neutral-900 border border-neutral-300 font-semibold text-sm rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs">
+        <i id="promptBtnIcon" data-lucide="bot" class="w-4 h-4"></i>
+        <span id="promptBtnText">Jalankan AI Agent (Susun Prompt & Copy)</span>
+      </button>
+
+      <!-- Detail Prompt Visual -->
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <label for="promptInput" class="block text-sm font-medium text-neutral-700">Detail Prompt Visual</label>
+          <div class="flex items-center gap-2">
+            <span id="promptStatus" class="text-xs text-neutral-400">Bisa diedit</span>
+            <button type="button" id="copyPromptBtn" title="Salin Prompt" class="text-xs text-neutral-500 hover:text-neutral-900 flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-neutral-100 transition cursor-pointer">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              <span id="copyBtnText">Salin</span>
+            </button>
+          </div>
+        </div>
+        <textarea id="promptInput" rows="8" placeholder="Klik Jalankan AI Agent di atas, atau tulis prompt secara manual..." class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 placeholder:text-neutral-400 transition" required></textarea>
+
+        <!-- Quick Refine Actions oleh AI Agent -->
+        <div class="flex flex-wrap items-center gap-1.5 mt-2">
+          <span class="text-[11px] text-neutral-400 mr-0.5">Sempurnakan cepat:</span>
+          <button type="button" data-refine="Make the visual composition even more minimalist with wider negative space and cleaner geometry." class="refine-btn text-[11px] px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200/80 text-neutral-700 transition cursor-pointer">Lebih Minimalis</button>
+          <button type="button" data-refine="Enhance studio macro lighting, metallic/glass material reflections, and crisp micro-textures." class="refine-btn text-[11px] px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200/80 text-neutral-700 transition cursor-pointer">Pertajam Material & Cahaya</button>
+          <button type="button" data-refine="Adjust camera angle to a dynamic three-quarter hero perspective with subtle soft contact shadows." class="refine-btn text-[11px] px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200/80 text-neutral-700 transition cursor-pointer">Sudut Kamera Hero</button>
+        </div>
+      </div>
+
+      <!-- Text Element Skills -->
+      <section class="rounded-2xl border border-neutral-200 p-4 space-y-3">
+        <div><h2 class="text-sm font-semibold text-neutral-900">Text Element Skills</h2><p class="text-xs text-neutral-500 mt-1">Aktifkan atau nonaktifkan setiap elemen teks. Value otomatis mengikuti kategori dan subkategori, serta dapat diedit.</p></div>
+        <div id="textElementsContainer" class="space-y-3"><p class="text-xs text-neutral-400">Pilih kategori dan subkategori terlebih dahulu.</p></div>
+      </section>
+
+      <!-- Dynamic Variable Filler -->
+      <section id="variablesSection" class="hidden rounded-2xl border border-amber-200/80 bg-amber-50/40 p-4 space-y-3 transition-all">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <h2 class="text-sm font-semibold text-neutral-900 flex items-center gap-1.5">
+              <i data-lucide="sliders-horizontal" class="w-4 h-4 text-amber-600"></i>
+              <span>Isi Variabel Teks</span>
+            </h2>
+            <p class="text-xs text-neutral-500 mt-1">Variabel terdeteksi otomatis dari teks aktif. Isi di bawah ini untuk mengganti placeholder <code class="text-[11px] bg-white px-1 py-0.5 rounded border border-neutral-200">[...]</code> secara langsung.</p>
+          </div>
+          <span id="variableCountBadge" class="shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">0 Variabel</span>
+        </div>
+        <div id="variablesContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+      </section>
+
+      <!-- Aspect Ratio Selector -->
+      <div>
+        <label for="aspectRatioSelect" class="block text-sm font-medium text-neutral-700 mb-1.5">Rasio Aspek Gambar</label>
+        <select id="aspectRatioSelect" class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 transition">
+          <option value="1:1">1:1 (Square - Instagram Feed)</option>
+          <option value="4:5">4:5 (Portrait - Social Media Post)</option>
+          <option value="9:16">9:16 (Vertical - Stories / Reels)</option>
+          <option value="16:9">16:9 (Landscape - Banner / Presentasi)</option>
+        </select>
+      </div>
+
+      <!-- Tombol Buat Gambar -->
+      <button type="submit" id="submitBtn" class="w-full py-3.5 px-4 bg-neutral-900 hover:bg-neutral-800 active:bg-neutral-950 text-white font-semibold text-sm rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm">
+        <i id="btnIcon" data-lucide="sparkles" class="w-4 h-4"></i>
+        <span id="btnText">Buat Gambar</span>
+      </button>
+    </form>
+
+    <!-- Pesan Error -->
+    <div id="errorBox" class="hidden mt-4 p-3.5 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2.5 text-red-700 text-sm">
+      <i data-lucide="alert-circle" class="w-4 h-4 shrink-0 mt-0.5"></i>
+      <p id="errorMsg" class="leading-snug"></p>
+    </div>
+
+    <!-- Loading Placeholder saat Membuat Gambar -->
+    <div id="imageLoadingSkeleton" class="hidden mt-6 flex flex-col items-center justify-center p-8 rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 space-y-3">
+      <i data-lucide="loader-2" class="w-8 h-8 text-neutral-400 animate-spin"></i>
+      <p class="text-sm font-medium text-neutral-600">Sedang merender visual studio...</p>
+      <p class="text-xs text-neutral-400 text-center">Proses ini membutuhkan beberapa detik untuk hasil detail terbaik.</p>
+    </div>
+
+    <!-- Hasil Gambar -->
+    <div id="resultContainer" class="hidden mt-6 pt-6 border-t border-neutral-100 flex flex-col items-center space-y-4">
+      <div class="w-full overflow-hidden rounded-2xl shadow-sm border border-neutral-200 bg-white">
+        <img id="resultImage" src="" alt="Generated Visual" class="w-full h-auto object-contain block" />
+      </div>
+      <a id="downloadBtn" href="" download="apple-store-visual.png" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200 px-5 py-2.5 rounded-xl text-sm font-medium transition">
+        <i data-lucide="download" class="w-4 h-4"></i> Download Gambar
+      </a>
+    </div>
+  </main>
+
+  <script>
+    // Inisialisasi ikon Lucide
+    lucide.createIcons();
+
+    // Konfigurasi API (Key diisi otomatis oleh environment runtime)
+    const apiKey = "";
+
+    // Data Kategori & Subkategori
+    const categories = {
+      product: {
+        name: 'Product Content',
+        objective: 'Memperkenalkan produk Apple dan meningkatkan product awareness.',
+        subcategories: [
+          'New Product Showcase',
+          'Product Features & Highlights',
+          'Product Launch',
+          'Product Comparison',
+          'Product in Detail',
+          'Best-Selling Products',
+          'Apple Ecosystem Showcase',
+          'Product Recommendation'
+        ]
+      },
+      education: {
+        name: 'Education Content',
+        objective: 'Memberikan edukasi kepada audiens mengenai fitur, fungsi, dan manfaat produk Apple.',
+        subcategories: [
+          'Tips & Tricks',
+          'How-to Tutorials',
+          'Hidden Features',
+          'Product Knowledge',
+          'iPhone Photography Tips',
+          'Productivity Tips',
+          'Apple Ecosystem Tips',
+          'Frequently Asked Questions (FAQ)'
+        ]
+      }
+    };
+
+    // Referensi Elemen DOM
+    const form = document.getElementById('imageForm');
+    const categorySelect = document.getElementById('categorySelect');
+    const subcategorySelect = document.getElementById('subcategorySelect');
+    const objectivePanel = document.getElementById('objectivePanel');
+    const objectiveText = document.getElementById('objectiveText');
+    const ideaInput = document.getElementById('ideaInput');
+    const agentModeSelect = document.getElementById('agentModeSelect');
+    const copyLangSelect = document.getElementById('copyLangSelect');
+    const promptInput = document.getElementById('promptInput');
+    const aspectRatioSelect = document.getElementById('aspectRatioSelect');
+    const textElementsContainer = document.getElementById('textElementsContainer');
+    const variablesSection = document.getElementById('variablesSection');
+    const variablesContainer = document.getElementById('variablesContainer');
+    const variableCountBadge = document.getElementById('variableCountBadge');
+    const generatePromptBtn = document.getElementById('generatePromptBtn');
+    const promptBtnText = document.getElementById('promptBtnText');
+    const promptStatus = document.getElementById('promptStatus');
+    const copyPromptBtn = document.getElementById('copyPromptBtn');
+    const copyBtnText = document.getElementById('copyBtnText');
+    const submitBtn = document.getElementById('submitBtn');
+    const btnText = document.getElementById('btnText');
+    const errorBox = document.getElementById('errorBox');
+    const errorMsg = document.getElementById('errorMsg');
+    const imageLoadingSkeleton = document.getElementById('imageLoadingSkeleton');
+    const resultContainer = document.getElementById('resultContainer');
+    const resultImage = document.getElementById('resultImage');
+    const downloadBtn = document.getElementById('downloadBtn');
+
+    // Helper: Menampilkan dan menyembunyikan pesan error
+    function showError(message) {
+      errorMsg.textContent = message;
+      errorBox.classList.remove('hidden');
+    }
+
+    function hideError() {
+      errorBox.classList.add('hidden');
+      errorMsg.textContent = '';
+    }
+
+    // Helper: Fetch dengan Exponential Backoff untuk menangani throttling
+    async function fetchWithRetry(url, options, maxRetries = 4) {
+      let delay = 1000;
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          const response = await fetch(url, options);
+          if (response.ok) {
+            return response;
+          }
+          if ((response.status === 429 || response.status >= 500) && attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, delay));
+            delay *= 2;
+            continue;
+          }
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData?.error?.message || `HTTP Error ${response.status}`);
+        } catch (error) {
+          if (attempt === maxRetries) throw error;
+          await new Promise(resolve => setTimeout(resolve, delay));
+          delay *= 2;
+        }
+      }
+    }
+
+    // Helper: Escape karakter HTML untuk atribut value/title
+    function escapeAttr(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    // Definisi Daftar Field Text Element Skills
+    const textFields = [
+      ['eyebrow', 'Eyebrow / Label', 'Teks kecil di atas judul (misal: NEW, PRO SERIES, TIPS)'],
+      ['headline', 'Headline Utama', 'Judul utama yang paling menonjol di gambar'],
+      ['subheadline', 'Subheadline', 'Deskripsi singkat pendukung di bawah headline'],
+      ['feature1', 'Poin / Fitur 1', 'Sorotan fitur utama atau langkah pertama'],
+      ['feature2', 'Poin / Fitur 2', 'Sorotan fitur kedua atau langkah kedua'],
+      ['cta', 'Call to Action / Harga', 'Teks ajakan bertindak atau informasi harga']
+    ];
+
+    // Profil Default Text Elements berdasarkan Kategori & Subkategori
+    function currentTextProfile() {
+      const cat = categorySelect.value;
+      const sub = subcategorySelect.value;
+
+      const base = {
+        eyebrow: { enabled: true, value: sub ? sub.toUpperCase() : '' },
+        headline: { enabled: true, value: '[Product Name]' },
+        subheadline: { enabled: true, value: '[Key Tagline]' },
+        feature1: { enabled: false, value: '[Feature 1]' },
+        feature2: { enabled: false, value: '[Feature 2]' },
+        cta: { enabled: false, value: 'Tersedia di Apple Store' }
+      };
+
+      if (cat === 'product') {
+        if (sub === 'New Product Showcase' || sub === 'Product Launch') {
+          base.eyebrow = { enabled: true, value: 'BARU' };
+          base.headline = { enabled: true, value: '[Product Name]' };
+          base.subheadline = { enabled: true, value: '[Tagline Produk]' };
+          base.cta = { enabled: true, value: 'Mulai dari RM [Price]' };
+        } else if (sub === 'Product Features & Highlights' || sub === 'Product in Detail') {
+          base.headline = { enabled: true, value: '[Product Name]' };
+          base.subheadline = { enabled: true, value: '[Highlight Utama]' };
+          base.feature1 = { enabled: true, value: '[Spesifikasi 1]' };
+          base.feature2 = { enabled: true, value: '[Spesifikasi 2]' };
+        } else if (sub === 'Product Comparison') {
+          base.headline = { enabled: true, value: '[Product A] vs [Product B]' };
+          base.subheadline = { enabled: true, value: 'Temukan yang paling pas untuk Anda.' };
+          base.feature1 = { enabled: true, value: '[Keunggulan A]' };
+          base.feature2 = { enabled: true, value: '[Keunggulan B]' };
+        } else if (sub === 'Best-Selling Products' || sub === 'Product Recommendation') {
+          base.eyebrow = { enabled: true, value: 'PILIHAN FAVORIT' };
+          base.headline = { enabled: true, value: '[Product Name]' };
+          base.subheadline = { enabled: true, value: '[Alasan Rekomendasi]' };
+        } else if (sub === 'Apple Ecosystem Showcase') {
+          base.headline = { enabled: true, value: 'Lebih Hebat Bersama.' };
+          base.subheadline = { enabled: true, value: '[Device 1] + [Device 2]' };
+        }
+      } else if (cat === 'education') {
+        base.eyebrow = { enabled: true, value: 'APPLE TIPS' };
+        base.headline = { enabled: true, value: 'Cara [Judul Tips / Fitur]' };
+        base.subheadline = { enabled: true, value: 'Maksimalkan [Product Name] Anda.' };
+        base.feature1 = { enabled: true, value: '1. [Langkah Pertama]' };
+        base.feature2 = { enabled: true, value: '2. [Langkah Kedua]' };
+      }
+
+      return base;
+    }
+
+    // Menyimpan nilai variabel yang diisi oleh pengguna
+    const variableValues = {};
+
+    function renderTextSkills() {
+      if(!categorySelect.value||!subcategorySelect.value) {
+        textElementsContainer.innerHTML='<p class="text-xs text-neutral-400">Pilih kategori dan subkategori terlebih dahulu.</p>';
+        renderVariables();
+        return;
+      }
+      const profile=currentTextProfile();
+      textElementsContainer.innerHTML=textFields.map(([key,label,description])=>{
+        const item=profile[key];
+        return `<div class="rounded-xl border border-neutral-200 bg-neutral-50/70 p-3 space-y-2">
+          <div class="flex items-start gap-2">
+            <input type="checkbox" id="skill-${key}" data-skill-enabled="${key}" ${item.enabled?'checked':''} class="mt-0.5 h-4 w-4 rounded border-neutral-300 text-neutral-900">
+            <div class="min-w-0 flex-1"><label for="skill-${key}" class="block text-sm font-medium text-neutral-800">${label}</label><p class="text-[11px] text-neutral-500">${description}</p></div>
+            <span data-skill-status="${key}" class="text-[10px] text-neutral-400">${item.enabled?'DIGUNAKAN':'TIDAK DIGUNAKAN'}</span>
+          </div>
+          <input type="text" data-skill-value="${key}" value="${escapeAttr(item.value)}" placeholder="Value untuk ${label}" class="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-900/10">
+        </div>`;
+      }).join('');
+      lucide.createIcons();
+      renderVariables();
+    }
+
+    // Ekstraksi placeholder [Nama Variabel] dari seluruh elemen teks yang aktif
+    function extractDetectedVariables() {
+      const vars = new Set();
+      textFields.forEach(([key]) => {
+        const toggle = textElementsContainer.querySelector(`[data-skill-enabled="${key}"]`);
+        const input = textElementsContainer.querySelector(`[data-skill-value="${key}"]`);
+        if (toggle && toggle.checked && input && input.value) {
+          const matches = input.value.match(/\[([^\]]+)\]/g);
+          if (matches) {
+            matches.forEach(m => vars.add(m.slice(1, -1).trim()));
+          }
+        }
+      });
+      return Array.from(vars);
+    }
+
+    // Merender input form dinamis untuk setiap variabel yang terdeteksi
+    function renderVariables() {
+      const detected = extractDetectedVariables();
+      if (!detected.length) {
+        variablesSection.classList.add('hidden');
+        variablesContainer.innerHTML = '';
+        return;
+      }
+
+      variablesSection.classList.remove('hidden');
+      variableCountBadge.textContent = `${detected.length} Variabel`;
+
+      variablesContainer.innerHTML = detected.map(varName => {
+        const currentVal = variableValues[varName] || '';
+        return `
+          <div class="space-y-1">
+            <label class="block text-xs font-medium text-neutral-700 truncate" title="${escapeAttr(varName)}">[${escapeAttr(varName)}]</label>
+            <input
+              type="text"
+              data-var-name="${escapeAttr(varName)}"
+              value="${escapeAttr(currentVal)}"
+              placeholder="Isi ${escapeAttr(varName)}..."
+              class="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 transition"
+            />
+          </div>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    // Mengganti seluruh placeholder [Nama Variabel] dengan nilai yang diisi user
+    function resolveVariables(text) {
+      if (!text) return '';
+      return text.replace(/\[([^\]]+)\]/g, (match, varName) => {
+        const key = varName.trim();
+        const val = variableValues[key];
+        return (val && val.trim()) ? val.trim() : match;
+      });
+    }
+
+    // Event Delegation: Mendeteksi perubahan checkbox/input pada Text Element Skills
+    textElementsContainer.addEventListener('change', (e) => {
+      const key = e.target.getAttribute('data-skill-enabled');
+      if (key) {
+        const statusSpan = textElementsContainer.querySelector(`[data-skill-status="${key}"]`);
+        if (statusSpan) {
+          statusSpan.textContent = e.target.checked ? 'DIGUNAKAN' : 'TIDAK DIGUNAKAN';
+        }
+        renderVariables();
+      }
+    });
+
+    textElementsContainer.addEventListener('input', (e) => {
+      if (e.target.hasAttribute('data-skill-value')) {
+        renderVariables();
+      }
+    });
+
+    // Event Delegation: Menyimpan nilai variabel saat pengguna mengetik
+    variablesContainer.addEventListener('input', (e) => {
+      const varName = e.target.getAttribute('data-var-name');
+      if (varName) {
+        variableValues[varName] = e.target.value;
+      }
+    });
+
+    function buildTextSkillPrompt() {
+      const values=textFields.map(([key,label])=>{
+        const toggle=textElementsContainer.querySelector('[data-skill-enabled="'+key+'"]');
+        const input=textElementsContainer.querySelector('[data-skill-value="'+key+'"]');
+        const rawValue = input ? input.value.trim() : '';
+        const resolvedValue = resolveVariables(rawValue);
+        return {label,enabled:!!(toggle&&toggle.checked),value:resolvedValue};
+      });
+      const active=values.filter(x=>x.enabled&&x.value);
+      const off=values.filter(x=>!x.enabled);
+      const blank=values.filter(x=>x.enabled&&!x.value);
+      return [
+        'TEXT ELEMENT SKILLS / EXACT COPY:',
+        active.length?active.map(x=>'- '+x.label+': "'+x.value+'" (render exactly as written)').join('\n'):'No text overlays. Keep the image free of visible text.',
+        off.length?'Do not render: '+off.map(x=>x.label).join(', ')+'.':'',
+        blank.length?'Enabled but blank; do not invent values for: '+blank.map(x=>x.label).join(', ')+'.':'',
+        'Do not create additional text, prices, badges, disclaimers, or footers that were not enabled and supplied.'
+      ].filter(Boolean).join('\n');
+    }
+
+    // Event Listener: Perubahan Kategori Konten
+    categorySelect.addEventListener('change', () => {
+      const selected = categories[categorySelect.value];
+      subcategorySelect.innerHTML = '';
+
+      if (!selected) {
+        objectivePanel.classList.add('hidden');
+        subcategorySelect.disabled = true;
+        subcategorySelect.add(new Option('Pilih kategori terlebih dahulu', ''));
+        renderTextSkills();
+        return;
+      }
+
+      objectiveText.textContent = selected.objective;
+      objectivePanel.classList.remove('hidden');
+      subcategorySelect.disabled = false;
+      subcategorySelect.add(new Option('Pilih subkategori', ''));
+      selected.subcategories.forEach(item => subcategorySelect.add(new Option(item, item)));
+      renderTextSkills();
+    });
+
+    subcategorySelect.addEventListener('change', renderTextSkills);
+
+    // Validasi Pilihan Kategori & Subkategori
+    function getSelectedContent() {
+      const category = categories[categorySelect.value];
+      const subcategory = subcategorySelect.value;
+      if (!category || !subcategory) {
+        throw new Error('Pilih kategori dan subkategori terlebih dahulu.');
+      }
+      return { category, subcategory };
+    }
+
+    // State Loading Tombol Generate Prompt
+    function setPromptLoadingState(isLoading, customLabel = null) {
+      generatePromptBtn.disabled = isLoading;
+      document.querySelectorAll('.refine-btn').forEach(btn => btn.disabled = isLoading);
+      promptBtnText.textContent = isLoading
+        ? (customLabel || 'AI Agent sedang bekerja...')
+        : 'Jalankan AI Agent (Susun Prompt & Copy)';
+      const icon = document.getElementById('promptBtnIcon');
+      icon.setAttribute('data-lucide', isLoading ? 'loader-2' : 'bot');
+      icon.classList.toggle('animate-spin', isLoading);
+      lucide.createIcons();
+    }
+
+    // Helper: Menerapkan hasil saran AI Agent ke Text Element Skills & Variabel
+    function applyAgentTextSuggestions(textSuggestions) {
+      if (!textSuggestions || typeof textSuggestions !== 'object') return;
+      textFields.forEach(([key]) => {
+        const suggestion = textSuggestions[key];
+        if (!suggestion) return;
+        const toggle = textElementsContainer.querySelector(`[data-skill-enabled="${key}"]`);
+        const input = textElementsContainer.querySelector(`[data-skill-value="${key}"]`);
+        const statusSpan = textElementsContainer.querySelector(`[data-skill-status="${key}"]`);
+
+        if (toggle && typeof suggestion.enabled === 'boolean') {
+          toggle.checked = suggestion.enabled;
+          if (statusSpan) {
+            statusSpan.textContent = suggestion.enabled ? 'DIGUNAKAN' : 'TIDAK DIGUNAKAN';
+          }
+        }
+        if (input && typeof suggestion.value === 'string') {
+          input.value = suggestion.value;
+        }
+      });
+      renderVariables();
+    }
+
+    // Event Listener: Salin Prompt ke Clipboard
+    copyPromptBtn.addEventListener('click', () => {
+      if (!promptInput.value.trim()) return;
+      promptInput.select();
+      document.execCommand('copy');
+      copyBtnText.textContent = 'Tersalin!';
+      setTimeout(() => {
+        copyBtnText.textContent = 'Salin';
+      }, 2000);
+    });
+
+    // Event Listener: Quick Refine Buttons (Menyempurnakan Prompt yang Ada)
+    document.querySelectorAll('.refine-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        hideError();
+        const currentPrompt = promptInput.value.trim();
+        if (!currentPrompt) {
+          showError('Buat atau tulis Detail Prompt Visual terlebih dahulu sebelum menyempurnakannya.');
+          return;
+        }
+
+        const instruction = btn.getAttribute('data-refine');
+        setPromptLoadingState(true, 'Menyempurnakan prompt...');
+        promptStatus.textContent = 'Menyempurnakan...';
+
+        try {
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+          const response = await fetchWithRetry(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                role: 'user',
+                parts: [{
+                  text: `Refine the following Apple-style studio image prompt according to this instruction: "${instruction}". Keep all exact section headers (SUBJECT; ACTION / CONCEPT; ENVIRONMENT; COMPOSITION; VISUAL STYLE; LIGHTING; CAMERA & QUALITY; COLOR & MOOD; DETAILS; NEGATIVE CONSTRAINTS) and preserve exact overlay text values. Return ONLY the updated prompt.\n\nCURRENT PROMPT:\n${currentPrompt}`
+                }]
+              }],
+              generationConfig: {
+                temperature: 0.5,
+                maxOutputTokens: 1800
+              }
+            })
+          });
+
+          const data = await response.json();
+          const refined = data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('\n').trim();
+          if (!refined) throw new Error('Gagal menyempurnakan prompt.');
+
+          promptInput.value = refined;
+          promptStatus.textContent = 'Disempurnakan AI · Bisa diedit';
+        } catch (err) {
+          promptStatus.textContent = 'Gagal menyempurnakan';
+          showError(err.message || 'Terjadi kesalahan saat menyempurnakan prompt.');
+        } finally {
+          setPromptLoadingState(false);
+        }
+      });
+    });
+
+    // Event Listener: Generate Detail Prompt & Copy dengan AI Agent (Structured JSON Output)
+    generatePromptBtn.addEventListener('click', async () => {
+      hideError();
+
+      let selected;
+      try {
+        selected = getSelectedContent();
+      } catch (err) {
+        showError(err.message);
+        return;
+      }
+
+      const mode = agentModeSelect.value;
+      const copyLang = copyLangSelect.value;
+      setPromptLoadingState(true, mode === 'full' ? 'AI Agent menyusun visual & copy...' : 'AI Agent menyusun visual...');
+      promptStatus.textContent = 'Sedang dibuat...';
+
+      try {
+        const idea = ideaInput.value.trim() || 'Develop a strong, authentic Apple-style visual concept based on the selected category and subcategory.';
+        const systemPrompt = [
+          'You are an elite Apple product advertising art director, creative strategist, and visual prompt engineer.',
+          'Analyze the supplied content category, objective, subcategory, and user idea to produce a cohesive creative package.',
+          '1. visualPrompt: Write one production-ready image-generation prompt in clear, detailed English using these exact sections: SUBJECT; ACTION / CONCEPT; ENVIRONMENT; COMPOSITION; VISUAL STYLE; LIGHTING; CAMERA & QUALITY; COLOR & MOOD; DETAILS; NEGATIVE CONSTRAINTS.',
+          'Always enforce pure clean white seamless studio background, minimalist Apple-style aesthetic, soft studio lighting, subtle realistic shadows, generous negative space, and zero clutter.',
+          '2. textElements: Generate sharp, concise, authentic marketing/educational overlay copy in ' + copyLang + ' matching the category, subcategory, and user idea.',
+          mode === 'full'
+            ? 'In full mode, replace any generic bracket placeholders like [Product Name] with concrete, realistic copy derived from the user idea (or leave clean bracket placeholders ONLY if the user gave zero product specifics and a variable is needed, such as [Price]). Keep headlines punchy (2-6 words) and subheadlines crisp.'
+            : 'In visual_only mode, keep the existing text element values intact.',
+          'Never fabricate unverified technical specs or false claims.'
+        ].join(' ');
+
+        const userQuery = [
+          'AGENT MODE: ' + mode,
+          'COPYWRITING LANGUAGE: ' + copyLang,
+          'CONTENT CATEGORY: ' + selected.category.name,
+          'CONTENT OBJECTIVE: ' + selected.category.objective,
+          'CONTENT SUBCATEGORY: ' + selected.subcategory,
+          'USER IDEA / ADDITIONAL INFORMATION: ' + idea,
+          'CURRENT TEXT ELEMENT SKILLS STATE:\n' + buildTextSkillPrompt()
+        ].join('\n');
+
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+        const response = await fetchWithRetry(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ role: 'user', parts: [{ text: userQuery }] }],
+            systemInstruction: {
+              parts: [{ text: systemPrompt }]
+            },
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 2200,
+              responseMimeType: 'application/json',
+              responseSchema: {
+                type: 'OBJECT',
+                properties: {
+                  visualPrompt: { type: 'STRING' },
+                  textElements: {
+                    type: 'OBJECT',
+                    properties: {
+                      eyebrow: { type: 'OBJECT', properties: { enabled: { type: 'BOOLEAN' }, value: { type: 'STRING' } }, required: ['enabled', 'value'] },
+                      headline: { type: 'OBJECT', properties: { enabled: { type: 'BOOLEAN' }, value: { type: 'STRING' } }, required: ['enabled', 'value'] },
+                      subheadline: { type: 'OBJECT', properties: { enabled: { type: 'BOOLEAN' }, value: { type: 'STRING' } }, required: ['enabled', 'value'] },
+                      feature1: { type: 'OBJECT', properties: { enabled: { type: 'BOOLEAN' }, value: { type: 'STRING' } }, required: ['enabled', 'value'] },
+                      feature2: { type: 'OBJECT', properties: { enabled: { type: 'BOOLEAN' }, value: { type: 'STRING' } }, required: ['enabled', 'value'] },
+                      cta: { type: 'OBJECT', properties: { enabled: { type: 'BOOLEAN' }, value: { type: 'STRING' } }, required: ['enabled', 'value'] }
+                    },
+                    required: ['eyebrow', 'headline', 'subheadline', 'feature1', 'feature2', 'cta']
+                  }
+                },
+                required: ['visualPrompt', 'textElements']
+              }
+            }
+          })
+        });
+
+        const data = await response.json();
+        const rawJson = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+        if (!rawJson) {
+          throw new Error('AI Agent tidak mengembalikan respons terstruktur.');
+        }
+
+        const parsed = JSON.parse(rawJson);
+        if (!parsed.visualPrompt) {
+          throw new Error('AI Agent gagal menyusun Detail Prompt Visual.');
+        }
+
+        if (mode === 'full' && parsed.textElements) {
+          applyAgentTextSuggestions(parsed.textElements);
+        }
+
+        promptInput.value = parsed.visualPrompt.trim();
+        promptStatus.textContent = mode === 'full'
+          ? 'Visual & Copy disusun AI · Bisa diedit'
+          : 'Visual disusun AI · Bisa diedit';
+      } catch (err) {
+        promptStatus.textContent = 'Belum dibuat';
+        showError(err.message || 'Terjadi kesalahan saat menjalankan AI Agent.');
+      } finally {
+        setPromptLoadingState(false);
+      }
+    });
+
+    // State Loading Tombol Submit Gambar
+    function setLoadingState(isLoading) {
+      submitBtn.disabled = isLoading;
+      const currentIcon = document.getElementById('btnIcon');
+
+      if (isLoading) {
+        currentIcon.setAttribute('data-lucide', 'loader-2');
+        currentIcon.classList.add('animate-spin');
+        btnText.textContent = 'Membuat Gambar...';
+        imageLoadingSkeleton.classList.remove('hidden');
+      } else {
+        currentIcon.setAttribute('data-lucide', 'sparkles');
+        currentIcon.classList.remove('animate-spin');
+        btnText.textContent = 'Buat Gambar';
+        imageLoadingSkeleton.classList.add('hidden');
+      }
+      lucide.createIcons();
+    }
+
+    // Event Listener: Submit Form untuk Membuat Gambar (gemini-3.1-flash-image)
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError();
+
+      let selected;
+      try {
+        selected = getSelectedContent();
+      } catch (err) {
+        showError(err.message);
+        return;
+      }
+
+      const { category, subcategory } = selected;
+      const userPrompt = promptInput.value.trim();
+
+      if (!userPrompt) {
+        showError('Generate atau isi Detail Prompt Visual terlebih dahulu.');
+        return;
+      }
+
+      const visualDirection = [
+        'BACKGROUND: Use a pure, clean white seamless studio background.',
+        'VISUAL STYLE: Minimalist, elegant, premium Apple-style advertising aesthetic.',
+        'LIGHTING: Professional soft studio lighting with subtle, realistic shadows.',
+        'COMPOSITION: Clean, balanced composition with generous negative space. Keep the relevant Apple product or educational subject as the clear main focus.',
+        'AVOID: Busy or colored backgrounds, clutter, unnecessary props, distracting textures, patterns, gradients, and excessive decorations.',
+        'IMPORTANT: Apply this visual direction consistently while preserving the specific subject, information, and creative intent in the user visual brief.'
+      ].join('\n');
+
+      const finalPrompt = [
+        'Content Category: ' + category.name,
+        'Content Objective: ' + category.objective,
+        'Content Subcategory: ' + subcategory,
+        'Visual Brief: ' + userPrompt,
+        buildTextSkillPrompt(),
+        'Mandatory Visual Direction:',
+        visualDirection
+      ].join('\n');
+
+      setLoadingState(true);
+      resultContainer.classList.add('hidden');
+
+      try {
+        const payload = {
+          contents: [{ role: 'user', parts: [{ text: finalPrompt }] }],
+          generationConfig: {
+            responseModalities: ['IMAGE'],
+            imageConfig: {
+              aspectRatio: aspectRatioSelect.value || '1:1'
+            }
+          }
+        };
+
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${apiKey}`;
+
+        const res = await fetchWithRetry(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        const part = data?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+
+        if (!part || !part.inlineData?.data) {
+          throw new Error('Tidak ada data gambar yang dikembalikan oleh model.');
+        }
+
+        const mimeType = part.inlineData.mimeType || 'image/png';
+        const imageUrl = `data:${mimeType};base64,${part.inlineData.data}`;
+
+        resultImage.src = imageUrl;
+        resultImage.alt = `${category.name} - ${subcategory}`;
+        downloadBtn.href = imageUrl;
+        downloadBtn.download = `apple-visual-${subcategory.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`;
+        resultContainer.classList.remove('hidden');
+      } catch (err) {
+        showError(err.message || 'Terjadi kesalahan saat menghasilkan gambar.');
+      } finally {
+        setLoadingState(false);
+      }
+    });
+  </script>
+</body>
+</html>
