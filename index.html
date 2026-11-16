@@ -85,6 +85,12 @@
         <p class="text-xs text-neutral-400 mt-1.5">Periksa dan sesuaikan hasil prompt sebelum membuat gambar.</p>
       </div>
 
+      <!-- Text Element Skills -->
+      <section class="rounded-2xl border border-neutral-200 p-4 space-y-3">
+        <div><h2 class="text-sm font-semibold text-neutral-900">Text Element Skills</h2><p class="text-xs text-neutral-500 mt-1">Aktifkan atau nonaktifkan setiap elemen teks. Value otomatis mengikuti kategori dan subkategori, serta dapat diedit.</p></div>
+        <div id="textElementsContainer" class="space-y-3"><p class="text-xs text-neutral-400">Pilih kategori dan subkategori terlebih dahulu.</p></div>
+      </section>
+
       <!-- Aspect Ratio Selector -->
       <div>
         <label for="aspectRatioSelect" class="block text-sm font-medium text-neutral-700 mb-1.5">Rasio Aspek Gambar</label>
@@ -175,6 +181,7 @@
     const ideaInput = document.getElementById('ideaInput');
     const promptInput = document.getElementById('promptInput');
     const aspectRatioSelect = document.getElementById('aspectRatioSelect');
+    const textElementsContainer = document.getElementById('textElementsContainer');
     const generatePromptBtn = document.getElementById('generatePromptBtn');
     const promptBtnText = document.getElementById('promptBtnText');
     const promptStatus = document.getElementById('promptStatus');
@@ -227,6 +234,113 @@
       }
     }
 
+    // Text Element Skills: 10 elemen dengan default use/value per kategori dan subkategori.
+    const textFields = [
+      ['headline','Headline','Pesan utama visual.'],
+      ['subheadline','Subheadline','Penjelas singkat headline.'],
+      ['bodyText','Body Text','Informasi pendukung.'],
+      ['highlightText','Highlight Text','Manfaat atau pesan utama.'],
+      ['featureText','Feature Text','Fitur, kemampuan, atau langkah.'],
+      ['ctaText','CTA Text','Ajakan tindakan.'],
+      ['priceText','Price Text','Harga yang harus dikonfirmasi pengguna.'],
+      ['badgeText','Badge Text','Label singkat seperti NEW atau FAQ.'],
+      ['disclaimerText','Disclaimer Text','Catatan atau syarat.'],
+      ['footerText','Footer Text','Identitas atau informasi penutup.']
+    ];
+
+    const textPresets = {
+      product: {
+        base: {
+          headline:[true,'Discover [Product Name]'], subheadline:[true,'Designed to make everyday experiences better.'],
+          bodyText:[false,'Explore the design and experience of [Product Name].'], highlightText:[true,'[Main Product Benefit]'],
+          featureText:[true,'[Key Feature 1] · [Key Feature 2] · [Key Feature 3]'], ctaText:[true,'Discover More'],
+          priceText:[false,'[Price] [Currency]'], badgeText:[false,'NEW'],
+          disclaimerText:[false,'Product details and availability may vary.'], footerText:[true,'Apple Store Malaysia']
+        },
+        bySubcategory: {
+          'New Product Showcase':{headline:'Meet [Product Name]',subheadline:'A new perspective on what’s possible.',badgeText:'NEW',badgeTextUse:true},
+          'Product Features & Highlights':{headline:'Made for More',subheadline:'Explore what makes [Product Name] stand out.',bodyTextUse:true,highlightText:'[Top Feature or Benefit]'},
+          'Product Launch':{headline:'Introducing [Product Name]',subheadline:'The next chapter starts here.',badgeText:'JUST LAUNCHED',badgeTextUse:true},
+          'Product Comparison':{headline:'Find Your Best Fit',subheadline:'Compare [Product A] and [Product B].',bodyTextUse:true,highlightText:'[Key Difference]',featureText:'[Comparison Point 1] · [Comparison Point 2]',disclaimerText:'Comparison is based on information supplied.',disclaimerTextUse:true},
+          'Product in Detail':{headline:'Every Detail Matters',subheadline:'A closer look at [Product Name].',bodyTextUse:true,featureText:'[Material] · [Design Detail] · [Feature]'},
+          'Best-Selling Products':{headline:'Customer Favorites',subheadline:'Explore selected Apple favorites.',badgeText:'BEST SELLER',badgeTextUse:true},
+          'Apple Ecosystem Showcase':{headline:'Better Together',subheadline:'Discover how Apple devices work together.',highlightText:'One connected experience',featureText:'[Device 1] · [Device 2] · [Device 3]'},
+          'Product Recommendation':{headline:'A Great Match for You',subheadline:'Discover [Product Name].',highlightText:'[Main Reason to Choose]',ctaText:'Explore Your Options'}
+        }
+      },
+      education: {
+        base: {
+          headline:[true,'Get More from Your Apple Device'], subheadline:[true,'Simple guidance for everyday use.'],
+          bodyText:[true,'[Brief explanation of the selected topic.]'], highlightText:[true,'[Key Takeaway]'],
+          featureText:[true,'[Step or Feature 1] · [Step or Feature 2]'], ctaText:[true,'Learn More'],
+          priceText:[false,''], badgeText:[false,''], disclaimerText:[false,''], footerText:[true,'Apple Store Malaysia']
+        },
+        bySubcategory: {
+          'Tips & Tricks':{headline:'Make Your iPhone Work Smarter',subheadline:'A simple tip worth trying.',bodyTextUse:false,badgeText:'QUICK TIP',badgeTextUse:true},
+          'How-to Tutorials':{headline:'How to [Complete a Task]',subheadline:'Follow these simple steps.',featureText:'01 [Step One] · 02 [Step Two] · 03 [Step Three]'},
+          'Hidden Features':{headline:'A Feature You Might Have Missed',subheadline:'Explore more ways to use your Apple device.',badgeText:'DID YOU KNOW?',badgeTextUse:true},
+          'Product Knowledge':{headline:'Understand [Product or Feature]',subheadline:'The essentials, explained clearly.',disclaimerText:'Verify details against official product documentation.',disclaimerTextUse:true},
+          'iPhone Photography Tips':{headline:'Take Better iPhone Photos',subheadline:'Small techniques. More expressive shots.',featureText:'[Photography Tip 1] · [Photography Tip 2] · [Photography Tip 3]'},
+          'Productivity Tips':{headline:'Make Time for What Matters',subheadline:'A smarter workflow with Apple devices.',featureText:'[Workflow Tip 1] · [Workflow Tip 2] · [Workflow Tip 3]'},
+          'Apple Ecosystem Tips':{headline:'Your Devices, Working Together',subheadline:'Discover a more connected workflow.',featureText:'[Device Feature 1] · [Device Feature 2]'},
+          'Frequently Asked Questions (FAQ)':{headline:'Your Questions, Answered',subheadline:'[Question about an Apple product or feature]',bodyText:'[Short, verified answer.]',highlightText:'QUICK ANSWER',badgeText:'FAQ',badgeTextUse:true,disclaimerText:'Check official Apple documentation for the latest details.',disclaimerTextUse:true}
+        }
+      }
+    };
+
+    function currentTextProfile() {
+      const preset=textPresets[categorySelect.value];
+      const profile={};
+      textFields.forEach(([key])=>{profile[key]={enabled:preset.base[key][0],value:preset.base[key][1]};});
+      const overrides=preset.bySubcategory[subcategorySelect.value]||{};
+      textFields.forEach(([key])=>{
+        if(Object.prototype.hasOwnProperty.call(overrides,key)) profile[key].value=overrides[key];
+        if(Object.prototype.hasOwnProperty.call(overrides,key+'Use')) profile[key].enabled=overrides[key+'Use'];
+      });
+      if(categorySelect.value==='education') profile.priceText.enabled=false;
+      return profile;
+    }
+
+    function escapeAttr(value) {
+      return String(value||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function renderTextSkills() {
+      if(!categorySelect.value||!subcategorySelect.value) {
+        textElementsContainer.innerHTML='<p class="text-xs text-neutral-400">Pilih kategori dan subkategori terlebih dahulu.</p>'; return;
+      }
+      const profile=currentTextProfile();
+      textElementsContainer.innerHTML=textFields.map(([key,label,description])=>{
+        const item=profile[key];
+        return `<div class="rounded-xl border border-neutral-200 bg-neutral-50/70 p-3 space-y-2">
+          <div class="flex items-start gap-2">
+            <input type="checkbox" id="skill-${key}" data-skill-enabled="${key}" ${item.enabled?'checked':''} class="mt-0.5 h-4 w-4 rounded border-neutral-300 text-neutral-900">
+            <div class="min-w-0 flex-1"><label for="skill-${key}" class="block text-sm font-medium text-neutral-800">${label}</label><p class="text-[11px] text-neutral-500">${description}</p></div>
+            <span class="text-[10px] text-neutral-400">${item.enabled?'DIGUNAKAN':'TIDAK DIGUNAKAN'}</span>
+          </div>
+          <input type="text" data-skill-value="${key}" value="${escapeAttr(item.value)}" placeholder="Value untuk ${label}" class="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-900/10">
+        </div>`;
+      }).join('');
+    }
+
+    function buildTextSkillPrompt() {
+      const values=textFields.map(([key,label])=>{
+        const toggle=textElementsContainer.querySelector('[data-skill-enabled="'+key+'"]');
+        const input=textElementsContainer.querySelector('[data-skill-value="'+key+'"]');
+        return {label,enabled:!!(toggle&&toggle.checked),value:input?input.value.trim():''};
+      });
+      const active=values.filter(x=>x.enabled&&x.value);
+      const off=values.filter(x=>!x.enabled);
+      const blank=values.filter(x=>x.enabled&&!x.value);
+      return [
+        'TEXT ELEMENT SKILLS / EXACT COPY:',
+        active.length?active.map(x=>'- '+x.label+': "'+x.value+'" (render exactly as written)').join('\n'):'No text overlays. Keep the image free of visible text.',
+        off.length?'Do not render: '+off.map(x=>x.label).join(', ')+'.':'',
+        blank.length?'Enabled but blank; do not invent values for: '+blank.map(x=>x.label).join(', ')+'.':'',
+        'Do not create additional text, prices, badges, disclaimers, or footers that were not enabled and supplied.'
+      ].filter(Boolean).join('\n');
+    }
+
     // Event Listener: Perubahan Kategori Konten
     categorySelect.addEventListener('change', () => {
       const selected = categories[categorySelect.value];
@@ -244,7 +358,10 @@
       subcategorySelect.disabled = false;
       subcategorySelect.add(new Option('Pilih subkategori', ''));
       selected.subcategories.forEach(item => subcategorySelect.add(new Option(item, item)));
+      renderTextSkills();
     });
+
+    subcategorySelect.addEventListener('change', renderTextSkills);
 
     // Validasi Pilihan Kategori & Subkategori
     function getSelectedContent() {
@@ -304,6 +421,7 @@
           'For Product Content, make the Apple product the clear hero subject and preserve its recognizable design. Do not invent product specifications, logos, ports, colors, or features that were not supplied.',
           'For Education Content, communicate the selected educational topic clearly and accurately. Keep the visual focused on the relevant Apple product or educational subject. If text is essential, keep it concise, correctly spelled, and legible; do not fabricate technical facts.',
           'Respect the user idea and selected subcategory. Improve visual specificity and composition without changing the intended message.',
+          'Use only enabled text elements and reproduce their supplied values exactly. Never invent or paraphrase overlay copy.',
           'Return only the completed image prompt.'
         ].join(' ');
 
@@ -311,7 +429,8 @@
           'CONTENT CATEGORY: ' + selected.category.name,
           'CONTENT OBJECTIVE: ' + selected.category.objective,
           'CONTENT SUBCATEGORY: ' + selected.subcategory,
-          'USER IDEA / ADDITIONAL INFORMATION: ' + idea
+          'USER IDEA / ADDITIONAL INFORMATION: ' + idea,
+          buildTextSkillPrompt()
         ].join('\n');
 
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
@@ -405,6 +524,7 @@
         'Content Objective: ' + category.objective,
         'Content Subcategory: ' + subcategory,
         'Visual Brief: ' + userPrompt,
+        buildTextSkillPrompt(),
         'Mandatory Visual Direction:',
         visualDirection
       ].join('\n');
