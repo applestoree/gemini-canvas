@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apple Store MY — Meta Ads Visual AI Agent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                    },
+                    colors: {
+                        apple: {
+                            black: '#000000',
+                            dark: '#111113',
+                            card: '#1C1C1E',
+                            border: '#2C2C2E',
+                            gray: '#86868B',
+                            light: '#F5F5F7',
+                            blue: '#0071E3',
+                            blueHover: '#0077ED',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom subtle scrollbars & glassmorphism */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #111113; }
+        ::-webkit-scrollbar-thumb { background: #2C2C2E; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #48484A; }
+        
+        .apple-glass {
+            background: rgba(28, 28, 30, 0.72);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        
+        .shimmer {
+            background: linear-gradient(90deg, #1C1C1E 25%, #2C2C2E 50%, #1C1C1E 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.6s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body class="bg-apple-black text-apple-light font-sans antialiased min-h-screen flex flex-col selection:bg-apple-blue selection:text-white">
+
+    <!-- Top Navigation Header -->
+    <header class="sticky top-0 z-40 apple-glass border-b border-apple-border px-4 sm:px-6 py-3.5">
+        <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <!-- Apple-inspired Minimalist Geometric Emblem -->
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-neutral-700 to-neutral-900 border border-neutral-600/50 flex items-center justify-center shadow-lg">
+                    <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.96 6.32c.67-.81 1.12-1.94 1-3.07-.96.04-2.13.64-2.82 1.45-.61.7-.115 1.85-1.01 2.96 1.07.08 2.16-.53 2.83-1.34z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-sm sm:text-base font-semibold tracking-tight text-white">Apple Store MY</h1>
+                        <span class="px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider bg-apple-blue/20 text-blue-400 border border-blue-500/30 rounded-full">Meta Ads Agent</span>
+                    </div>
+                    <p class="text-xs text-apple-gray hidden sm:block">Instagram Creative & Prompt Architect • Kuala Lumpur / TRX Edition</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2.5">
+                <span class="hidden md:inline-flex items-center gap-1.5 text-xs text-apple-gray bg-apple-card px-3 py-1.5 rounded-full border border-apple-border">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    MYR Localization Active
+                </span>
+                <button onclick="resetForm()" class="px-3.5 py-2 text-xs font-medium text-neutral-300 hover:text-white bg-apple-card hover:bg-neutral-800 border border-apple-border rounded-xl transition cursor-pointer">
+                    Reset
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Notification Toast (No alert() used) -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-apple-card border border-neutral-700 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 text-sm">
+            <span id="toastIcon" class="text-emerald-400">✓</span>
+            <span id="toastMessage">Berhasil disalin!</span>
+        </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- LEFT PANEL: Campaign & Visual Elements Configurator -->
+        <section class="lg:col-span-5 space-y-5">
+            
+            <!-- Step 1: Product & Malaysia Campaign Preset -->
+            <div class="bg-apple-card border border-apple-border rounded-2xl p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-semibold text-white flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-apple-blue text-[11px] flex items-center justify-center font-bold">1</span>
+                        Produk & Preset Kampanye MY
+                    </h2>
+                    <span class="text-[11px] text-apple-gray">Apple Malaysia</span>
+                </div>
+
+                <!-- Quick Presets -->
+                <div>
+                    <label class="block text-xs font-medium text-apple-gray mb-2">Template Cepat Meta Ads</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" onclick="applyPreset('iphone_pro')" class="preset-btn text-left p-2.5 rounded-xl bg-apple-dark hover:bg-neutral-800 border border-apple-border hover:border-apple-blue/60 transition cursor-pointer">
+                            <div class="text-xs font-semibold text-white">iPhone 16 Pro</div>
+                            <div class="text-[11px] text-apple-gray truncate">0% IPP • From RM208/mo</div>
+                        </button>
+                        <button type="button" onclick="applyPreset('macbook_air')" class="preset-btn text-left p-2.5 rounded-xl bg-apple-dark hover:bg-neutral-800 border border-apple-border hover:border-apple-blue/60 transition cursor-pointer">
+                            <div class="text-xs font-semibold text-white">MacBook Air M3</div>
+                            <div class="text-[11px] text-apple-gray truncate">Uni Student • Education MY</div>
+                        </button>
+                        <button type="button" onclick="applyPreset('trx_store')" class="preset-btn text-left p-2.5 rounded-xl bg-apple-dark hover:bg-neutral-800 border border-apple-border hover:border-apple-blue/60 transition cursor-pointer">
+                            <div class="text-xs font-semibold text-white">The Exchange TRX</div>
+                            <div class="text-[11px] text-apple-gray truncate">Today at Apple • KL Flagship</div>
+                        </button>
+                        <button type="button" onclick="applyPreset('raya_tradein')" class="preset-btn text-left p-2.5 rounded-xl bg-apple-dark hover:bg-neutral-800 border border-apple-border hover:border-apple-blue/60 transition cursor-pointer">
+                            <div class="text-xs font-semibold text-white">Festive / Trade In</div>
+                            <div class="text-[11px] text-apple-gray truncate">Instant Credit • Malaysia</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Product Selection -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-apple-gray mb-1.5">Lineup Produk</label>
+                        <select id="productSelect" onchange="updatePromptBuilder()" class="w-full bg-apple-dark border border-apple-border rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-apple-blue">
+                            <option value="iPhone 16 Pro Max in Desert Titanium">iPhone 16 Pro Max (Titanium)</option>
+                            <option value="iPhone 16 in Ultramarine">iPhone 16 (Ultramarine)</option>
+                            <option value="MacBook Air 15-inch M3 in Midnight">MacBook Air M3 (Midnight)</option>
+                            <option value="iPad Pro M4 Ultra-Thin in Space Black with Apple Pencil Pro">iPad Pro M4 + Pencil Pro</option>
+                            <option value="Apple Watch Series 10 Jet Black Aluminum">Apple Watch Series 10</option>
+                            <option value="AirPods Max in Starlight and AirPods Pro 2">AirPods Max & Pro 2</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-apple-gray mb-1.5">Format Instagram Meta Ads</label>
+                        <select id="aspectRatio" onchange="updateAspectPreview()" class="w-full bg-apple-dark border border-apple-border rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-apple-blue">
+                            <option value="1:1">IG Feed Square (1:1)</option>
+                            <option value="4:5">IG Feed Portrait (4:5 - High CTR)</option>
+                            <option value="9:16">IG Story / Reels (9:16)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Visual Concept / Art Direction -->
+                <div>
+                    <label class="block text-xs font-medium text-apple-gray mb-1.5">Konsep Visual & Pencahayaan</label>
+                    <select id="visualStyle" onchange="updatePromptBuilder()" class="w-full bg-apple-dark border border-apple-border rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-apple-blue">
+                        <option value="Studio Dark Titanium Macro — dramatic rim lighting, floating device on obsidian glass with subtle titanium dust particles">Studio Dark Titanium Macro (Flagship Pro)</option>
+                        <option value="Clean Bento Minimalist — pure #F5F5F7 off-white Apple architectural pedestal, soft diffused daylight shadows, ultra-crisp">Clean Bento Minimalist (Apple Store Classic)</option>
+                        <option value="Kuala Lumpur Architectural Luxury — modern tropical glass pavilion inspired by Apple The Exchange TRX at golden hour dusk">TRX Kuala Lumpur Architectural Dusk</option>
+                        <option value="Vibrant Youth Lifestyle — dynamic floating composition with colorful translucent acrylic blocks, energetic Gen-Z Malaysia aesthetic">Vibrant Lifestyle & Campus Aesthetic</option>
+                        <option value="Festive Emerald & Gold Elegance — subtle modern songket geometric light reflections, warm ambient bokeh for Malaysian festive gifting">Festive Malaysia Luxury (Emerald & Gold)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Step 2: Meta Ads Copy & Malaysia Elements -->
+            <div class="bg-apple-card border border-apple-border rounded-2xl p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-semibold text-white flex items-center gap-2">
+                        <span class="w-5 h-5 rounded-full bg-apple-blue text-[11px] flex items-center justify-center font-bold">2</span>
+                        Elemen Teks & Lokalisasi Malaysia
+                    </h2>
+                    <button type="button" onclick="generateSmartCopyWithAI()" id="aiCopyBtn" class="text-[11px] font-medium text-blue-400 hover:text-blue-300 flex items-center gap-1 cursor-pointer">
+                        <span>✨ Auto-Copy AI</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-apple-gray mb-1.5">Bahasa Iklan</label>
+                        <select id="adLanguage" onchange="updatePromptBuilder()" class="w-full bg-apple-dark border border-apple-border rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-apple-blue">
+                            <option value="English (Apple Malaysia Official)">English (Official MY)</option>
+                            <option value="Bahasa Melayu (Modern & Premium)">Bahasa Melayu (Premium)</option>
+                            <option value="Bilingual EN + BM">Bilingual (EN / BM)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-apple-gray mb-1.5">Badge Promo / Offer MY</label>
+                        <select id="promoBadge" onchange="updatePromptBuilder()" class="w-full bg-apple-dark border border-apple-border rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-apple-blue">
+                            <option value="0% Instalment up to 24 Months">0% IPP up to 24 Months</option>
+                            <option value="Apple Trade In • Instant Credit">Apple Trade In • Instant Credit</option>
+                            <option value="Free Delivery Across Malaysia">Free Delivery Across Malaysia</option>
+                            <option value="Save with Education Pricing">Education Pricing for Uni</option>
+                            <option value="Available at Apple The Exchange TRX">Available at Apple TRX</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-apple-gray mb-1.5">Headline Utama (Typography di Gambar)</label>
+                    <input type="text" id="headlineInput" oninput="updatePromptBuilder()" value="iPhone 16 Pro. Built for Apple Intelligence." class="w-full bg-apple-dark border border-apple-border rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-apple-blue" placeholder="Masukkan headline singkat...">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-apple-gray mb-1.5">Sub-headline / Harga MYR</label>
+                        <input type="text" id="subheadlineInput" oninput="updatePromptBuilder()" value="From RM4,999 or RM208.29/mo." class="w-full bg-apple-dark border border-apple-border rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-apple-blue">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-apple-gray mb-1.5">CTA Pill Button</label>
+                        <input type="text" id="ctaInput" oninput="updatePromptBuilder()" value="Buy Now" class="w-full bg-apple-dark border border-apple-border rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-apple-blue">
+                    </div>
+                </div>
+
+                <!-- Visual Element Toggles -->
+                <div>
+                    <label class="block text-xs font-medium text-apple-gray mb-2">Elemen Grafis Meta Ads</label>
+                    <div class="flex flex-wrap gap-2">
+                        <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-apple-dark border border-apple-border text-xs cursor-pointer select-none">
+                            <input type="checkbox" id="elAppleLogo" checked onchange="updatePromptBuilder()" class="accent-apple-blue rounded">
+                            <span>Apple Minimal Logo</span>
+                        </label>
+                        <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-apple-dark border border-apple-border text-xs cursor-pointer select-none">
+                            <input type="checkbox" id="elPriceTag" checked onchange="updatePromptBuilder()" class="accent-apple-blue rounded">
+                            <span>MYR Pricing Pill</span>
+                        </label>
+                        <label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-apple-dark border border-apple-border text-xs cursor-pointer select-none">
+                            <input type="checkbox" id="elSafeZone" checked onchange="updatePromptBuilder()" class="accent-apple-blue rounded">
+                            <span>IG Safe-Zone Margin</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action CTA -->
+            <button type="button" id="generateImageBtn" onclick="generateAdImage()" class="w-full py-3.5 px-5 rounded-2xl bg-apple-blue hover:bg-apple-blueHover active:scale-[0.99] text-white font-semibold text-sm shadow-lg shadow-blue-600/25 transition flex items-center justify-center gap-2.5 cursor-pointer">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                </svg>
+                <span>Generate Visual Meta Ads Sekarang</span>
+            </button>
+
+        </section>
+
+        <!-- RIGHT PANEL: Live Prompt Architect & Instagram Ad Preview -->
+        <section class="lg:col-span-7 space-y-5">
+            
+            <!-- Prompt Architect Box -->
+            <div class="bg-apple-card border border-apple-border rounded-2xl p-5 space-y-3">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-apple-blue"></span>
+                        <h3 class="text-xs font-semibold uppercase tracking-wider text-neutral-300">Structured Visual Prompt Template</h3>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="copyPrompt()" class="px-3 py-1.5 rounded-xl bg-apple-dark hover:bg-neutral-800 border border-apple-border text-xs font-medium text-neutral-200 transition flex items-center gap-1.5 cursor-pointer">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                            Copy Prompt
+                        </button>
+                    </div>
+                </div>
+                <textarea id="generatedPrompt" rows="4" class="w-full bg-apple-dark border border-apple-border rounded-xl p-3.5 text-xs text-neutral-300 leading-relaxed focus:outline-none focus:border-apple-blue font-mono"></textarea>
+            </div>
+
+            <!-- Instagram Meta Ads Preview Frame -->
+            <div class="bg-apple-card border border-apple-border rounded-2xl p-5">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <div>
+                        <h3 class="text-sm font-semibold text-white">Instagram Meta Ads Preview</h3>
+                        <p class="text-xs text-apple-gray">Simulasi tampilan Sponsored Ad untuk audiens Malaysia</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button type="button" id="downloadBtn" onclick="downloadGeneratedImage()" disabled class="px-3.5 py-2 rounded-xl bg-neutral-800 disabled:opacity-40 hover:bg-neutral-700 border border-neutral-700 text-xs font-medium text-white transition flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            Download PNG
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mockup Instagram Sponsored Card -->
+                <div class="max-w-md mx-auto bg-[#0D0D0F] border border-neutral-800 rounded-3xl overflow-hidden shadow-2xl">
+                    <!-- IG Header -->
+                    <div class="px-4 py-3 flex items-center justify-between border-b border-neutral-800/80">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-full bg-white text-black flex items-center justify-center font-bold text-xs shadow">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.96 6.32c.67-.81 1.12-1.94 1-3.07-.96.04-2.13.64-2.82 1.45-.61.7-.115 1.85-1.01 2.96 1.07.08 2.16-.53 2.83-1.34z"/></svg>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-1">
+                                    <span class="text-xs font-semibold text-white">apple</span>
+                                    <!-- Verified Check -->
+                                    <svg class="w-3.5 h-3.5 text-sky-400" viewBox="0 0 24 24" fill="currentColor"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                </div>
+                                <div class="text-[10px] text-neutral-400">Sponsored • Malaysia</div>
+                            </div>
+                        </div>
+                        <span class="text-neutral-500 text-xs font-bold tracking-widest">•••</span>
+                    </div>
+
+                    <!-- Ad Creative Canvas Container -->
+                    <div id="canvasWrapper" class="relative w-full aspect-square bg-neutral-950 flex items-center justify-center overflow-hidden">
+                        
+                        <!-- Initial Empty / Blueprint State -->
+                        <div id="emptyState" class="p-6 text-center space-y-3 max-w-xs">
+                            <div class="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-800 mx-auto flex items-center justify-center text-apple-blue">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>
+                            </div>
+                            <h4 class="text-sm font-medium text-white">Siap Merender Visual Ad</h4>
+                            <p class="text-xs text-apple-gray leading-relaxed">Sesuaikan elemen Apple Malaysia di panel kiri, lalu klik <span class="text-white font-medium">Generate Visual Meta Ads</span>.</p>
+                        </div>
+
+                        <!-- Loading State -->
+                        <div id="loadingState" class="hidden absolute inset-0 shimmer flex flex-col items-center justify-center p-6 text-center z-20">
+                            <div class="w-10 h-10 border-2 border-apple-blue border-t-transparent rounded-full animate-spin mb-3"></div>
+                            <p class="text-xs font-medium text-white">Merancang Visual Apple Store MY...</p>
+                            <p class="text-[11px] text-apple-gray mt-1">Mengatur tipografi SF Pro & pencahayaan studio</p>
+                        </div>
+
+                        <!-- Generated Image Output -->
+                        <img id="adImageOutput" src="" alt="Generated Apple Malaysia Meta Ad" class="hidden w-full h-full object-cover">
+                    </div>
+
+                    <!-- Meta Ads CTA Bar -->
+                    <div class="bg-[#161618] px-4 py-2.5 flex items-center justify-between border-t border-neutral-800">
+                        <div>
+                            <div class="text-[10px] uppercase tracking-wider text-neutral-400">apple.com/my</div>
+                            <div id="previewFooterTitle" class="text-xs font-semibold text-white truncate max-w-[210px]">iPhone 16 Pro. Built for Apple Intelligence.</div>
+                        </div>
+                        <span id="previewCtaPill" class="px-3.5 py-1.5 rounded-lg bg-apple-blue text-white text-xs font-semibold">Buy Now</span>
+                    </div>
+
+                    <!-- IG Caption & Hashtags Preview -->
+                    <div class="p-4 space-y-2 bg-[#0D0D0F]">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-semibold text-neutral-400">Recommended IG Ad Primary Text</span>
+                            <button type="button" onclick="copyCaption()" class="text-[11px] text-blue-400 hover:underline cursor-pointer">Copy Caption</button>
+                        </div>
+                        <p id="igCaptionOutput" class="text-xs text-neutral-300 leading-relaxed">
+                            <span class="font-semibold text-white">apple</span> Kuasa Titanium. Direka untuk Apple Intelligence. Dapatkan iPhone 16 Pro dengan pelan ansuran 0% sehingga 24 bulan atau tukar beli (Trade In) di Apple Store Malaysia & Apple The Exchange TRX. 🇲🇾✨ #AppleMalaysia #iPhone16Pro #AppleTRX
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <script>
+        const apiKey = ""; // Runtime environment provides key automatically
+        let currentImageBase64 = null;
+
+        // Preset configurations tailored for Apple Store Malaysia
+        const presets = {
+            iphone_pro: {
+                product: "iPhone 16 Pro Max in Desert Titanium",
+                style: "Studio Dark Titanium Macro — dramatic rim lighting, floating device on obsidian glass with subtle titanium dust particles",
+                lang: "English (Apple Malaysia Official)",
+                badge: "0% Instalment up to 24 Months",
+                headline: "iPhone 16 Pro. Hello, Apple Intelligence.",
+                subheadline: "From RM4,999 or RM208.29/mo.",
+                cta: "Buy Now",
+                caption: "Hello, Apple Intelligence. Experience iPhone 16 Pro in Desert Titanium with 0% instalment up to 24 months across Malaysia. Visit Apple The Exchange TRX or shop online at apple.com/my. 🇲🇾 #AppleMalaysia #iPhone16Pro #ShotOniPhone"
+            },
+            macbook_air: {
+                product: "MacBook Air 15-inch M3 in Midnight",
+                style: "Clean Bento Minimalist — pure #F5F5F7 off-white Apple architectural pedestal, soft diffused daylight shadows, ultra-crisp",
+                lang: "Bilingual EN + BM",
+                badge: "Save with Education Pricing",
+                headline: "Lean. Mean. M3 Machine.",
+                subheadline: "Education pricing from RM4,679.",
+                cta: "Shop Uni Offer",
+                caption: "Ringan dibawa ke kuliah, berkuasa untuk setiap tugasan. Dapatkan MacBook Air M3 dengan harga istimewa Pendidikan Malaysia & penghantaran percuma ke seluruh negara. 🎓💻 #MacBookAir #AppleMalaysia #UniLifeMY"
+            },
+            trx_store: {
+                product: "iPad Pro M4 Ultra-Thin in Space Black with Apple Pencil Pro",
+                style: "Kuala Lumpur Architectural Luxury — modern tropical glass pavilion inspired by Apple The Exchange TRX at golden hour dusk",
+                lang: "English (Apple Malaysia Official)",
+                badge: "Available at Apple The Exchange TRX",
+                headline: "Create at Apple The Exchange TRX.",
+                subheadline: "Join free Today at Apple sessions in KL.",
+                cta: "Reserve Spot",
+                caption: "Discover boundless creativity with the ultra-thin iPad Pro M4 & Apple Pencil Pro. Join complimentary Today at Apple workshops at Apple The Exchange TRX, Kuala Lumpur. 🇲🇾✨ #AppleTRX #TodayAtApple #KualaLumpur"
+            },
+            raya_tradein: {
+                product: "iPhone 16 in Ultramarine",
+                style: "Festive Emerald & Gold Elegance — subtle modern songket geometric light reflections, warm ambient bokeh for Malaysian festive gifting",
+                lang: "Bahasa Melayu (Modern & Premium)",
+                badge: "Apple Trade In • Instant Credit",
+                headline: "Naik Taraf ke iPhone 16 Baharu.",
+                subheadline: "Kredit segera dengan Apple Trade In MY.",
+                cta: "Anggar Nilai",
+                caption: "Abadikan setiap detik bermakna bersama keluarga dengan kamera baharu iPhone 16. Tukar beli peranti lama anda untuk kredit segera di Apple Store Malaysia. ✨🇲🇾 #AppleMalaysia #iPhone16 #AppleTradeIn"
+            }
+        };
+
+        // Toast Helper
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2600);
+        }
+
+        // Apply Preset
+        function applyPreset(key) {
+            const p = presets[key];
+            if (!p) return;
+            document.getElementById('productSelect').value = p.product;
+            document.getElementById('visualStyle').value = p.style;
+            document.getElementById('adLanguage').value = p.lang;
+            document.getElementById('promoBadge').value = p.badge;
+            document.getElementById('headlineInput').value = p.headline;
+            document.getElementById('subheadlineInput').value = p.subheadline;
+            document.getElementById('ctaInput').value = p.cta;
+            document.getElementById('igCaptionOutput').innerHTML = `<span class="font-semibold text-white">apple</span> ${p.caption}`;
+            
+            updatePromptBuilder();
+            showToast(`Preset diterapkan!`);
+        }
+
+        // Update Aspect Ratio Preview Frame
+        function updateAspectPreview() {
+            const ratio = document.getElementById('aspectRatio').value;
+            const wrapper = document.getElementById('canvasWrapper');
+            wrapper.classList.remove('aspect-square', 'aspect-[4/5]', 'aspect-[9/16]');
+            
+            if (ratio === '1:1') wrapper.classList.add('aspect-square');
+            else if (ratio === '4:5') wrapper.classList.add('aspect-[4/5]');
+            else if (ratio === '9:16') wrapper.classList.add('aspect-[9/16]');
+            
+            updatePromptBuilder();
+        }
+
+        // Build Structured Prompt for Gemini Image Model
+        function updatePromptBuilder() {
+            const product = document.getElementById('productSelect').value;
+            const style = document.getElementById('visualStyle').value;
+            const ratio = document.getElementById('aspectRatio').value;
+            const lang = document.getElementById('adLanguage').value;
+            const badge = document.getElementById('promoBadge').value;
+            const headline = document.getElementById('headlineInput').value.trim();
+            const subheadline = document.getElementById('subheadlineInput').value.trim();
+            const cta = document.getElementById('ctaInput').value.trim();
+
+            const hasLogo = document.getElementById('elAppleLogo').checked;
+            const hasPriceTag = document.getElementById('elPriceTag').checked;
+            const hasSafeZone = document.getElementById('elSafeZone').checked;
+
+            // Update live mockup footer
+            document.getElementById('previewFooterTitle').textContent = headline || product;
+            document.getElementById('previewCtaPill').textContent = cta || "Learn More";
+
+            const elementsList = [];
+            if (hasLogo) elementsList.push("a clean minimalist Apple logo icon at the top center");
+            if (hasPriceTag) elementsList.push(`a sleek frosted-glass pill badge reading "${badge}"`);
+            if (hasSafeZone) elementsList.push("generous outer safe-zone padding optimized for Instagram Meta Ads UI overlays");
+
+            const promptText = `High-end commercial product advertisement poster for Apple Store Malaysia Instagram Meta Ads (${ratio} format). 
+Hero Subject: ${product}, ultra-detailed photorealistic 8K studio render, razor-sharp industrial aluminum/titanium textures and OLED screen reflections.
+Art Direction & Environment: ${style}.
+Typography & Graphic Layout (${lang}): Clean Apple SF Pro geometric sans-serif typography integrated harmoniously into the upper composition. Bold crisp headline text reading "${headline}". Secondary subtitle text below reading "${subheadline}". Includes ${elementsList.join(", ")}.
+Color Grading: Authentic Apple Store flagship visual identity, high dynamic range, balanced negative space, no clutter, award-winning commercial advertising photography.`;
+
+            document.getElementById('generatedPrompt').value = promptText;
+        }
+
+        // Copy Prompt to Clipboard
+        function copyPrompt() {
+            const textarea = document.getElementById('generatedPrompt');
+            textarea.select();
+            document.execCommand('copy');
+            showToast("Prompt visual berhasil disalin!");
+        }
+
+        // Copy IG Caption
+        function copyCaption() {
+            const text = document.getElementById('igCaptionOutput').innerText.replace(/^apple\s+/, '');
+            const temp = document.createElement('textarea');
+            temp.value = text;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            document.body.removeChild(temp);
+            showToast("Caption Instagram disalin!");
+        }
+
+        // Exponential Backoff Fetch Helper
+        async function fetchWithBackoff(url, options, maxRetries = 4) {
+            let delay = 1000;
+            for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                try {
+                    const res = await fetch(url, options);
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                    return await res.json();
+                } catch (err) {
+                    if (attempt === maxRetries) throw err;
+                    await new Promise(r => setTimeout(r, delay));
+                    delay *= 2;
+                }
+            }
+        }
+
+        // AI Smart Copywriter for Malaysia Market (gemini-3-flash-preview)
+        async function generateSmartCopyWithAI() {
+            const btn = document.getElementById('aiCopyBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<span class="animate-pulse">Generating...</span>`;
+            btn.disabled = true;
+
+            const product = document.getElementById('productSelect').value;
+            const lang = document.getElementById('adLanguage').value;
+            const badge = document.getElementById('promoBadge').value;
+
+            const prompt = `You are an Apple Store Malaysia senior copywriter for Instagram Meta Ads. Create concise, authentic Apple-style ad copy for "${product}" with offer "${badge}" in language "${lang}".
+Return strictly valid JSON with keys:
+- "headline": max 6 words, punchy Apple-style headline
+- "subheadline": max 7 words with realistic Malaysian Ringgit (RM) pricing or instalment
+- "cta": 2 words CTA button text
+- "caption": engaging Instagram Sponsored caption tailored for Malaysia (mentioning Malaysia / MYR / TRX where natural, max 35 words + 3 hashtags).`;
+
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+                const data = await fetchWithBackoff(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            responseMimeType: "application/json",
+                            responseSchema: {
+                                type: "OBJECT",
+                                properties: {
+                                    headline: { type: "STRING" },
+                                    subheadline: { type: "STRING" },
+                                    cta: { type: "STRING" },
+                                    caption: { type: "STRING" }
+                                },
+                                required: ["headline", "subheadline", "cta", "caption"]
+                            }
+                        }
+                    })
+                });
+
+                const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (rawText) {
+                    const parsed = JSON.parse(rawText);
+                    document.getElementById('headlineInput').value = parsed.headline;
+                    document.getElementById('subheadlineInput').value = parsed.subheadline;
+                    document.getElementById('ctaInput').value = parsed.cta;
+                    document.getElementById('igCaptionOutput').innerHTML = `<span class="font-semibold text-white">apple</span> ${parsed.caption}`;
+                    updatePromptBuilder();
+                    showToast("Copywriting Apple MY diperbarui!");
+                }
+            } catch (error) {
+                showToast("Gagal membuat copy AI, coba lagi.");
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // Generate Visual Meta Ads Image using gemini-3.1-flash-image
+        async function generateAdImage() {
+            const btn = document.getElementById('generateImageBtn');
+            const loadingState = document.getElementById('loadingState');
+            const emptyState = document.getElementById('emptyState');
+            const imgOutput = document.getElementById('adImageOutput');
+            const downloadBtn = document.getElementById('downloadBtn');
+
+            const promptText = document.getElementById('generatedPrompt').value.trim();
+            const ratio = document.getElementById('aspectRatio').value;
+            // Map 4:5 to closest supported aspect ratio 3:4 if needed, or pass standard ratio
+            const apiAspectRatio = ratio === '4:5' ? '3:4' : ratio;
+
+            btn.disabled = true;
+            btn.classList.add('opacity-70');
+            emptyState.classList.add('hidden');
+            loadingState.classList.remove('hidden');
+
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${apiKey}`;
+                const payload = {
+                    contents: [{
+                        role: 'user',
+                        parts: [{ text: promptText }]
+                    }],
+                    generationConfig: {
+                        responseModalities: ['IMAGE'],
+                        imageConfig: {
+                            aspectRatio: apiAspectRatio
+                        }
+                    }
+                };
+
+                const result = await fetchWithBackoff(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const part = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+                if (part && part.inlineData?.data) {
+                    const mime = part.inlineData.mimeType || 'image/png';
+                    currentImageBase64 = `data:${mime};base64,${part.inlineData.data}`;
+                    imgOutput.src = currentImageBase64;
+                    imgOutput.classList.remove('hidden');
+                    downloadBtn.disabled = false;
+                    showToast("Visual Meta Ads berhasil dirender!");
+                } else {
+                    throw new Error("No image returned");
+                }
+            } catch (err) {
+                emptyState.classList.remove('hidden');
+                showToast("Gagal merender gambar. Silakan coba lagi.");
+            } finally {
+                loadingState.classList.add('hidden');
+                btn.disabled = false;
+                btn.classList.remove('opacity-70');
+            }
+        }
+
+        // Download Image
+        function downloadGeneratedImage() {
+            if (!currentImageBase64) return;
+            const link = document.createElement('a');
+            link.href = currentImageBase64;
+            link.download = `apple-my-meta-ad-${Date.now()}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("Mengunduh PNG kualitas tinggi...");
+        }
+
+        // Reset Form
+        function resetForm() {
+            applyPreset('iphone_pro');
+            document.getElementById('aspectRatio').value = '1:1';
+            updateAspectPreview();
+            document.getElementById('adImageOutput').classList.add('hidden');
+            document.getElementById('emptyState').classList.remove('hidden');
+            document.getElementById('downloadBtn').disabled = true;
+            currentImageBase64 = null;
+        }
+
+        // Initialize on Load
+        window.onload = function() {
+            updatePromptBuilder();
+        };
+    </script>
+</body>
+</html>
