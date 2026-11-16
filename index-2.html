@@ -59,33 +59,78 @@
         <label for="ideaInput" class="block text-sm font-medium text-neutral-700 mb-1.5">
           Ide atau Informasi Tambahan <span class="font-normal text-neutral-400">(opsional)</span>
         </label>
-        <textarea id="ideaInput" rows="3" placeholder="Contoh: iPhone 17 Pro Max dengan fokus pada desain titanium dan kemampuan kamera, harga mulai RM 5,999..." class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 placeholder:text-neutral-400 transition"></textarea>
-        <p class="text-xs text-neutral-400 mt-1.5">AI Agent akan merancang arahan visual sekaligus menyusun copywriting teks yang relevan.</p>
+        <textarea id="ideaInput" rows="3" placeholder="Contoh: iPhone 17 Pro Max dengan fokus pada desain titanium dan kemampuan kamera..." class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 placeholder:text-neutral-400 transition"></textarea>
+        <p class="text-xs text-neutral-400 mt-1.5">AI akan mengembangkan ide ini berdasarkan kategori dan subkategori yang dipilih.</p>
       </div>
 
-      <!-- Konfigurasi AI Agent -->
-      <div class="rounded-2xl border border-neutral-200 bg-neutral-50/70 p-3.5 space-y-3">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-neutral-800 flex items-center gap-1.5">
-            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i>
-            <span>AI Creative Agent Mode</span>
-          </span>
-          <span class="text-[11px] text-neutral-400">Structured Output</span>
-        </div>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+      <!-- Panel Pengaturan Text Overlay Skill -->
+      <div class="rounded-2xl border border-neutral-200 bg-neutral-50/70 p-4 space-y-3">
+        <div class="flex items-center justify-between gap-3">
           <div>
-            <label for="agentModeSelect" class="block text-[11px] font-medium text-neutral-500 mb-1">Tugas Agent</label>
-            <select id="agentModeSelect" class="w-full bg-white text-neutral-800 border border-neutral-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-neutral-400">
-              <option value="full">Visual Prompt + Auto-Fill Teks</option>
-              <option value="visual_only">Hanya Visual Prompt</option>
-            </select>
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="type" class="w-4 h-4 text-neutral-700"></i>
+              <span class="text-sm font-semibold text-neutral-900">Text Overlay Skill</span>
+            </div>
+            <p id="textSkillHint" class="text-xs text-neutral-500 mt-0.5">
+              Pilih kategori & subkategori untuk rekomendasi otomatis.
+            </p>
           </div>
-          <div>
-            <label for="copyLangSelect" class="block text-[11px] font-medium text-neutral-500 mb-1">Bahasa Copywriting Teks</label>
-            <select id="copyLangSelect" class="w-full bg-white text-neutral-800 border border-neutral-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-neutral-400">
-              <option value="Indonesian">Bahasa Indonesia (Natural & Premium)</option>
-              <option value="English">English (Apple Global Style)</option>
-            </select>
+          <label class="relative inline-flex items-center cursor-pointer shrink-0">
+            <input type="checkbox" id="useTextSkillToggle" class="sr-only peer">
+            <div class="w-11 h-6 bg-neutral-300 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-neutral-900/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-neutral-900"></div>
+          </label>
+        </div>
+
+        <!-- Daftar Input Elemen Copywriting -->
+        <div id="textElementsContainer" class="hidden pt-3 border-t border-neutral-200/80 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-semibold uppercase tracking-wider text-neutral-500">Elemen Copywriting (Kosongkan jika tidak perlu)</span>
+            <button type="button" id="resetTextPresetBtn" class="text-xs text-neutral-600 hover:text-neutral-900 underline cursor-pointer">
+              Reset Preset
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label for="valHeadline" class="block text-[11px] font-medium text-neutral-600 mb-1">[Headline]</label>
+              <input type="text" id="valHeadline" placeholder="Judul utama..." class="w-full bg-white text-neutral-900 border border-neutral-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-neutral-400">
+            </div>
+            <div>
+              <label for="valSubheadline" class="block text-[11px] font-medium text-neutral-600 mb-1">[Subheadline]</label>
+              <input type="text" id="valSubheadline" placeholder="Subjudul pendukung..." class="w-full bg-white text-neutral-900 border border-neutral-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-neutral-400">
+            </div>
+            <div class="sm:col-span-2">
+              <label for="valBodyText" class="block text-[11px] font-medium text-neutral-600 mb-1">[Body Text]</label>
+              <input type="text" id="valBodyText" placeholder="Deskripsi singkat atau penjelasan..." class="w-full bg-white text-neutral-900 border border-neutral-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-neutral-400">
+            </div>
+            <div>
+              <label for="valHighlightText" class="block text-[11px] font-medium text-neutral-600 mb-1">[Highlight Text]</label>
+              <input type="text" id="valHighlightText" placeholder="Poin sorotan / angka kunci..." class="w-full bg-white text-neutral-900 border border-neutral-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-neutral-400">
+            </div>
+            <div>
+              <label for="valFeatureText" class="block text-[11px] font-medium text-neutral-600 mb-1">[Feature Text]</label>
+              <input type="text" id="valFeatureText" placeholder="Fitur unggulan..." class="w-full bg-white text-neutral-900 border border-neutral-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-neutral-400">
+            </div>
+            <div>
+              <label for="valCtaText" class="block text-[11px] font-medium text-neutral-600 mb-1">[CTA Text]</label>
+              <input type="text" id="valCtaText" placeholder="Contoh: Beli Sekarang / Pelajari" class="w-full bg-white text-neutral-900 border border-neutral-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-neutral-400">
+            </div>
+            <div>
+              <label for="valPriceText" class="block text-[11px] font-medium text-neutral-600 mb-1">[Price Text]</label>
+              <input type="text" id="valPriceText" placeholder="Contoh: Dari RM 4,999" class="w-full bg-white text-neutral-900 border border-neutral-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-neutral-400">
+            </div>
+            <div>
+              <label for="valBadgeText" class="block text-[11px] font-medium text-neutral-600 mb-1">[Badge Text]</label>
+              <input type="text" id="valBadgeText" placeholder="Contoh: Baharu / Terlaris" class="w-full bg-white text-neutral-900 border border-neutral-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-neutral-400">
+            </div>
+            <div>
+              <label for="valDisclaimerText" class="block text-[11px] font-medium text-neutral-600 mb-1">[Disclaimer Text]</label>
+              <input type="text" id="valDisclaimerText" placeholder="Tertakluk terma & syarat..." class="w-full bg-white text-neutral-900 border border-neutral-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-neutral-400">
+            </div>
+            <div class="sm:col-span-2">
+              <label for="valFooterText" class="block text-[11px] font-medium text-neutral-600 mb-1">[Footer Text]</label>
+              <input type="text" id="valFooterText" placeholder="Contoh: Apple Store Malaysia · apple.com/my" class="w-full bg-white text-neutral-900 border border-neutral-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-neutral-400">
+            </div>
           </div>
         </div>
       </div>
@@ -93,7 +138,7 @@
       <!-- Tombol Generate Prompt AI -->
       <button type="button" id="generatePromptBtn" class="w-full py-3 px-4 bg-white hover:bg-neutral-50 active:bg-neutral-100 text-neutral-900 border border-neutral-300 font-semibold text-sm rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs">
         <i id="promptBtnIcon" data-lucide="bot" class="w-4 h-4"></i>
-        <span id="promptBtnText">Jalankan AI Agent (Susun Prompt & Copy)</span>
+        <span id="promptBtnText">Generate Detail Prompt dengan AI</span>
       </button>
 
       <!-- Detail Prompt Visual -->
@@ -108,37 +153,9 @@
             </button>
           </div>
         </div>
-        <textarea id="promptInput" rows="8" placeholder="Klik Jalankan AI Agent di atas, atau tulis prompt secara manual..." class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 placeholder:text-neutral-400 transition" required></textarea>
-
-        <!-- Quick Refine Actions oleh AI Agent -->
-        <div class="flex flex-wrap items-center gap-1.5 mt-2">
-          <span class="text-[11px] text-neutral-400 mr-0.5">Sempurnakan cepat:</span>
-          <button type="button" data-refine="Make the visual composition even more minimalist with wider negative space and cleaner geometry." class="refine-btn text-[11px] px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200/80 text-neutral-700 transition cursor-pointer">Lebih Minimalis</button>
-          <button type="button" data-refine="Enhance studio macro lighting, metallic/glass material reflections, and crisp micro-textures." class="refine-btn text-[11px] px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200/80 text-neutral-700 transition cursor-pointer">Pertajam Material & Cahaya</button>
-          <button type="button" data-refine="Adjust camera angle to a dynamic three-quarter hero perspective with subtle soft contact shadows." class="refine-btn text-[11px] px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-neutral-200/80 text-neutral-700 transition cursor-pointer">Sudut Kamera Hero</button>
-        </div>
+        <textarea id="promptInput" rows="8" placeholder="Klik Generate Detail Prompt dengan AI, atau tulis prompt secara manual..." class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 placeholder:text-neutral-400 transition" required></textarea>
+        <p class="text-xs text-neutral-400 mt-1.5">Periksa dan sesuaikan hasil prompt sebelum membuat gambar.</p>
       </div>
-
-      <!-- Text Element Skills -->
-      <section class="rounded-2xl border border-neutral-200 p-4 space-y-3">
-        <div><h2 class="text-sm font-semibold text-neutral-900">Text Element Skills</h2><p class="text-xs text-neutral-500 mt-1">Aktifkan atau nonaktifkan setiap elemen teks. Value otomatis mengikuti kategori dan subkategori, serta dapat diedit.</p></div>
-        <div id="textElementsContainer" class="space-y-3"><p class="text-xs text-neutral-400">Pilih kategori dan subkategori terlebih dahulu.</p></div>
-      </section>
-
-      <!-- Dynamic Variable Filler -->
-      <section id="variablesSection" class="hidden rounded-2xl border border-amber-200/80 bg-amber-50/40 p-4 space-y-3 transition-all">
-        <div class="flex items-start justify-between gap-2">
-          <div>
-            <h2 class="text-sm font-semibold text-neutral-900 flex items-center gap-1.5">
-              <i data-lucide="sliders-horizontal" class="w-4 h-4 text-amber-600"></i>
-              <span>Isi Variabel Teks</span>
-            </h2>
-            <p class="text-xs text-neutral-500 mt-1">Variabel terdeteksi otomatis dari teks aktif. Isi di bawah ini untuk mengganti placeholder <code class="text-[11px] bg-white px-1 py-0.5 rounded border border-neutral-200">[...]</code> secara langsung.</p>
-          </div>
-          <span id="variableCountBadge" class="shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">0 Variabel</span>
-        </div>
-        <div id="variablesContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
-      </section>
 
       <!-- Aspect Ratio Selector -->
       <div>
@@ -221,6 +238,266 @@
       }
     };
 
+    // Konfigurasi Skill & Preset Value Berdasarkan Kategori + Subkategori
+    const textSkillPresets = {
+      'product:New Product Showcase': {
+        recommended: true,
+        reason: 'Direkomendasikan untuk memperkenalkan nama & tagline produk baru secara ikonik.',
+        values: {
+          Headline: 'iPhone 17 Pro',
+          Subheadline: 'Titanium. Begitu kuat. Begitu ringan. Begitu Pro.',
+          BodyText: '',
+          HighlightText: 'Chip A19 Pro',
+          FeatureText: 'Sistem Kamera Pro 48MP',
+          CtaText: 'Ketahui lebih lanjut',
+          PriceText: 'Dari RM 5,499',
+          BadgeText: 'Baharu',
+          DisclaimerText: '',
+          FooterText: 'Apple Store Malaysia'
+        }
+      },
+      'product:Product Features & Highlights': {
+        recommended: true,
+        reason: 'Direkomendasikan untuk menonjolkan spesifikasi utama & keunggulan fitur.',
+        values: {
+          Headline: 'Kuasa Tanpa Batas.',
+          Subheadline: 'Direka untuk prestasi profesional sepanjang hari.',
+          BodyText: 'Nikmati kelajuan luar biasa dan kecekapan bateri generasi baharu.',
+          HighlightText: 'Sehingga 33 Jam Main Balik Video',
+          FeatureText: 'Paparan Super Retina XDR · ProMotion 120Hz',
+          CtaText: 'Beli Sekarang',
+          PriceText: '',
+          BadgeText: 'Ciri Utama',
+          DisclaimerText: 'Hayat bateri berbeza mengikut penggunaan dan konfigurasi.',
+          FooterText: 'apple.com/my'
+        }
+      },
+      'product:Product Launch': {
+        recommended: true,
+        reason: 'Direkomendasikan untuk pengumuman tanggal rilis, pre-order, dan harga.',
+        values: {
+          Headline: 'Kini Tersedia.',
+          Subheadline: 'Alami generasi baharu inovasi Apple hari ini.',
+          BodyText: 'Dapatkan di Apple Store The Exchange TRX atau secara dalam talian.',
+          HighlightText: 'Pratempah Bermula Jumaat Ini',
+          FeatureText: 'Penghantaran Percuma · Tukar Beli Apple',
+          CtaText: 'Pesan Sekarang',
+          PriceText: 'Dari RM 4,999 atau RM 208.29/bln',
+          BadgeText: 'Pelancaran Baharu',
+          DisclaimerText: 'Ansuran 0% sehingga 24 bulan untuk bank terpilih.',
+          FooterText: 'Apple Store Malaysia'
+        }
+      },
+      'product:Product Comparison': {
+        recommended: true,
+        reason: 'Direkomendasikan untuk menampilkan perbedaan spesifikasi antar model.',
+        values: {
+          Headline: 'Pilih iPhone Yang Sesuai Untuk Anda.',
+          Subheadline: 'Bandingkan ciri utama dan prestasi setiap model.',
+          BodyText: 'Perbandingan saiz paparan, sistem kamera, dan cip pemprosesan.',
+          HighlightText: '6.3" vs 6.9" Paparan XDR',
+          FeatureText: 'Cip A19 vs Cip A19 Pro · Zum Optik 5x',
+          CtaText: 'Bandingkan Semua Model',
+          PriceText: 'Bermula RM 4,299',
+          BadgeText: 'Panduan Pilihan',
+          DisclaimerText: '',
+          FooterText: 'Apple Store Malaysia'
+        }
+      },
+      'product:Product in Detail': {
+        recommended: false,
+        reason: 'Opsional — Visual makro produk murni lebih menonjolkan detail material tanpa teks.',
+        values: {
+          Headline: 'Ketelitian Dalam Setiap Milimeter.',
+          Subheadline: 'Kemasan titanium gred aeroangkasa yang halus.',
+          BodyText: '',
+          HighlightText: 'Butang Tindakan & Kawalan Kamera',
+          FeatureText: 'Ceramic Shield Generasi Terkini',
+          CtaText: '',
+          PriceText: '',
+          BadgeText: '',
+          DisclaimerText: '',
+          FooterText: ''
+        }
+      },
+      'product:Best-Selling Products': {
+        recommended: true,
+        reason: 'Direkomendasikan untuk menampilkan badge terlaris, harga, dan ajakan beli.',
+        values: {
+          Headline: 'Pilihan Kegemaran Ramai.',
+          Subheadline: 'Produk Apple paling laris untuk kerja dan hiburan.',
+          BodyText: 'Gabungan prestasi pantas, reka bentuk nipis, dan ketahanan bateri.',
+          HighlightText: 'Penarafan 4.9 ★ Pelanggan',
+          FeatureText: 'Keserasian Penuh Ekosistem Apple',
+          CtaText: 'Dapatkan Sekarang',
+          PriceText: 'Dari RM 3,499',
+          BadgeText: 'Paling Laris',
+          DisclaimerText: 'Stok tertakluk pada ketersediaan.',
+          FooterText: 'Apple Store Malaysia'
+        }
+      },
+      'product:Apple Ecosystem Showcase': {
+        recommended: true,
+        reason: 'Direkomendasikan untuk menjelaskan konektivitas lintas perangkat Apple.',
+        values: {
+          Headline: 'Lebih Hebat Bersama.',
+          Subheadline: 'iPhone, Mac, iPad dan Apple Watch saling melengkapi.',
+          BodyText: 'Salin di iPhone, tampal di Mac. Jawab panggilan dari mana-mana peranti.',
+          HighlightText: 'Kesinambungan Tanpa Gangguan',
+          FeatureText: 'AirDrop · Universal Clipboard · Handoff',
+          CtaText: 'Terokai Ekosistem',
+          PriceText: '',
+          BadgeText: 'Ekosistem Apple',
+          DisclaimerText: 'Memerlukan akaun iCloud yang sama dan sambungan Wi-Fi.',
+          FooterText: 'apple.com/my'
+        }
+      },
+      'product:Product Recommendation': {
+        recommended: true,
+        reason: 'Direkomendasikan untuk mengarahkan segmen pengguna tertentu ke produk ideal.',
+        values: {
+          Headline: 'Pilihan Terbaik Untuk Kreativiti.',
+          Subheadline: 'Sempurna untuk pelajar, pencipta kandungan & profesional.',
+          BodyText: 'Ringan dibawa ke mana sahaja dengan kuasa pemprosesan luar biasa.',
+          HighlightText: 'Sokongan Apple Pencil Pro',
+          FeatureText: 'Paparan Liquid Retina · Cip Siri M',
+          CtaText: 'Lihat Cadangan',
+          PriceText: 'Harga Pendidikan Dari RM 2,799',
+          BadgeText: 'Disyorkan',
+          DisclaimerText: 'Tawaran harga pendidikan layak untuk pelajar & pendidik.',
+          FooterText: 'Apple Store Malaysia'
+        }
+      },
+      'education:Tips & Tricks': {
+        recommended: true,
+        reason: 'Direkomendasikan untuk menampilkan judul tips dan langkah ringkas pada visual.',
+        values: {
+          Headline: '3 Tips Pantas iPhone',
+          Subheadline: 'Jimat masa harian anda dengan pintasan pintar ini.',
+          BodyText: '1. Tekan & tahan ruang kosong untuk padam · 2. Leret bar bawah tukar aplikasi.',
+          HighlightText: 'Tip #1: Ketik Belakang (Back Tap)',
+          FeatureText: 'Tetapan > Kebolehcapaian > Sentuhan',
+          CtaText: 'Simpan Tip Ini',
+          PriceText: '',
+          BadgeText: 'Tips & Trik',
+          DisclaimerText: 'Tersedia pada iOS 18 dan ke atas.',
+          FooterText: 'Apple Store Malaysia · Tips Harian'
+        }
+      },
+      'education:How-to Tutorials': {
+        recommended: true,
+        reason: 'Direkomendasikan untuk panduan langkah demi langkah yang jelas & terstruktur.',
+        values: {
+          Headline: 'Cara Guna NameDrop Di iPhone',
+          Subheadline: 'Kongsi maklumat hubungan dalam beberapa saat sahaja.',
+          BodyText: 'Langkah 1: Dekatkan bahagian atas dua iPhone · Langkah 2: Pilih Kongsi.',
+          HighlightText: 'Mudah & Selamat',
+          FeatureText: 'Berfungsi antara iPhone & Apple Watch',
+          CtaText: 'Cuba Sekarang',
+          PriceText: '',
+          BadgeText: 'Tutorial',
+          DisclaimerText: 'Pastikan AirDrop dan Bluetooth diaktifkan.',
+          FooterText: 'Panduan Pengguna Apple'
+        }
+      },
+      'education:Hidden Features': {
+        recommended: true,
+        reason: 'Direkomendasikan untuk menarik perhatian audiens pada fitur tersembunyi.',
+        values: {
+          Headline: 'Ciri Tersembunyi Yang Ramai Tak Tahu',
+          Subheadline: 'Imbas dokumen terus dari aplikasi Notes tanpa aplikasi pihak ketiga.',
+          BodyText: 'Buka Notes > Ketik ikon Kamera > Pilih Imbas Dokumen.',
+          HighlightText: 'Auto-Potong & Simpan Sebagai PDF',
+          FeatureText: 'Terbina Dalam iOS',
+          CtaText: 'Kongsi Dengan Rakan',
+          PriceText: '',
+          BadgeText: 'Tahukah Anda?',
+          DisclaimerText: '',
+          FooterText: 'Apple Store Malaysia'
+        }
+      },
+      'education:Product Knowledge': {
+        recommended: true,
+        reason: 'Direkomendasikan untuk menjelaskan teknologi/komponen Apple secara edukatif.',
+        values: {
+          Headline: 'Apa Itu Paparan ProMotion?',
+          Subheadline: 'Kadar segar semula adaptif sehingga 120Hz.',
+          BodyText: 'Menjadikan penatalan lebih lancar semasa bermain permainan dan menjimatkan bateri ketika statik.',
+          HighlightText: '1Hz Hingga 120Hz Adaptif',
+          FeatureText: 'Paparan Sentiasa Hidup (Always-On)',
+          CtaText: 'Pelajari Lanjut',
+          PriceText: '',
+          BadgeText: 'Info Produk',
+          DisclaimerText: 'Tersedia pada model iPhone Pro dan iPad Pro.',
+          FooterText: 'Apple Store Malaysia'
+        }
+      },
+      'education:iPhone Photography Tips': {
+        recommended: false,
+        reason: 'Opsional — Hasil foto bersih tanpa teks lebih menonjolkan kualitas kamera (aktifkan jika ingin overlay setting kamera).',
+        values: {
+          Headline: 'Tangkap Foto Potret Malam Lebih Tajam',
+          Subheadline: 'Kawal pencahayaan dan fokus seperti jurugambar pro.',
+          BodyText: 'Ketik skrin untuk kunci fokus (AE/AF Lock) dan leret ikon matahari ke bawah.',
+          HighlightText: 'Mod Malam · Apple ProRAW',
+          FeatureText: 'Kanta Utama 48MP · f/1.78',
+          CtaText: 'Cuba Hujung Minggu Ini',
+          PriceText: '',
+          BadgeText: 'Tip Fotografi',
+          DisclaimerText: 'Dirakam pada iPhone.',
+          FooterText: 'Shot on iPhone · Malaysia'
+        }
+      },
+      'education:Productivity Tips': {
+        recommended: true,
+        reason: 'Direkomendasikan untuk menyoroti alur kerja cepat dan fitur produktivitas.',
+        values: {
+          Headline: 'Kerja Lebih Pantas Dengan Stage Manager',
+          Subheadline: 'Susun aplikasi dan tetingkap dengan kemas di iPad & Mac.',
+          BodyText: 'Beralih antara tugasan utama dan aplikasi rujukan dengan satu klik.',
+          HighlightText: 'Multitugas Tahap Pro',
+          FeatureText: 'Sokongan Paparan Luaran Penuh',
+          CtaText: 'Tingkatkan Produktiviti',
+          PriceText: '',
+          BadgeText: 'Produktiviti',
+          DisclaimerText: 'Tersedia pada model iPad dengan cip siri M dan macOS.',
+          FooterText: 'Apple Store Malaysia'
+        }
+      },
+      'education:Apple Ecosystem Tips': {
+        recommended: true,
+        reason: 'Direkomendasikan untuk memandu cara memaksimalkan fitur antar perangkat.',
+        values: {
+          Headline: 'Guna iPhone Sebagai Webcam Mac Anda',
+          Subheadline: 'Kualiti kamera studio untuk panggilan video dengan Continuity Camera.',
+          BodyText: 'Hanya dekatkan iPhone bersebelahan Mac anda — bersambung secara automatik.',
+          HighlightText: 'Tanpa Kabel · Tanpa Tetapan Rumit',
+          FeatureText: 'Center Stage · Desk View',
+          CtaText: 'Cuba Hari Ini',
+          PriceText: '',
+          BadgeText: 'Tip Ekosistem',
+          DisclaimerText: 'Memerlukan iOS 16 / macOS Ventura atau lebih baharu.',
+          FooterText: 'Apple Store Malaysia'
+        }
+      },
+      'education:Frequently Asked Questions (FAQ)': {
+        recommended: true,
+        reason: 'Direkomendasikan untuk format Tanya & Jawab (Q&A) yang informatif.',
+        values: {
+          Headline: 'Soalan Lazim: Tukar Beli (Trade In)',
+          Subheadline: 'Bolehkah saya tukar beli peranti lama untuk iPhone baharu?',
+          BodyText: 'Ya! Dapatkan nilai kredit segera untuk peranti layak anda di Apple Store.',
+          HighlightText: 'Jimat Serta-Merta Untuk Pembelian Baharu',
+          FeatureText: 'Pemindahan Data Selamat & Percuma',
+          CtaText: 'Semak Nilai Peranti Anda',
+          PriceText: '',
+          BadgeText: 'FAQ',
+          DisclaimerText: 'Nilai tukar beli bergantung pada keadaan, tahun dan konfigurasi peranti.',
+          FooterText: 'Apple Trade In · Malaysia'
+        }
+      }
+    };
+
     // Referensi Elemen DOM
     const form = document.getElementById('imageForm');
     const categorySelect = document.getElementById('categorySelect');
@@ -228,19 +505,29 @@
     const objectivePanel = document.getElementById('objectivePanel');
     const objectiveText = document.getElementById('objectiveText');
     const ideaInput = document.getElementById('ideaInput');
-    const agentModeSelect = document.getElementById('agentModeSelect');
-    const copyLangSelect = document.getElementById('copyLangSelect');
-    const promptInput = document.getElementById('promptInput');
-    const aspectRatioSelect = document.getElementById('aspectRatioSelect');
+    const useTextSkillToggle = document.getElementById('useTextSkillToggle');
+    const textSkillHint = document.getElementById('textSkillHint');
     const textElementsContainer = document.getElementById('textElementsContainer');
-    const variablesSection = document.getElementById('variablesSection');
-    const variablesContainer = document.getElementById('variablesContainer');
-    const variableCountBadge = document.getElementById('variableCountBadge');
+    const resetTextPresetBtn = document.getElementById('resetTextPresetBtn');
+    const textInputs = {
+      Headline: document.getElementById('valHeadline'),
+      Subheadline: document.getElementById('valSubheadline'),
+      BodyText: document.getElementById('valBodyText'),
+      HighlightText: document.getElementById('valHighlightText'),
+      FeatureText: document.getElementById('valFeatureText'),
+      CtaText: document.getElementById('valCtaText'),
+      PriceText: document.getElementById('valPriceText'),
+      BadgeText: document.getElementById('valBadgeText'),
+      DisclaimerText: document.getElementById('valDisclaimerText'),
+      FooterText: document.getElementById('valFooterText')
+    };
+    const promptInput = document.getElementById('promptInput');
     const generatePromptBtn = document.getElementById('generatePromptBtn');
     const promptBtnText = document.getElementById('promptBtnText');
     const promptStatus = document.getElementById('promptStatus');
     const copyPromptBtn = document.getElementById('copyPromptBtn');
     const copyBtnText = document.getElementById('copyBtnText');
+    const aspectRatioSelect = document.getElementById('aspectRatioSelect');
     const submitBtn = document.getElementById('submitBtn');
     const btnText = document.getElementById('btnText');
     const errorBox = document.getElementById('errorBox');
@@ -250,236 +537,79 @@
     const resultImage = document.getElementById('resultImage');
     const downloadBtn = document.getElementById('downloadBtn');
 
-    // Helper: Menampilkan dan menyembunyikan pesan error
+    // Helper: Menampilkan & Menyembunyikan Error
     function showError(message) {
       errorMsg.textContent = message;
       errorBox.classList.remove('hidden');
     }
 
     function hideError() {
-      errorBox.classList.add('hidden');
       errorMsg.textContent = '';
+      errorBox.classList.add('hidden');
     }
 
-    // Helper: Fetch dengan Exponential Backoff untuk menangani throttling
-    async function fetchWithRetry(url, options, maxRetries = 4) {
-      let delay = 1000;
-      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    // Helper: Fetch dengan Exponential Backoff Retry
+    async function fetchWithRetry(url, options, maxRetries = 5) {
+      const delays = [1000, 2000, 4000, 8000, 16000];
+      for (let i = 0; i <= maxRetries; i++) {
         try {
           const response = await fetch(url, options);
-          if (response.ok) {
-            return response;
-          }
-          if ((response.status === 429 || response.status >= 500) && attempt < maxRetries) {
-            await new Promise(resolve => setTimeout(resolve, delay));
-            delay *= 2;
+          if (response.ok) return response;
+
+          const errorData = await response.json().catch(() => ({}));
+          const errorMessage = errorData?.error?.message || `HTTP Error ${response.status}`;
+
+          if ((response.status === 429 || response.status >= 500) && i < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, delays[i]));
             continue;
           }
-          const errData = await response.json().catch(() => ({}));
-          throw new Error(errData?.error?.message || `HTTP Error ${response.status}`);
-        } catch (error) {
-          if (attempt === maxRetries) throw error;
-          await new Promise(resolve => setTimeout(resolve, delay));
-          delay *= 2;
+          throw new Error(errorMessage);
+        } catch (err) {
+          if (i === maxRetries) throw err;
+          await new Promise(resolve => setTimeout(resolve, delays[i]));
         }
       }
     }
 
-    // Helper: Escape karakter HTML untuk atribut value/title
-    function escapeAttr(str) {
-      return String(str || '')
-        .replace(/&/g, '&amp;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
+    // Helper: Mengisi value elemen copywriting berdasarkan preset
+    function applyTextPreset(key) {
+      const preset = textSkillPresets[key];
+      if (!preset) return;
+      Object.keys(textInputs).forEach(field => {
+        textInputs[field].value = preset.values[field] || '';
+      });
     }
 
-    // Definisi Daftar Field Text Element Skills
-    const textFields = [
-      ['eyebrow', 'Eyebrow / Label', 'Teks kecil di atas judul (misal: NEW, PRO SERIES, TIPS)'],
-      ['headline', 'Headline Utama', 'Judul utama yang paling menonjol di gambar'],
-      ['subheadline', 'Subheadline', 'Deskripsi singkat pendukung di bawah headline'],
-      ['feature1', 'Poin / Fitur 1', 'Sorotan fitur utama atau langkah pertama'],
-      ['feature2', 'Poin / Fitur 2', 'Sorotan fitur kedua atau langkah kedua'],
-      ['cta', 'Call to Action / Harga', 'Teks ajakan bertindak atau informasi harga']
-    ];
-
-    // Profil Default Text Elements berdasarkan Kategori & Subkategori
-    function currentTextProfile() {
-      const cat = categorySelect.value;
-      const sub = subcategorySelect.value;
-
-      const base = {
-        eyebrow: { enabled: true, value: sub ? sub.toUpperCase() : '' },
-        headline: { enabled: true, value: '[Product Name]' },
-        subheadline: { enabled: true, value: '[Key Tagline]' },
-        feature1: { enabled: false, value: '[Feature 1]' },
-        feature2: { enabled: false, value: '[Feature 2]' },
-        cta: { enabled: false, value: 'Tersedia di Apple Store' }
+    // Helper: Mengambil ringkasan elemen teks yang aktif & terisi
+    function getActiveTextElements() {
+      if (!useTextSkillToggle.checked) return [];
+      const labels = {
+        Headline: '[Headline]',
+        Subheadline: '[Subheadline]',
+        BodyText: '[Body Text]',
+        HighlightText: '[Highlight Text]',
+        FeatureText: '[Feature Text]',
+        CtaText: '[CTA Text]',
+        PriceText: '[Price Text]',
+        BadgeText: '[Badge Text]',
+        DisclaimerText: '[Disclaimer Text]',
+        FooterText: '[Footer Text]'
       };
-
-      if (cat === 'product') {
-        if (sub === 'New Product Showcase' || sub === 'Product Launch') {
-          base.eyebrow = { enabled: true, value: 'BARU' };
-          base.headline = { enabled: true, value: '[Product Name]' };
-          base.subheadline = { enabled: true, value: '[Tagline Produk]' };
-          base.cta = { enabled: true, value: 'Mulai dari RM [Price]' };
-        } else if (sub === 'Product Features & Highlights' || sub === 'Product in Detail') {
-          base.headline = { enabled: true, value: '[Product Name]' };
-          base.subheadline = { enabled: true, value: '[Highlight Utama]' };
-          base.feature1 = { enabled: true, value: '[Spesifikasi 1]' };
-          base.feature2 = { enabled: true, value: '[Spesifikasi 2]' };
-        } else if (sub === 'Product Comparison') {
-          base.headline = { enabled: true, value: '[Product A] vs [Product B]' };
-          base.subheadline = { enabled: true, value: 'Temukan yang paling pas untuk Anda.' };
-          base.feature1 = { enabled: true, value: '[Keunggulan A]' };
-          base.feature2 = { enabled: true, value: '[Keunggulan B]' };
-        } else if (sub === 'Best-Selling Products' || sub === 'Product Recommendation') {
-          base.eyebrow = { enabled: true, value: 'PILIHAN FAVORIT' };
-          base.headline = { enabled: true, value: '[Product Name]' };
-          base.subheadline = { enabled: true, value: '[Alasan Rekomendasi]' };
-        } else if (sub === 'Apple Ecosystem Showcase') {
-          base.headline = { enabled: true, value: 'Lebih Hebat Bersama.' };
-          base.subheadline = { enabled: true, value: '[Device 1] + [Device 2]' };
-        }
-      } else if (cat === 'education') {
-        base.eyebrow = { enabled: true, value: 'APPLE TIPS' };
-        base.headline = { enabled: true, value: 'Cara [Judul Tips / Fitur]' };
-        base.subheadline = { enabled: true, value: 'Maksimalkan [Product Name] Anda.' };
-        base.feature1 = { enabled: true, value: '1. [Langkah Pertama]' };
-        base.feature2 = { enabled: true, value: '2. [Langkah Kedua]' };
-      }
-
-      return base;
+      return Object.keys(textInputs)
+        .map(key => ({ label: labels[key], value: textInputs[key].value.trim() }))
+        .filter(item => item.value.length > 0);
     }
 
-    // Menyimpan nilai variabel yang diisi oleh pengguna
-    const variableValues = {};
-
-    function renderTextSkills() {
-      if(!categorySelect.value||!subcategorySelect.value) {
-        textElementsContainer.innerHTML='<p class="text-xs text-neutral-400">Pilih kategori dan subkategori terlebih dahulu.</p>';
-        renderVariables();
-        return;
-      }
-      const profile=currentTextProfile();
-      textElementsContainer.innerHTML=textFields.map(([key,label,description])=>{
-        const item=profile[key];
-        return `<div class="rounded-xl border border-neutral-200 bg-neutral-50/70 p-3 space-y-2">
-          <div class="flex items-start gap-2">
-            <input type="checkbox" id="skill-${key}" data-skill-enabled="${key}" ${item.enabled?'checked':''} class="mt-0.5 h-4 w-4 rounded border-neutral-300 text-neutral-900">
-            <div class="min-w-0 flex-1"><label for="skill-${key}" class="block text-sm font-medium text-neutral-800">${label}</label><p class="text-[11px] text-neutral-500">${description}</p></div>
-            <span data-skill-status="${key}" class="text-[10px] text-neutral-400">${item.enabled?'DIGUNAKAN':'TIDAK DIGUNAKAN'}</span>
-          </div>
-          <input type="text" data-skill-value="${key}" value="${escapeAttr(item.value)}" placeholder="Value untuk ${label}" class="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-900/10">
-        </div>`;
-      }).join('');
-      lucide.createIcons();
-      renderVariables();
-    }
-
-    // Ekstraksi placeholder [Nama Variabel] dari seluruh elemen teks yang aktif
-    function extractDetectedVariables() {
-      const vars = new Set();
-      textFields.forEach(([key]) => {
-        const toggle = textElementsContainer.querySelector(`[data-skill-enabled="${key}"]`);
-        const input = textElementsContainer.querySelector(`[data-skill-value="${key}"]`);
-        if (toggle && toggle.checked && input && input.value) {
-          const matches = input.value.match(/\[([^\]]+)\]/g);
-          if (matches) {
-            matches.forEach(m => vars.add(m.slice(1, -1).trim()));
-          }
-        }
-      });
-      return Array.from(vars);
-    }
-
-    // Merender input form dinamis untuk setiap variabel yang terdeteksi
-    function renderVariables() {
-      const detected = extractDetectedVariables();
-      if (!detected.length) {
-        variablesSection.classList.add('hidden');
-        variablesContainer.innerHTML = '';
-        return;
-      }
-
-      variablesSection.classList.remove('hidden');
-      variableCountBadge.textContent = `${detected.length} Variabel`;
-
-      variablesContainer.innerHTML = detected.map(varName => {
-        const currentVal = variableValues[varName] || '';
-        return `
-          <div class="space-y-1">
-            <label class="block text-xs font-medium text-neutral-700 truncate" title="${escapeAttr(varName)}">[${escapeAttr(varName)}]</label>
-            <input
-              type="text"
-              data-var-name="${escapeAttr(varName)}"
-              value="${escapeAttr(currentVal)}"
-              placeholder="Isi ${escapeAttr(varName)}..."
-              class="w-full rounded-lg border border-amber-200 bg-white px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-400 transition"
-            />
-          </div>
-        `;
-      }).join('');
-      lucide.createIcons();
-    }
-
-    // Mengganti seluruh placeholder [Nama Variabel] dengan nilai yang diisi user
-    function resolveVariables(text) {
-      if (!text) return '';
-      return text.replace(/\[([^\]]+)\]/g, (match, varName) => {
-        const key = varName.trim();
-        const val = variableValues[key];
-        return (val && val.trim()) ? val.trim() : match;
-      });
-    }
-
-    // Event Delegation: Mendeteksi perubahan checkbox/input pada Text Element Skills
-    textElementsContainer.addEventListener('change', (e) => {
-      const key = e.target.getAttribute('data-skill-enabled');
-      if (key) {
-        const statusSpan = textElementsContainer.querySelector(`[data-skill-status="${key}"]`);
-        if (statusSpan) {
-          statusSpan.textContent = e.target.checked ? 'DIGUNAKAN' : 'TIDAK DIGUNAKAN';
-        }
-        renderVariables();
-      }
+    // Toggle tampilan form elemen copywriting
+    useTextSkillToggle.addEventListener('change', () => {
+      textElementsContainer.classList.toggle('hidden', !useTextSkillToggle.checked);
     });
 
-    textElementsContainer.addEventListener('input', (e) => {
-      if (e.target.hasAttribute('data-skill-value')) {
-        renderVariables();
-      }
+    // Tombol Reset Preset ke default kategori & subkategori terpilih
+    resetTextPresetBtn.addEventListener('click', () => {
+      const key = `${categorySelect.value}:${subcategorySelect.value}`;
+      applyTextPreset(key);
     });
-
-    // Event Delegation: Menyimpan nilai variabel saat pengguna mengetik
-    variablesContainer.addEventListener('input', (e) => {
-      const varName = e.target.getAttribute('data-var-name');
-      if (varName) {
-        variableValues[varName] = e.target.value;
-      }
-    });
-
-    function buildTextSkillPrompt() {
-      const values=textFields.map(([key,label])=>{
-        const toggle=textElementsContainer.querySelector('[data-skill-enabled="'+key+'"]');
-        const input=textElementsContainer.querySelector('[data-skill-value="'+key+'"]');
-        const rawValue = input ? input.value.trim() : '';
-        const resolvedValue = resolveVariables(rawValue);
-        return {label,enabled:!!(toggle&&toggle.checked),value:resolvedValue};
-      });
-      const active=values.filter(x=>x.enabled&&x.value);
-      const off=values.filter(x=>!x.enabled);
-      const blank=values.filter(x=>x.enabled&&!x.value);
-      return [
-        'TEXT ELEMENT SKILLS / EXACT COPY:',
-        active.length?active.map(x=>'- '+x.label+': "'+x.value+'" (render exactly as written)').join('\n'):'No text overlays. Keep the image free of visible text.',
-        off.length?'Do not render: '+off.map(x=>x.label).join(', ')+'.':'',
-        blank.length?'Enabled but blank; do not invent values for: '+blank.map(x=>x.label).join(', ')+'.':'',
-        'Do not create additional text, prices, badges, disclaimers, or footers that were not enabled and supplied.'
-      ].filter(Boolean).join('\n');
-    }
 
     // Event Listener: Perubahan Kategori Konten
     categorySelect.addEventListener('change', () => {
@@ -490,7 +620,9 @@
         objectivePanel.classList.add('hidden');
         subcategorySelect.disabled = true;
         subcategorySelect.add(new Option('Pilih kategori terlebih dahulu', ''));
-        renderTextSkills();
+        useTextSkillToggle.checked = false;
+        textElementsContainer.classList.add('hidden');
+        textSkillHint.textContent = 'Pilih kategori & subkategori untuk rekomendasi otomatis.';
         return;
       }
 
@@ -499,10 +631,25 @@
       subcategorySelect.disabled = false;
       subcategorySelect.add(new Option('Pilih subkategori', ''));
       selected.subcategories.forEach(item => subcategorySelect.add(new Option(item, item)));
-      renderTextSkills();
     });
 
-    subcategorySelect.addEventListener('change', renderTextSkills);
+    // Event Listener: Perubahan Subkategori -> Otomatis Atur Rekomendasi & Value Text Skill
+    subcategorySelect.addEventListener('change', () => {
+      const key = `${categorySelect.value}:${subcategorySelect.value}`;
+      const preset = textSkillPresets[key];
+
+      if (!preset) {
+        useTextSkillToggle.checked = false;
+        textElementsContainer.classList.add('hidden');
+        textSkillHint.textContent = 'Pilih kategori & subkategori untuk rekomendasi otomatis.';
+        return;
+      }
+
+      useTextSkillToggle.checked = preset.recommended;
+      textElementsContainer.classList.toggle('hidden', !preset.recommended);
+      textSkillHint.textContent = preset.reason;
+      applyTextPreset(key);
+    });
 
     // Validasi Pilihan Kategori & Subkategori
     function getSelectedContent() {
@@ -515,39 +662,13 @@
     }
 
     // State Loading Tombol Generate Prompt
-    function setPromptLoadingState(isLoading, customLabel = null) {
+    function setPromptLoadingState(isLoading) {
       generatePromptBtn.disabled = isLoading;
-      document.querySelectorAll('.refine-btn').forEach(btn => btn.disabled = isLoading);
-      promptBtnText.textContent = isLoading
-        ? (customLabel || 'AI Agent sedang bekerja...')
-        : 'Jalankan AI Agent (Susun Prompt & Copy)';
+      promptBtnText.textContent = isLoading ? 'AI sedang menyusun prompt...' : 'Generate Detail Prompt dengan AI';
       const icon = document.getElementById('promptBtnIcon');
       icon.setAttribute('data-lucide', isLoading ? 'loader-2' : 'bot');
       icon.classList.toggle('animate-spin', isLoading);
       lucide.createIcons();
-    }
-
-    // Helper: Menerapkan hasil saran AI Agent ke Text Element Skills & Variabel
-    function applyAgentTextSuggestions(textSuggestions) {
-      if (!textSuggestions || typeof textSuggestions !== 'object') return;
-      textFields.forEach(([key]) => {
-        const suggestion = textSuggestions[key];
-        if (!suggestion) return;
-        const toggle = textElementsContainer.querySelector(`[data-skill-enabled="${key}"]`);
-        const input = textElementsContainer.querySelector(`[data-skill-value="${key}"]`);
-        const statusSpan = textElementsContainer.querySelector(`[data-skill-status="${key}"]`);
-
-        if (toggle && typeof suggestion.enabled === 'boolean') {
-          toggle.checked = suggestion.enabled;
-          if (statusSpan) {
-            statusSpan.textContent = suggestion.enabled ? 'DIGUNAKAN' : 'TIDAK DIGUNAKAN';
-          }
-        }
-        if (input && typeof suggestion.value === 'string') {
-          input.value = suggestion.value;
-        }
-      });
-      renderVariables();
     }
 
     // Event Listener: Salin Prompt ke Clipboard
@@ -561,55 +682,7 @@
       }, 2000);
     });
 
-    // Event Listener: Quick Refine Buttons (Menyempurnakan Prompt yang Ada)
-    document.querySelectorAll('.refine-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        hideError();
-        const currentPrompt = promptInput.value.trim();
-        if (!currentPrompt) {
-          showError('Buat atau tulis Detail Prompt Visual terlebih dahulu sebelum menyempurnakannya.');
-          return;
-        }
-
-        const instruction = btn.getAttribute('data-refine');
-        setPromptLoadingState(true, 'Menyempurnakan prompt...');
-        promptStatus.textContent = 'Menyempurnakan...';
-
-        try {
-          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-          const response = await fetchWithRetry(apiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{
-                role: 'user',
-                parts: [{
-                  text: `Refine the following Apple-style studio image prompt according to this instruction: "${instruction}". Keep all exact section headers (SUBJECT; ACTION / CONCEPT; ENVIRONMENT; COMPOSITION; VISUAL STYLE; LIGHTING; CAMERA & QUALITY; COLOR & MOOD; DETAILS; NEGATIVE CONSTRAINTS) and preserve exact overlay text values. Return ONLY the updated prompt.\n\nCURRENT PROMPT:\n${currentPrompt}`
-                }]
-              }],
-              generationConfig: {
-                temperature: 0.5,
-                maxOutputTokens: 1800
-              }
-            })
-          });
-
-          const data = await response.json();
-          const refined = data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('\n').trim();
-          if (!refined) throw new Error('Gagal menyempurnakan prompt.');
-
-          promptInput.value = refined;
-          promptStatus.textContent = 'Disempurnakan AI · Bisa diedit';
-        } catch (err) {
-          promptStatus.textContent = 'Gagal menyempurnakan';
-          showError(err.message || 'Terjadi kesalahan saat menyempurnakan prompt.');
-        } finally {
-          setPromptLoadingState(false);
-        }
-      });
-    });
-
-    // Event Listener: Generate Detail Prompt & Copy dengan AI Agent (Structured JSON Output)
+    // Event Listener: Generate Detail Prompt dengan AI (gemini-3-flash-preview)
     generatePromptBtn.addEventListener('click', async () => {
       hideError();
 
@@ -621,33 +694,49 @@
         return;
       }
 
-      const mode = agentModeSelect.value;
-      const copyLang = copyLangSelect.value;
-      setPromptLoadingState(true, mode === 'full' ? 'AI Agent menyusun visual & copy...' : 'AI Agent menyusun visual...');
+      setPromptLoadingState(true);
       promptStatus.textContent = 'Sedang dibuat...';
 
       try {
-        const idea = ideaInput.value.trim() || 'Develop a strong, authentic Apple-style visual concept based on the selected category and subcategory.';
+        const idea = ideaInput.value.trim() || 'Develop a strong visual concept based on the selected category and subcategory.';
+        const activeTexts = getActiveTextElements();
+        const isTextSkillEnabled = useTextSkillToggle.checked && activeTexts.length > 0;
+
+        const textSkillInstruction = isTextSkillEnabled
+          ? [
+              'TEXT OVERLAY SKILL: ENABLED.',
+              'Integrate clean, Apple-style San Francisco / minimalist sans-serif typography layout into the composition with generous negative space.',
+              'Include the exact supplied copywriting elements verbatim with accurate spelling and clear visual hierarchy (Badge -> Headline -> Subheadline -> Highlight/Feature -> Body -> Price/CTA -> Disclaimer/Footer).',
+              'Do NOT invent extra text beyond what is provided.'
+            ].join(' ')
+          : [
+              'TEXT OVERLAY SKILL: DISABLED.',
+              'Produce a pure visual photography/studio render with ZERO text overlays, NO headlines, NO badges, NO watermarks, and NO promotional copywriting on the image.'
+            ].join(' ');
+
         const systemPrompt = [
-          'You are an elite Apple product advertising art director, creative strategist, and visual prompt engineer.',
-          'Analyze the supplied content category, objective, subcategory, and user idea to produce a cohesive creative package.',
-          '1. visualPrompt: Write one production-ready image-generation prompt in clear, detailed English using these exact sections: SUBJECT; ACTION / CONCEPT; ENVIRONMENT; COMPOSITION; VISUAL STYLE; LIGHTING; CAMERA & QUALITY; COLOR & MOOD; DETAILS; NEGATIVE CONSTRAINTS.',
-          'Always enforce pure clean white seamless studio background, minimalist Apple-style aesthetic, soft studio lighting, subtle realistic shadows, generous negative space, and zero clutter.',
-          '2. textElements: Generate sharp, concise, authentic marketing/educational overlay copy in ' + copyLang + ' matching the category, subcategory, and user idea.',
-          mode === 'full'
-            ? 'In full mode, replace any generic bracket placeholders like [Product Name] with concrete, realistic copy derived from the user idea (or leave clean bracket placeholders ONLY if the user gave zero product specifics and a variable is needed, such as [Price]). Keep headlines punchy (2-6 words) and subheadlines crisp.'
-            : 'In visual_only mode, keep the existing text element values intact.',
-          'Never fabricate unverified technical specs or false claims.'
+          'You are an expert Apple product advertising art director and visual prompt engineer.',
+          'Create one production-ready image-generation prompt based on the supplied content category, objective, subcategory, text overlay configuration, and user idea.',
+          'Write the final image prompt in clear, detailed English for an image generation model (while preserving the exact language/spelling of any supplied copywriting values). Do not add commentary, explanations, markdown fences, or multiple alternatives.',
+          'Use these exact sections in the final prompt: SUBJECT; ACTION / CONCEPT; ENVIRONMENT; COMPOSITION; TYPOGRAPHY & TEXT OVERLAY; VISUAL STYLE; LIGHTING; CAMERA & QUALITY; COLOR & MOOD; DETAILS; NEGATIVE CONSTRAINTS.',
+          'Always apply this visual direction: pure clean white seamless studio background; minimalist, elegant, premium Apple-style aesthetic; professional soft studio lighting; subtle realistic shadows; balanced composition with generous negative space.',
+          'Avoid busy backgrounds, clutter, unnecessary props, distracting textures, patterns, gradients, and excessive decorations.',
+          'For Product Content, make the Apple product the clear hero subject and preserve its recognizable design. Do not invent product specifications, logos, ports, colors, or features that were not supplied.',
+          'For Education Content, communicate the selected educational topic clearly and accurately. Keep the visual focused on the relevant Apple product or educational subject.',
+          textSkillInstruction,
+          'Return only the completed image prompt.'
         ].join(' ');
 
+        const textValuesBlock = isTextSkillEnabled
+          ? '\nACTIVE COPYWRITING VALUES:\n' + activeTexts.map(t => `- ${t.label}: "${t.value}"`).join('\n')
+          : '\nACTIVE COPYWRITING VALUES: NONE (No text overlay)';
+
         const userQuery = [
-          'AGENT MODE: ' + mode,
-          'COPYWRITING LANGUAGE: ' + copyLang,
           'CONTENT CATEGORY: ' + selected.category.name,
           'CONTENT OBJECTIVE: ' + selected.category.objective,
           'CONTENT SUBCATEGORY: ' + selected.subcategory,
-          'USER IDEA / ADDITIONAL INFORMATION: ' + idea,
-          'CURRENT TEXT ELEMENT SKILLS STATE:\n' + buildTextSkillPrompt()
+          'TEXT OVERLAY SKILL STATUS: ' + (isTextSkillEnabled ? 'ACTIVE' : 'INACTIVE'),
+          'USER IDEA / ADDITIONAL INFORMATION: ' + idea + textValuesBlock
         ].join('\n');
 
         const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
@@ -662,54 +751,26 @@
             },
             generationConfig: {
               temperature: 0.7,
-              maxOutputTokens: 2200,
-              responseMimeType: 'application/json',
-              responseSchema: {
-                type: 'OBJECT',
-                properties: {
-                  visualPrompt: { type: 'STRING' },
-                  textElements: {
-                    type: 'OBJECT',
-                    properties: {
-                      eyebrow: { type: 'OBJECT', properties: { enabled: { type: 'BOOLEAN' }, value: { type: 'STRING' } }, required: ['enabled', 'value'] },
-                      headline: { type: 'OBJECT', properties: { enabled: { type: 'BOOLEAN' }, value: { type: 'STRING' } }, required: ['enabled', 'value'] },
-                      subheadline: { type: 'OBJECT', properties: { enabled: { type: 'BOOLEAN' }, value: { type: 'STRING' } }, required: ['enabled', 'value'] },
-                      feature1: { type: 'OBJECT', properties: { enabled: { type: 'BOOLEAN' }, value: { type: 'STRING' } }, required: ['enabled', 'value'] },
-                      feature2: { type: 'OBJECT', properties: { enabled: { type: 'BOOLEAN' }, value: { type: 'STRING' } }, required: ['enabled', 'value'] },
-                      cta: { type: 'OBJECT', properties: { enabled: { type: 'BOOLEAN' }, value: { type: 'STRING' } }, required: ['enabled', 'value'] }
-                    },
-                    required: ['eyebrow', 'headline', 'subheadline', 'feature1', 'feature2', 'cta']
-                  }
-                },
-                required: ['visualPrompt', 'textElements']
-              }
+              maxOutputTokens: 1800
             }
           })
         });
 
         const data = await response.json();
-        const rawJson = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        const generatedPrompt = data?.candidates?.[0]?.content?.parts
+          ?.map(part => part.text || '')
+          .join('\n')
+          .trim();
 
-        if (!rawJson) {
-          throw new Error('AI Agent tidak mengembalikan respons terstruktur.');
+        if (!generatedPrompt) {
+          throw new Error('AI tidak mengembalikan Detail Prompt Visual.');
         }
 
-        const parsed = JSON.parse(rawJson);
-        if (!parsed.visualPrompt) {
-          throw new Error('AI Agent gagal menyusun Detail Prompt Visual.');
-        }
-
-        if (mode === 'full' && parsed.textElements) {
-          applyAgentTextSuggestions(parsed.textElements);
-        }
-
-        promptInput.value = parsed.visualPrompt.trim();
-        promptStatus.textContent = mode === 'full'
-          ? 'Visual & Copy disusun AI · Bisa diedit'
-          : 'Visual disusun AI · Bisa diedit';
+        promptInput.value = generatedPrompt;
+        promptStatus.textContent = 'Dibuat oleh AI · Bisa diedit';
       } catch (err) {
         promptStatus.textContent = 'Belum dibuat';
-        showError(err.message || 'Terjadi kesalahan saat menjalankan AI Agent.');
+        showError(err.message || 'Terjadi kesalahan saat membuat prompt.');
       } finally {
         setPromptLoadingState(false);
       }
@@ -755,12 +816,24 @@
         return;
       }
 
+      const activeTexts = getActiveTextElements();
+      const isTextSkillEnabled = useTextSkillToggle.checked && activeTexts.length > 0;
+
+      const textOverlayDirective = isTextSkillEnabled
+        ? [
+            'TEXT OVERLAY: ENABLED. Render crisp, legible, Apple-style minimalist typography on clean negative space.',
+            'Exact text elements to render verbatim:',
+            ...activeTexts.map(t => `${t.label}: "${t.value}"`)
+          ].join('\n')
+        : 'TEXT OVERLAY: DISABLED. Pure clean product/visual photography ONLY. Do NOT render any text, titles, badges, watermarks, or typography.';
+
       const visualDirection = [
         'BACKGROUND: Use a pure, clean white seamless studio background.',
         'VISUAL STYLE: Minimalist, elegant, premium Apple-style advertising aesthetic.',
         'LIGHTING: Professional soft studio lighting with subtle, realistic shadows.',
         'COMPOSITION: Clean, balanced composition with generous negative space. Keep the relevant Apple product or educational subject as the clear main focus.',
         'AVOID: Busy or colored backgrounds, clutter, unnecessary props, distracting textures, patterns, gradients, and excessive decorations.',
+        textOverlayDirective,
         'IMPORTANT: Apply this visual direction consistently while preserving the specific subject, information, and creative intent in the user visual brief.'
       ].join('\n');
 
@@ -769,7 +842,6 @@
         'Content Objective: ' + category.objective,
         'Content Subcategory: ' + subcategory,
         'Visual Brief: ' + userPrompt,
-        buildTextSkillPrompt(),
         'Mandatory Visual Direction:',
         visualDirection
       ].join('\n');
