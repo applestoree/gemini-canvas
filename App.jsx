@@ -331,7 +331,7 @@ export default function App() {
     setVariables(extracted);
 
     // Automatically generate image with extracted variables
-    await executeGeneration(extracted);
+    await executeGeneration(extracted, recordItem.id);
   };
 
   const base64ToImageFile = (base64Data, mimeType) => {
@@ -405,7 +405,7 @@ export default function App() {
     }
   };
 
-  const uploadGeneratedImageToEdge = async (base64Data, mimeType) => {
+  const uploadGeneratedImageToEdge = async (base64Data, mimeType, recordId) => {
     setIsUploading(true);
     setUploadError(null);
     setSaveUrlError(null);
@@ -462,8 +462,8 @@ export default function App() {
       setUploadedImageUrl(returnedUrl);
       setIsUploading(false);
 
-      if (selectedRecord?.id) {
-        await saveImageUrlToPromptRecord(selectedRecord.id, returnedUrl);
+      if (recordId) {
+        await saveImageUrlToPromptRecord(recordId, returnedUrl);
       } else {
         showToast('success', 'Image uploaded to Supabase Storage.');
       }
@@ -475,7 +475,7 @@ export default function App() {
     }
   };
 
-  const executeGeneration = async (currentVars) => {
+  const executeGeneration = async (currentVars, recordId = selectedRecord?.id) => {
     setIsGenerating(true);
     setGenerationError(null);
     setUploadError(null);
@@ -563,7 +563,7 @@ export default function App() {
       setGeneratedImageMimeType(mime);
       setIsGenerating(false);
 
-      await uploadGeneratedImageToEdge(b64, mime);
+      await uploadGeneratedImageToEdge(b64, mime, recordId);
     } catch (err) {
       setIsGenerating(false);
       setGenerationError(err.message || 'Image generation failed.');
@@ -573,13 +573,13 @@ export default function App() {
 
   const handleRetryGeneration = () => {
     if (selectedRecord) {
-      executeGeneration(variables);
+      executeGeneration(variables, selectedRecord.id);
     }
   };
 
   const handleRetryUpload = () => {
     if (!generatedImageBase64 || isUploading) return;
-    uploadGeneratedImageToEdge(generatedImageBase64, generatedImageMimeType);
+    uploadGeneratedImageToEdge(generatedImageBase64, generatedImageMimeType, selectedRecord?.id);
   };
 
   const handleRetrySaveUrl = () => {
