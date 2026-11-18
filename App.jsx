@@ -18,7 +18,7 @@ import {
   Sliders,
   FileText,
   CloudUpload,
-  Key
+  History,
   ArrowLeft,
 } from 'lucide-react';
 
@@ -185,6 +185,10 @@ function getRecordHeadlinePreview(record) {
 export default function App() {
   const [anonKey, setAnonKey] = useState('');
   const [showKeyConfig, setShowKeyConfig] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyRecords, setHistoryRecords] = useState([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState(null);
 
   // Logo upload state
   const [logoFile, setLogoFile] = useState(null);
@@ -272,6 +276,35 @@ export default function App() {
   useEffect(() => {
     loadRecords();
   }, []);
+
+  const loadHistory = async () => {
+    setIsLoadingHistory(true);
+    setHistoryError(null);
+    try {
+      const response = await fetch(CRUD_MAKE_PROMPT_URL, {
+        method: 'GET',
+        headers: getEdgeHeaders(false)
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || `Failed to load history (HTTP ${response.status}).`);
+      }
+      const data = await response.json();
+      if (!Array.isArray(data)) {
+        throw new Error('Invalid response format: expected an array of prompt records.');
+      }
+      setHistoryRecords(data.filter((record) => record?.is_ready === true));
+    } catch (err) {
+      setHistoryError(err.message || 'Failed to load image history.');
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const handleOpenHistory = async () => {
+    setShowHistory(true);
+    await loadHistory();
+  };
 
   // Handle Logo File Selection
   const handleLogoChange = (e) => {
@@ -711,16 +744,14 @@ export default function App() {
           <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
-              onClick={() => setShowKeyConfig((prev) => !prev)}
-              className={`h-8 px-2.5 rounded-xl border text-[11px] font-medium flex items-center gap-1 transition ${
-                anonKey.trim()
-                  ? 'bg-neutral-100 border-neutral-300 text-black'
-                  : 'bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50'
-              }`}
-              title="Supabase API Key"
+              onClick={handleOpenHistory}
+              disabled={isLoadingHistory}
+              className="h-8 px-2.5 rounded-xl border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50 text-[11px] font-medium flex items-center gap-1 transition disabled:opacity-50"
+              title="View generated image history"
+              aria-label="History"
             >
-              <Key className="w-3 h-3" />
-              <span>Key</span>
+              <History className="w-3 h-3" />
+              <span>History</span>
             </button>
 
             <button
@@ -770,6 +801,95 @@ export default function App() {
                 Save
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Generated Image History */}
+        {showHistory && (
+          <div className="absolute inset-0 z-40 bg-black/40 flex items-center justify-center p-4">
+            <section className="w-full max-h-[85%] bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
+              <div className="shrink-0 px-4 py-3 border-b border-neutral-200 flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-semibold text-black">Image History</h2>
+                  <p className="text-[11px] text-neutral-500">
+                    {historyRecords.length} completed products
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowHistory(false)}
+                  className="w-8 h-8 rounded-lg hover:bg-neutral-100 flex items-center justify-center"
+                  aria-label="Close history"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3">
+                {isLoadingHistory && (
+                  <div className="py-8 flex items-center justify-center gap-2 text-xs text-neutral-500">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Loading history...
+                  </div>
+                )}
+                {!isLoadingHistory && historyError && (
+                  <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800 space-y-2">
+                    <p>{historyError}</p>
+                    <button
+                      type="button"
+                      onClick={loadHistory}
+                      className="h-8 px-3 rounded-lg bg-black text-white"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                )}
+                {!isLoadingHistory && !historyError && historyRecords.length === 0 && (
+                  <div className="py-8 text-center text-xs text-neutral-500">
+                    No completed products found.
+                  </div>
+                )}
+                {!isLoadingHistory && !historyError && historyRecords.map((record) => (
+                  <article key={record.id} className="rounded-xl border border-neutral-200 overflow-hidden">
+                    <div className="p-3 space-y-2">
+                      <h3 className="text-xs font-semibold text-black">
+                        {serializeFieldForEditor(record.product) || 'Untitled Product'}
+                      </h3>
+                      {record.image_url ? (
+                        <a href={record.image_url} target="_blank" rel="noopener noreferrer" className="block">
+                          <img
+                            src={record.image_url}
+                            alt={serializeFieldForEditor(record.product) || 'Generated product'}
+                            className="w-full max-h-72 object-contain rounded-lg bg-neutral-50 border border-neutral-100"
+                            loading="lazy"
+                          />
+                        </a>
+                      ) : (
+                        <div className="p-6 rounded-lg bg-neutral-50 text-center text-[11px] text-neutral-400">
+                          No image URL available
+                        </div>
+                      )}
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">Caption</p>
+                        <p className="text-xs text-neutral-700 whitespace-pre-wrap break-words">
+                          {serializeFieldForEditor(record.caption) || 'No caption'}
+                        </p>
+                      </div>
+                      {record.image_url && (
+                        <a
+                          href={record.image_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] font-medium text-blue-700 hover:underline break-all"
+                        >
+                          Open image_url
+                        </a>
+                      )}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
           </div>
         )}
 
