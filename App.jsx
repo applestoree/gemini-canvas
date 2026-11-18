@@ -194,6 +194,7 @@ export default function App() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [calendarRecords, setCalendarRecords] = useState([]);
+  const [selectedCalendarRecordId, setSelectedCalendarRecordId] = useState(null);
   const [isLoadingCalendar, setIsLoadingCalendar] = useState(false);
   const [calendarError, setCalendarError] = useState(null);
   const [historyRecords, setHistoryRecords] = useState([]);
@@ -463,6 +464,7 @@ export default function App() {
   };
 
     const handleOpenCalendar = async () => {
+    setSelectedCalendarRecordId(null);
     setShowHistory(false);
     setShowCalendar(true);
     setShowSettings(false);
@@ -470,6 +472,7 @@ export default function App() {
   };
 
   const handleOpenTemplates = () => {
+    setSelectedCalendarRecordId(null);
     setShowHistory(false);
     setShowCalendar(false);
     setShowSettings(false);
@@ -479,6 +482,7 @@ export default function App() {
   };
 
   const handleOpenSettings = () => {
+    setSelectedCalendarRecordId(null);
     setShowHistory(false);
     setShowCalendar(false);
     setShowSettings(true);
@@ -872,6 +876,7 @@ export default function App() {
     (generatedImageBase64 ? `data:${generatedImageMimeType};base64,${generatedImageBase64}` : null);
 
   const selectedHistoryRecord = historyRecords.find((record) => record.id === selectedHistoryId) || null;
+  const selectedCalendarRecord = calendarRecords.find((record) => record.id === selectedCalendarRecordId) || null;
 
   return (
     <div className="h-[100vh] w-full bg-[#F5F5F7] flex justify-center overflow-hidden">
@@ -970,6 +975,35 @@ export default function App() {
               )}
             </section>
           ) : showCalendar ? (
+            selectedCalendarRecord ? (
+              <section className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl border border-neutral-200 shadow-2xs overflow-hidden">
+                <div className="shrink-0 flex items-center gap-3 p-3 border-b border-neutral-200">
+                  <button type="button" onClick={() => setSelectedCalendarRecordId(null)} className="w-9 h-9 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 inline-flex items-center justify-center" aria-label="Kembali ke Calendar">
+                    <ArrowLeft className="w-4 h-4" />
+                  </button>
+                  <div className="min-w-0">
+                    <h2 className="text-sm font-semibold text-black">Detail Post</h2>
+                    <p className="text-[11px] text-neutral-500">{String(selectedCalendarRecord.date || '').slice(0, 10)} · {String(selectedCalendarRecord.time || '').slice(0, 5)} MYT</p>
+                  </div>
+                </div>
+                <div className="flex-1 min-h-0 overflow-y-auto">
+                  <div className="w-full aspect-[4/5] bg-neutral-100">
+                    {selectedCalendarRecord.image_url ? (
+                      <img src={selectedCalendarRecord.image_url} alt="Scheduled post" className="w-full h-full object-contain" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xs text-neutral-400">No image available</div>
+                    )}
+                  </div>
+                  <div className="p-4 space-y-3">
+                    <div className="flex items-center gap-3 text-neutral-800"><span className="text-lg leading-none">♡</span><span className="text-lg leading-none">○</span><span className="text-lg leading-none">↗</span></div>
+                    <p className="text-xs leading-relaxed text-neutral-800 whitespace-pre-wrap break-words"><span className="font-semibold">@appletheexchangetrx </span>{serializeFieldForEditor(selectedCalendarRecord.caption) || 'No caption'}</p>
+                  </div>
+                </div>
+                <div className="shrink-0 border-t border-neutral-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+                  <button type="button" onClick={() => { const caption = serializeFieldForEditor(selectedCalendarRecord.caption); if (caption) { const copied = copyTextToClipboard(caption); showToast(copied ? "success" : "error", copied ? "Caption berhasil disalin." : "Tidak dapat menyalin caption."); } }} disabled={!selectedCalendarRecord.caption} className="w-full h-11 rounded-xl bg-black text-white text-xs font-semibold disabled:opacity-40">Copy Caption</button>
+                </div>
+              </section>
+            ) : (
             <section className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl border border-neutral-200 p-3 shadow-2xs">
               <div className="shrink-0 flex items-center justify-between gap-3 pb-3 border-b border-neutral-200">
                 <div>
@@ -1021,7 +1055,7 @@ export default function App() {
                         {CALENDAR_SLOTS.map((slot) => {
                           const record = calendarRecords.find((item) => String(item.date || '').slice(0, 10) === date && String(item.time || '').slice(0, 5) === slot);
                           return (
-                            <article key={slot} className="relative aspect-square min-w-0 overflow-hidden bg-neutral-100">
+                            <button key={slot} type="button" onClick={() => record && setSelectedCalendarRecordId(record.id)} disabled={!record} aria-label={record ? "Buka post " + date + " " + slot : "Slot kosong " + date + " " + slot} className="relative aspect-square min-w-0 overflow-hidden bg-neutral-100 text-left disabled:cursor-default">
                               {record?.image_url ? (
                                 <img
                                   src={record.image_url}
@@ -1043,7 +1077,7 @@ export default function App() {
                                   <Check className="w-2.5 h-2.5 text-white" />
                                 </div>
                               )}
-                            </article>
+                            </button>
                           );
                         })}
                       </div>
@@ -1052,6 +1086,7 @@ export default function App() {
                 })}
               </div>
             </section>
+            )
           ) : showSettings ? (
             <section className="flex-1 min-h-0 overflow-y-auto bg-white rounded-2xl border border-neutral-200 p-4 space-y-4 shadow-2xs">
               <div>
@@ -1464,7 +1499,7 @@ export default function App() {
           </div>
         )}
 
-        {!selectedHistoryRecord && (
+        {!selectedHistoryRecord && !selectedCalendarRecord && (
         <nav className="shrink-0 h-16 border-t border-neutral-200 bg-white px-2 flex items-center justify-around z-20" aria-label="Main navigation">
           <button
             type="button"
