@@ -200,6 +200,11 @@ export default function App() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [historyError, setHistoryError] = useState(null);
   const [selectedHistoryId, setSelectedHistoryId] = useState(null);
+  const [scheduleRecordId, setScheduleRecordId] = useState(null);
+  const [scheduleDate, setScheduleDate] = useState(() =>
+    new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur' }).format(new Date())
+  );
+  const [isScheduling, setIsScheduling] = useState(false);
 
   // Logo upload state
   const [logoFile, setLogoFile] = useState(null);
@@ -339,6 +344,70 @@ export default function App() {
       setCalendarError(err.message || 'Failed to load calendar.');
     } finally {
       setIsLoadingCalendar(false);
+    }
+  };
+
+  const handleScheduleRecord = async (record) => {
+    if (!record?.image_url || !record?.caption) {
+      showToast('error', 'Image URL or caption is missing for this product.');
+      return;
+    }
+    if (!scheduleDate) {
+      showToast('error', 'Please select a schedule date.');
+      return;
+    }
+
+    setIsScheduling(true);
+    try {
+      const existingResponse = await fetch(
+        `${CRUD_MAKE_WEBHOOK_URL}/get`,
+        { method: 'GET', headers: getEdgeHeaders(false) }
+      );
+      const existingPayload = await existingResponse.json().catch(() => ({}));
+      if (!existingResponse.ok || existingPayload?.success === false || !Array.isArray(existingPayload?.data)) {
+        throw new Error(existingPayload?.error || 'Unable to check existing calendar slots.');
+      }
+
+      const existingTimes = new Set(
+        existingPayload.data
+          .filter((item) => item.date === scheduleDate)
+          .map((item) => String(item.time || '').slice(0, 5))
+      );
+      const availableSlots = CALENDAR_SLOTS.filter((slot) => !existingTimes.has(slot));
+      if (availableSlots.length === 0) {
+        showToast('error', 'All three schedule slots are already occupied for this date.');
+        return;
+      }
+
+      const createdSlots = [];
+      for (const slot of availableSlots) {
+        const response = await fetch(`${CRUD_MAKE_WEBHOOK_URL}/post`, {
+          method: 'POST',
+          headers: { ...getEdgeHeaders(true) },
+          body: JSON.stringify({
+            image_url: record.image_url,
+            caption: record.caption,
+            date: scheduleDate,
+            time: slot
+          })
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok || payload?.success === false) {
+          throw new Error(payload?.error || `Failed to schedule slot ${slot}.`);
+        }
+        createdSlots.push(slot);
+      }
+
+      showToast(
+        'success',
+        `Scheduled ${createdSlots.length} slot(s): ${createdSlots.join(', ')}.`
+      );
+      setScheduleRecordId(null);
+      await loadCalendar();
+    } catch (err) {
+      showToast('error', err.message || 'Failed to schedule this product.');
+    } finally {
+      setIsScheduling(false);
     }
   };
 
@@ -831,7 +900,7 @@ export default function App() {
                       const productName = serializeFieldForEditor(record.product) || 'Untitled Product';
                       const captionText = serializeFieldForEditor(record.caption) || 'No caption';
                       return (
-                        <article key={record.id} className="min-w-0">
+                        <article key={record.id} className="min-w-0 space-y-2">
                           <button
                             type="button"
                             onClick={() => setSelectedHistoryId(isCaptionVisible ? null : record.id)}
@@ -868,6 +937,51 @@ export default function App() {
                               </div>
                             )}
                           </button>
+                          {scheduleRecordId === record.id ? (
+                            <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-2 space-y-2">
+                              <label className="block text-[10px] font-medium text-neutral-600">Schedule date</label>
+                              <input
+                                type="date"
+                                value={scheduleDate}
+                                min={new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur' }).format(new Date())}
+                                onChange={(event) => setScheduleDate(event.target.value)}
+                                disabled={isScheduling}
+                                className="w-full h-9 rounded-lg border border-neutral-200 bg-white px-2 text-[11px] text-neutral-800"
+                              />
+                              <p className="text-[9px] text-neutral-500">Slots: 09:00 · 13:00 · 19:00 (MYT)</p>
+                              <div className="flex gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleScheduleRecord(record)}
+                                  disabled={isScheduling || !record.image_url || !record.caption}
+                                  className="flex-1 h-8 rounded-lg bg-black text-white text-[10px] font-semibold disabled:opacity-50 inline-flex items-center justify-center gap-1"
+                                >
+                                  {isScheduling ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+                                  {isScheduling ? 'Scheduling' : 'Confirm'}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setScheduleRecordId(null)}
+                                  disabled={isScheduling}
+                                  className="h-8 px-2 rounded-lg border border-neutral-200 bg-white text-[10px] text-neutral-600"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setScheduleDate(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur' }).format(new Date()));
+                                setScheduleRecordId(record.id);
+                              }}
+                              disabled={!record.image_url || !record.caption || isScheduling}
+                              className="w-full h-8 rounded-lg border border-neutral-200 bg-white text-[10px] font-semibold text-neutral-700 disabled:opacity-40"
+                            >
+                              Jadwalkan
+                            </button>
+                          )}
                         </article>
                       );
                     })}
