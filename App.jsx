@@ -349,6 +349,8 @@ export default function App() {
     setShowHistory(false);
     setShowCalendar(false);
     setSelectedHistoryId(null);
+    setSelectedRecordId(null);
+    setSelectedRecord(null);
   };
 
   // Handle Logo File Selection
