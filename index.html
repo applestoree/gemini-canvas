@@ -90,6 +90,10 @@
       generationError: null,
       generatedImageBase64: null,
       generatedImageMimeType: 'image/png',
+      generatedCaption: '',
+      isGeneratingCaption: false,
+      captionError: null,
+      captionCopied: false,
       isUploading: false,
       uploadError: null,
       uploadedImageUrl: null,
@@ -636,6 +640,9 @@ RULES:
         state.selectedRecord = null;
         state.generatedImageBase64 = null;
         state.uploadedImageUrl = null;
+        state.generatedCaption = '';
+        state.captionError = null;
+        state.captionCopied = false;
         state.isImageUrlSaved = false;
         state.generationError = null;
         state.uploadError = null;
@@ -687,7 +694,7 @@ RULES:
       await executeGeneration(extracted, recordItem.id);
     }
 
-    async function saveImageUrlToPromptRecord(recordId, imageUrl) {
+    async function saveImageUrlToPromptRecord(recordId, imageUrl, caption = state.generatedCaption) {
       if (!recordId || !imageUrl) return;
       state.isSavingUrl = true;
       state.saveUrlError = null;
@@ -700,7 +707,7 @@ RULES:
           {
             method: 'PATCH',
             headers: getEdgeHeaders(true),
-            body: JSON.stringify({ image_url: imageUrl, is_ready: true })
+            body: JSON.stringify({ image_url: imageUrl, caption, is_ready: true })
           }
         );
 
@@ -722,12 +729,12 @@ RULES:
 
         state.isImageUrlSaved = true;
         if (state.selectedRecord && state.selectedRecord.id === recordId) {
-          state.selectedRecord = { ...state.selectedRecord, ...payload, image_url: imageUrl, is_ready: true };
+          state.selectedRecord = { ...state.selectedRecord, ...payload, image_url: imageUrl, caption, is_ready: true };
         }
         state.records = state.records.map((item) =>
-          item.id === recordId ? { ...item, ...payload, image_url: imageUrl, is_ready: true } : item
+          item.id === recordId ? { ...item, ...payload, image_url: imageUrl, caption, is_ready: true } : item
         );
-        showToast('success', 'image_url saved to prompt record.');
+        showToast('success', 'Image URL and caption saved to prompt record.');
       } catch (err) {
         state.saveUrlError = err.message || 'Failed to save image_url to database.';
       } finally {
@@ -736,6 +743,31 @@ RULES:
       }
     }
 
+    async function generateCaptionFromImage(base64Data, mimeType) {
+      state.isGeneratingCaption = true; state.captionError = null; state.generatedCaption = ''; state.captionCopied = false; render();
+      try {
+        const vars = state.variables;
+        const instruction = 'You are a professional social media copywriter for Apple The Exchange TRX.\n\n' +
+          'Write one polished Instagram caption in Bahasa Melayu Malaysia based on the supplied generated advertisement image and product information.\n\n' +
+          'PRODUCT:\n' + (vars.product || 'Apple product') + '\n\nHEADLINE:\n' + (vars.headline || '') + '\n\nSUBHEADLINE:\n' + (vars.subheadline || '') + '\n\nFEATURES:\n' + (vars.feature_items || '') + '\n\n' +
+          'STRICT RULES:\n- Match the supplied image and product information accurately.\n- Do not invent specifications, features, prices, discounts, availability, or promotional claims.\n- Do not include any ID, reference number, or emoji.\n- Use natural, engaging Bahasa Melayu Malaysia.\n- Include a tasteful call to action to visit Apple The Exchange TRX.\n- Add 4 to 7 relevant hashtags, including #AppleTheExchangeTRX.\n- Return only the caption text.';
+        const apiKey = '';
+        const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=' + apiKey;
+        const response = await fetchWithBackoff(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: instruction }, { inlineData: { mimeType: mimeType, data: base64Data } }] }], generationConfig: { temperature: 0.7, maxOutputTokens: 1200 } }) });
+        const result = await response.json().catch(() => null);
+        if (!response.ok || !result) throw new Error(result?.error?.message || 'Gemini Caption Generation failed (HTTP ' + response.status + ').');
+        const caption = result?.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('').trim();
+        if (!caption) throw new Error('Gemini did not return a caption.');
+        state.generatedCaption = caption;
+      } catch (err) { state.captionError = err.message || 'Caption generation failed.'; throw err; }
+      finally { state.isGeneratingCaption = false; render(); }
+    }
+
+    function handleCopyCaption() {
+      if (!state.generatedCaption) return;
+      const copied = copyTextToClipboard(state.generatedCaption); state.captionCopied = copied;
+      showToast(copied ? 'success' : 'error', copied ? 'Caption copied.' : 'Unable to copy caption.'); render();
+    }
     async function uploadGeneratedImageToEdge(base64Data, mimeType, recordId) {
       state.isUploading = true;
       state.uploadError = null;
@@ -899,6 +931,7 @@ RULES:
         state.isGenerating = false;
         render();
 
+        await generateCaptionFromImage(b64, mime);
         await uploadGeneratedImageToEdge(b64, mime, recordId);
       } catch (err) {
         state.isGenerating = false;
@@ -1456,6 +1489,14 @@ RULES:
           }
 
           ${
+            state.generatedCaption || state.isGeneratingCaption || state.captionError
+              ? `<div class="p-3 rounded-xl bg-white border border-neutral-200 space-y-2">
+                  <div class="flex items-center justify-between"><span class="text-[11px] font-semibold text-neutral-800">AI Generated Caption</span>${state.isGeneratingCaption ? '<span class="text-[10px] text-neutral-500">Creating caption...</span>' : ''}</div>
+                  ${state.captionError ? `<p class="text-xs text-red-600">${escapeHtml(state.captionError)}</p>` : ''}
+                  ${state.generatedCaption ? `<textarea data-field="generated-caption" rows="7" class="w-full rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-xs leading-relaxed text-neutral-800 resize-y">${escapeHtml(state.generatedCaption)}</textarea><button type="button" data-action="copy-caption" class="w-full h-9 rounded-xl bg-black text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5"><i data-lucide="${state.captionCopied ? 'check' : 'copy'}" class="w-3.5 h-3.5"></i><span>${state.captionCopied ? 'Caption Copied' : 'Copy Caption'}</span></button>` : ''}
+                </div>` : ''
+          }
+          ${
             state.uploadedImageUrl
               ? `<div class="p-3 rounded-xl bg-neutral-50 border border-neutral-200 space-y-2">
                   <div class="flex items-center justify-between">
@@ -1719,6 +1760,10 @@ RULES:
       }
     }
 
+    document.addEventListener('input', (e) => {
+      if (e.target?.dataset?.field === 'generated-caption') state.generatedCaption = e.target.value;
+    });
+
     document.addEventListener('click', (e) => {
       const btn = e.target.closest('[data-action]');
       if (!btn) return;
@@ -1781,8 +1826,12 @@ RULES:
 
         case 'retry-save-url':
           if (state.selectedRecord?.id && state.uploadedImageUrl && !state.isSavingUrl) {
-            saveImageUrlToPromptRecord(state.selectedRecord.id, state.uploadedImageUrl);
+            saveImageUrlToPromptRecord(state.selectedRecord.id, state.uploadedImageUrl, state.generatedCaption);
           }
+          break;
+
+        case 'copy-caption':
+          handleCopyCaption();
           break;
 
         case 'copy-image-url':
