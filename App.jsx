@@ -844,6 +844,8 @@ export default function App() {
     uploadedImageUrl ||
     (generatedImageBase64 ? `data:${generatedImageMimeType};base64,${generatedImageBase64}` : null);
 
+  const selectedHistoryRecord = historyRecords.find((record) => record.id === selectedHistoryId) || null;
+
   return (
     <div className="h-[100vh] w-full bg-[#F5F5F7] flex justify-center overflow-hidden">
       <div className="w-full max-w-[500px] h-[100vh] bg-white flex flex-col border-x border-neutral-200 overflow-hidden relative">
@@ -872,199 +874,106 @@ export default function App() {
            ============================================================ */}
         <main className={`flex-1 min-h-0 overflow-x-hidden bg-[#F5F5F7] p-0 flex flex-col ${showHistory || showCalendar || selectedRecordId ? "overflow-y-auto" : "overflow-hidden"}`}>
           {showHistory ? (
-            <section className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl border border-neutral-200 p-3 shadow-2xs">
-              <div className="shrink-0 flex items-center justify-between gap-3 pb-3 border-b border-neutral-200">
-                <div className="min-w-0">
-                  <h2 className="text-sm font-semibold text-black">Jadwal</h2>
-                  <p className="text-[11px] text-neutral-500">
-                    {historyRecords.length} completed products
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowHistory(false);
-                    setSelectedHistoryId(null);
-                  }}
-                  className="h-8 px-3 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-xs font-medium text-neutral-700 inline-flex items-center gap-1.5 shrink-0"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  Back
-                </button>
-              </div>
-
-              <div className="flex-1 min-h-0 overflow-y-auto pt-3">
-                {isLoadingHistory && (
-                  <div className="py-8 flex items-center justify-center gap-2 text-xs text-neutral-500">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Loading schedule...
-                  </div>
-                )}
-                {!isLoadingHistory && historyError && (
-                  <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800 space-y-2">
-                    <p>{historyError}</p>
-                    <button
-                      type="button"
-                      onClick={loadHistory}
-                      className="h-8 px-3 rounded-lg bg-black text-white"
-                    >
-                      Retry
+            <section className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl border border-neutral-200 shadow-2xs overflow-hidden">
+              {selectedHistoryRecord ? (
+                <>
+                  <div className="shrink-0 flex items-center gap-3 p-3 border-b border-neutral-200">
+                    <button type="button" onClick={() => { setSelectedHistoryId(null); setScheduleRecordId(null); }} className="w-9 h-9 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 inline-flex items-center justify-center" aria-label="Kembali ke daftar Jadwal">
+                      <ArrowLeft className="w-4 h-4" />
                     </button>
+                    <div className="min-w-0 flex-1">
+                      <h2 className="text-sm font-semibold text-black">Detail Post</h2>
+                      <p className="text-[11px] text-neutral-500 truncate">{serializeFieldForEditor(selectedHistoryRecord.product) || 'Untitled Product'}</p>
+                    </div>
                   </div>
-                )}
-                {!isLoadingHistory && !historyError && historyRecords.length === 0 && (
-                  <div className="py-8 text-center text-xs text-neutral-500">
-                    No completed products found.
+                  <div className="flex-1 min-h-0 overflow-y-auto">
+                    <div className="flex items-center gap-2 px-3 py-3">
+                      <img src={logoPreviewUrl || DEFAULT_LOGO_URL} alt="Apple Store Malaysia" className="w-8 h-8 rounded-full object-cover border border-neutral-200" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold text-neutral-900">@appletheexchangetrx</p>
+                        <p className="text-[10px] text-neutral-500">{serializeFieldForEditor(selectedHistoryRecord.product) || 'Untitled Product'}</p>
+                      </div>
+                    </div>
+                    <div className="w-full aspect-[4/5] bg-neutral-100">
+                      {selectedHistoryRecord.image_url ? (
+                        <img src={selectedHistoryRecord.image_url} alt={serializeFieldForEditor(selectedHistoryRecord.product)} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-xs text-neutral-400">No image available</div>
+                      )}
+                    </div>
+                    <div className="p-3 space-y-3">
+                      <div className="flex items-center gap-3 text-neutral-800"><span className="text-lg leading-none">♡</span><span className="text-lg leading-none">○</span><span className="text-lg leading-none">↗</span></div>
+                      <p className="text-xs leading-relaxed text-neutral-800 whitespace-pre-wrap break-words"><span className="font-semibold">@appletheexchangetrx </span>{serializeFieldForEditor(selectedHistoryRecord.caption) || 'No caption'}</p>
+                      {scheduleRecordId === selectedHistoryRecord.id && (
+                        <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3 space-y-2">
+                          <label className="block text-[10px] font-semibold text-neutral-600">Tanggal jadwal</label>
+                          <input type="date" value={scheduleDate} min={new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur' }).format(new Date())} onChange={(event) => { const nextDate = event.target.value; setScheduleDate(nextDate); loadScheduleAvailability(nextDate); }} disabled={isScheduling} className="w-full h-10 rounded-lg border border-neutral-200 bg-white px-3 text-xs text-neutral-800" />
+                          <div className="space-y-2">
+                            <p className="text-[10px] font-semibold text-neutral-600">Pilih slot waktu (MYT)</p>
+                            {isLoadingScheduleSlots ? (
+                              <div className="flex items-center gap-2 py-2 text-[10px] text-neutral-500"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Memeriksa jadwal yang sudah ada...</div>
+                            ) : (
+                              <div className="grid grid-cols-3 gap-2">
+                                {CALENDAR_SLOTS.map((slot) => {
+                                  const isAvailable = availableScheduleSlots.includes(slot);
+                                  const isSelected = selectedScheduleSlot === slot;
+                                  return (
+                                    <button key={slot} type="button" disabled={!isAvailable || isScheduling} onClick={() => setSelectedScheduleSlot(slot)} className={(!isAvailable ? 'h-9 rounded-lg border text-xs font-semibold transition bg-neutral-100 border-neutral-100 text-neutral-300 line-through' : isSelected ? 'h-9 rounded-lg border text-xs font-semibold transition bg-black border-black text-white' : 'h-9 rounded-lg border text-xs font-semibold transition bg-white border-neutral-200 text-neutral-700') + ' disabled:cursor-not-allowed'}>
+                                      {slot}{!isAvailable ? ' · Penuh' : ''}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            {!isLoadingScheduleSlots && availableScheduleSlots.length === 0 && <p className="text-[10px] text-amber-700 bg-amber-50 rounded-lg p-2">Semua slot pada tanggal ini sudah terisi.</p>}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
-                {!isLoadingHistory && !historyError && historyRecords.length > 0 && (
-                  <div className="space-y-2">
-                    {historyRecords.map((record) => {
-                      const isExpanded = selectedHistoryId === record.id;
-                      const isScheduleOpen = scheduleRecordId === record.id;
-                      const productName = serializeFieldForEditor(record.product) || 'Untitled Product';
-                      const captionText = serializeFieldForEditor(record.caption) || 'No caption';
-                      return (
-                        <article key={record.id} className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedHistoryId(isExpanded ? null : record.id);
-                              setScheduleRecordId(null);
-                            }}
-                            aria-expanded={isExpanded}
-                            className="w-full flex items-center gap-3 p-2.5 text-left"
-                          >
-                            <div className="w-[62px] aspect-[4/5] shrink-0 overflow-hidden rounded-lg bg-neutral-100">
-                              {record.image_url ? (
-                                <img src={record.image_url} alt={productName} className="w-full h-full object-cover" loading="lazy" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-[9px] text-neutral-400">No image</div>
-                              )}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-xs font-semibold text-neutral-900 truncate">{productName}</p>
-                              <p className="mt-1 text-[10px] text-neutral-500 line-clamp-2">{captionText}</p>
-                              <p className="mt-2 text-[10px] font-medium text-neutral-700">{isExpanded ? 'Tutup postingan' : 'Lihat postingan'}</p>
-                            </div>
-                            <ChevronDown className={`w-4 h-4 shrink-0 text-neutral-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                          </button>
-
-                          {isExpanded && (
-                            <div className="border-t border-neutral-100">
-                              <div className="flex items-center gap-2 px-3 py-3">
-                                <img src={logoPreviewUrl || DEFAULT_LOGO_URL} alt="Apple Store Malaysia" className="w-8 h-8 rounded-full object-cover border border-neutral-200" />
-                                <div className="min-w-0">
-                                  <p className="text-xs font-semibold text-neutral-900">@appletheexchangetrx</p>
-                                  <p className="text-[10px] text-neutral-500">{productName}</p>
-                                </div>
-                              </div>
-                              <div className="w-full aspect-[4/5] bg-neutral-100">
-                                {record.image_url ? (
-                                  <img src={record.image_url} alt={productName} className="w-full h-full object-cover" loading="lazy" />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center text-xs text-neutral-400">No image available</div>
-                                )}
-                              </div>
-                              <div className="p-3 space-y-3">
-                                <div className="flex items-center gap-3 text-neutral-800">
-                                  <span className="text-lg leading-none">♡</span>
-                                  <span className="text-lg leading-none">○</span>
-                                  <span className="text-lg leading-none">↗</span>
-                                </div>
-                                <p className="text-xs leading-relaxed text-neutral-800 whitespace-pre-wrap break-words">
-                                  <span className="font-semibold">@appletheexchangetrx </span>{captionText}
-                                </p>
-                                {isScheduleOpen ? (
-                                  <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3 space-y-2">
-                                    <label className="block text-[10px] font-semibold text-neutral-600">Tanggal jadwal</label>
-                                    <input
-                                      type="date"
-                                      value={scheduleDate}
-                                      min={new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur' }).format(new Date())}
-                                      onChange={(event) => {
-                                        const nextDate = event.target.value;
-                                        setScheduleDate(nextDate);
-                                        loadScheduleAvailability(nextDate);
-                                      }}
-                                      disabled={isScheduling}
-                                      className="w-full h-10 rounded-lg border border-neutral-200 bg-white px-3 text-xs text-neutral-800"
-                                    />
-                                    <div className="space-y-2">
-                                      <p className="text-[10px] font-semibold text-neutral-600">Pilih slot waktu (MYT)</p>
-                                      {isLoadingScheduleSlots ? (
-                                        <div className="flex items-center gap-2 py-2 text-[10px] text-neutral-500">
-                                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Memeriksa jadwal yang sudah ada...
-                                        </div>
-                                      ) : availableScheduleSlots.length > 0 ? (
-                                        <div className="grid grid-cols-3 gap-2">
-                                          {CALENDAR_SLOTS.map((slot) => {
-                                            const isAvailable = availableScheduleSlots.includes(slot);
-                                            const isSelected = selectedScheduleSlot === slot;
-                                            return (
-                                              <button
-                                                key={slot}
-                                                type="button"
-                                                disabled={!isAvailable || isScheduling}
-                                                onClick={() => setSelectedScheduleSlot(slot)}
-                                                className={`h-9 rounded-lg border text-xs font-semibold transition ${!isAvailable ? 'bg-neutral-100 border-neutral-100 text-neutral-300 line-through' : isSelected ? 'bg-black border-black text-white' : 'bg-white border-neutral-200 text-neutral-700'} disabled:cursor-not-allowed`}
-                                              >
-                                                {slot}
-                                                {!isAvailable ? ' · Penuh' : ''}
-                                              </button>
-                                            );
-                                          })}
-                                        </div>
-                                      ) : (
-                                        <p className="text-[10px] text-amber-700 bg-amber-50 rounded-lg p-2">
-                                          Semua slot pada tanggal ini sudah terisi.
-                                        </p>
-                                      )}
-                                    </div>
-                                    <div className="flex gap-2">
-                                      <button
-                                        type="button"
-                                        onClick={() => handleScheduleRecord(record)}
-                                        disabled={isScheduling || isLoadingScheduleSlots || !selectedScheduleSlot || !record.image_url || !record.caption}
-                                        className="flex-1 h-9 rounded-lg bg-black text-white text-xs font-semibold disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
-                                      >
-                                        {isScheduling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-                                        {isScheduling ? 'Menjadwalkan...' : 'Konfirmasi Jadwal'}
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => setScheduleRecordId(null)}
-                                        disabled={isScheduling}
-                                        className="h-9 px-3 rounded-lg border border-neutral-200 bg-white text-xs text-neutral-600"
-                                      >
-                                        Batal
-                                      </button>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur' }).format(new Date());
-                                      setScheduleDate(today);
-                                      setScheduleRecordId(record.id);
-                                      loadScheduleAvailability(today);
-                                    }}
-                                    disabled={!record.image_url || !record.caption || isScheduling}
-                                    className="w-full h-10 rounded-lg bg-black text-white text-xs font-semibold disabled:opacity-40"
-                                  >
-                                    Jadwalkan
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </article>
-                      );
-                    })}
+                  <div className="shrink-0 border-t border-neutral-200 bg-white p-3">
+                    {scheduleRecordId === selectedHistoryRecord.id ? (
+                      <div className="flex gap-2">
+                        <button type="button" onClick={() => handleScheduleRecord(selectedHistoryRecord)} disabled={isScheduling || isLoadingScheduleSlots || !selectedScheduleSlot || !selectedHistoryRecord.image_url || !selectedHistoryRecord.caption} className="flex-1 h-11 rounded-xl bg-black text-white text-xs font-semibold disabled:opacity-50 inline-flex items-center justify-center gap-1.5">
+                          {isScheduling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}{isScheduling ? 'Menjadwalkan...' : 'Konfirmasi Jadwal'}
+                        </button>
+                        <button type="button" onClick={() => { setScheduleRecordId(null); setSelectedScheduleSlot(''); }} disabled={isScheduling} className="h-11 px-4 rounded-xl border border-neutral-200 bg-white text-xs font-medium text-neutral-600">Batal</button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={() => { const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur' }).format(new Date()); setScheduleDate(today); setScheduleRecordId(selectedHistoryRecord.id); loadScheduleAvailability(today); }} disabled={!selectedHistoryRecord.image_url || !selectedHistoryRecord.caption || isScheduling} className="w-full h-11 rounded-xl bg-black text-white text-xs font-semibold disabled:opacity-40">Jadwalkan</button>
+                    )}
                   </div>
-                )}
-              </div>
+                </>
+              ) : (
+                <>
+                  <div className="shrink-0 flex items-center justify-between gap-3 p-3 border-b border-neutral-200">
+                    <div className="min-w-0"><h2 className="text-sm font-semibold text-black">Jadwal</h2><p className="text-[11px] text-neutral-500">{historyRecords.length} completed products</p></div>
+                    <button type="button" onClick={loadHistory} disabled={isLoadingHistory} className="h-8 px-3 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-xs font-medium text-neutral-700 inline-flex items-center gap-1.5 disabled:opacity-50"><RefreshCw className={isLoadingHistory ? 'w-3.5 h-3.5 animate-spin' : 'w-3.5 h-3.5'} />Refresh</button>
+                  </div>
+                  <div className="flex-1 min-h-0 overflow-y-auto p-3">
+                    {isLoadingHistory && <div className="py-8 flex items-center justify-center gap-2 text-xs text-neutral-500"><Loader2 className="w-4 h-4 animate-spin" />Loading schedule...</div>}
+                    {!isLoadingHistory && historyError && <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800 space-y-2"><p>{historyError}</p><button type="button" onClick={loadHistory} className="h-8 px-3 rounded-lg bg-black text-white">Retry</button></div>}
+                    {!isLoadingHistory && !historyError && historyRecords.length === 0 && <div className="py-8 text-center text-xs text-neutral-500">No completed products found.</div>}
+                    {!isLoadingHistory && !historyError && historyRecords.length > 0 && (
+                      <div className="space-y-2">
+                        {historyRecords.map((record) => {
+                          const productName = serializeFieldForEditor(record.product) || 'Untitled Product';
+                          const captionText = serializeFieldForEditor(record.caption) || 'No caption';
+                          return (
+                            <button key={record.id} type="button" onClick={() => setSelectedHistoryId(record.id)} className="w-full flex items-center gap-3 p-2.5 text-left rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50">
+                              <div className="w-[62px] aspect-[4/5] shrink-0 overflow-hidden rounded-lg bg-neutral-100">
+                                {record.image_url ? <img src={record.image_url} alt={productName} className="w-full h-full object-cover" loading="lazy" /> : <div className="w-full h-full flex items-center justify-center text-[9px] text-neutral-400">No image</div>}
+                              </div>
+                              <div className="min-w-0 flex-1"><p className="text-xs font-semibold text-neutral-900 truncate">{productName}</p><p className="mt-1 text-[10px] text-neutral-500 line-clamp-2">{captionText}</p><p className="mt-2 text-[10px] font-medium text-neutral-700">Lihat detail post</p></div>
+                              <ChevronDown className="w-4 h-4 shrink-0 -rotate-90 text-neutral-400" />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </section>
           ) : showCalendar ? (
             <section className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl border border-neutral-200 p-3 shadow-2xs">
@@ -1511,6 +1420,7 @@ export default function App() {
           )}
         </main>
 
+        {!selectedHistoryRecord && (
         <nav className="shrink-0 h-16 border-t border-neutral-200 bg-white px-2 flex items-center justify-around z-20" aria-label="Main navigation">
           <button
             type="button"
@@ -1551,6 +1461,7 @@ export default function App() {
             <span>Settings</span>
           </button>
         </nav>
+        )}
 
         {/* Fullscreen Image Preview Modal */}
         {isFullViewOpen && activePreviewSrc && (
