@@ -894,93 +894,110 @@ export default function App() {
                   </div>
                 )}
                 {!isLoadingHistory && !historyError && historyRecords.length > 0 && (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
                     {historyRecords.map((record) => {
-                      const isCaptionVisible = selectedHistoryId === record.id;
+                      const isExpanded = selectedHistoryId === record.id;
+                      const isScheduleOpen = scheduleRecordId === record.id;
                       const productName = serializeFieldForEditor(record.product) || 'Untitled Product';
                       const captionText = serializeFieldForEditor(record.caption) || 'No caption';
                       return (
-                        <article key={record.id} className="min-w-0 space-y-2">
+                        <article key={record.id} className="overflow-hidden rounded-xl border border-neutral-200 bg-white">
                           <button
                             type="button"
-                            onClick={() => setSelectedHistoryId(isCaptionVisible ? null : record.id)}
-                            aria-expanded={isCaptionVisible}
-                            aria-label={`${productName}. ${isCaptionVisible ? 'Hide' : 'Show'} caption`}
-                            className="relative block w-full aspect-[4/5] overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 text-left"
+                            onClick={() => {
+                              setSelectedHistoryId(isExpanded ? null : record.id);
+                              setScheduleRecordId(null);
+                            }}
+                            aria-expanded={isExpanded}
+                            className="w-full flex items-center gap-3 p-2.5 text-left"
                           >
-                            {record.image_url ? (
-                              <img
-                                src={record.image_url}
-                                alt={productName}
-                                className="absolute inset-0 w-full h-full object-cover"
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div className="absolute inset-0 flex items-center justify-center px-2 text-center text-[10px] text-neutral-400">
-                                No image available
-                              </div>
-                            )}
-                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-2.5 pt-8 pb-2.5">
-                              <p className="text-[11px] leading-tight font-semibold text-white line-clamp-2">
-                                {productName}
-                              </p>
+                            <div className="w-[62px] aspect-[4/5] shrink-0 overflow-hidden rounded-lg bg-neutral-100">
+                              {record.image_url ? (
+                                <img src={record.image_url} alt={productName} className="w-full h-full object-cover" loading="lazy" />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-[9px] text-neutral-400">No image</div>
+                              )}
                             </div>
-                            {isCaptionVisible && (
-                              <div className="absolute inset-0 flex flex-col justify-end bg-black/85 p-2.5">
-                                <p className="text-[9px] font-semibold uppercase tracking-wide text-white/70 mb-1">
-                                  Caption
-                                </p>
-                                <p className="max-h-[72%] overflow-y-auto whitespace-pre-wrap break-words text-[10px] leading-relaxed text-white">
-                                  {captionText}
-                                </p>
-                                <p className="mt-2 text-[9px] text-white/60">Tap to close</p>
-                              </div>
-                            )}
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-semibold text-neutral-900 truncate">{productName}</p>
+                              <p className="mt-1 text-[10px] text-neutral-500 line-clamp-2">{captionText}</p>
+                              <p className="mt-2 text-[10px] font-medium text-neutral-700">{isExpanded ? 'Tutup postingan' : 'Lihat postingan'}</p>
+                            </div>
+                            <ChevronDown className={`w-4 h-4 shrink-0 text-neutral-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                           </button>
-                          {scheduleRecordId === record.id ? (
-                            <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-2 space-y-2">
-                              <label className="block text-[10px] font-medium text-neutral-600">Schedule date</label>
-                              <input
-                                type="date"
-                                value={scheduleDate}
-                                min={new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur' }).format(new Date())}
-                                onChange={(event) => setScheduleDate(event.target.value)}
-                                disabled={isScheduling}
-                                className="w-full h-9 rounded-lg border border-neutral-200 bg-white px-2 text-[11px] text-neutral-800"
-                              />
-                              <p className="text-[9px] text-neutral-500">Slots: 09:00 · 13:00 · 19:00 (MYT)</p>
-                              <div className="flex gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => handleScheduleRecord(record)}
-                                  disabled={isScheduling || !record.image_url || !record.caption}
-                                  className="flex-1 h-8 rounded-lg bg-black text-white text-[10px] font-semibold disabled:opacity-50 inline-flex items-center justify-center gap-1"
-                                >
-                                  {isScheduling ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-                                  {isScheduling ? 'Scheduling' : 'Confirm'}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setScheduleRecordId(null)}
-                                  disabled={isScheduling}
-                                  className="h-8 px-2 rounded-lg border border-neutral-200 bg-white text-[10px] text-neutral-600"
-                                >
-                                  Cancel
-                                </button>
+
+                          {isExpanded && (
+                            <div className="border-t border-neutral-100">
+                              <div className="flex items-center gap-2 px-3 py-3">
+                                <img src={logoPreviewUrl || DEFAULT_LOGO_URL} alt="Apple Store Malaysia" className="w-8 h-8 rounded-full object-cover border border-neutral-200" />
+                                <div className="min-w-0">
+                                  <p className="text-xs font-semibold text-neutral-900">@appletheexchangetrx</p>
+                                  <p className="text-[10px] text-neutral-500">{productName}</p>
+                                </div>
+                              </div>
+                              <div className="w-full aspect-[4/5] bg-neutral-100">
+                                {record.image_url ? (
+                                  <img src={record.image_url} alt={productName} className="w-full h-full object-cover" loading="lazy" />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center text-xs text-neutral-400">No image available</div>
+                                )}
+                              </div>
+                              <div className="p-3 space-y-3">
+                                <div className="flex items-center gap-3 text-neutral-800">
+                                  <span className="text-lg leading-none">♡</span>
+                                  <span className="text-lg leading-none">○</span>
+                                  <span className="text-lg leading-none">↗</span>
+                                </div>
+                                <p className="text-xs leading-relaxed text-neutral-800 whitespace-pre-wrap break-words">
+                                  <span className="font-semibold">@appletheexchangetrx </span>{captionText}
+                                </p>
+                                {isScheduleOpen ? (
+                                  <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3 space-y-2">
+                                    <label className="block text-[10px] font-semibold text-neutral-600">Tanggal jadwal</label>
+                                    <input
+                                      type="date"
+                                      value={scheduleDate}
+                                      min={new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur' }).format(new Date())}
+                                      onChange={(event) => setScheduleDate(event.target.value)}
+                                      disabled={isScheduling}
+                                      className="w-full h-10 rounded-lg border border-neutral-200 bg-white px-3 text-xs text-neutral-800"
+                                    />
+                                    <p className="text-[10px] text-neutral-500">Slot waktu: 09:00 · 13:00 · 19:00 (MYT)</p>
+                                    <div className="flex gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleScheduleRecord(record)}
+                                        disabled={isScheduling || !record.image_url || !record.caption}
+                                        className="flex-1 h-9 rounded-lg bg-black text-white text-xs font-semibold disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
+                                      >
+                                        {isScheduling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                                        {isScheduling ? 'Menjadwalkan...' : 'Konfirmasi Jadwal'}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setScheduleRecordId(null)}
+                                        disabled={isScheduling}
+                                        className="h-9 px-3 rounded-lg border border-neutral-200 bg-white text-xs text-neutral-600"
+                                      >
+                                        Batal
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setScheduleDate(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur' }).format(new Date()));
+                                      setScheduleRecordId(record.id);
+                                    }}
+                                    disabled={!record.image_url || !record.caption || isScheduling}
+                                    className="w-full h-10 rounded-lg bg-black text-white text-xs font-semibold disabled:opacity-40"
+                                  >
+                                    Jadwalkan
+                                  </button>
+                                )}
                               </div>
                             </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setScheduleDate(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur' }).format(new Date()));
-                                setScheduleRecordId(record.id);
-                              }}
-                              disabled={!record.image_url || !record.caption || isScheduling}
-                              className="w-full h-8 rounded-lg border border-neutral-200 bg-white text-[10px] font-semibold text-neutral-700 disabled:opacity-40"
-                            >
-                              Jadwalkan
-                            </button>
                           )}
                         </article>
                       );
