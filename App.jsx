@@ -777,7 +777,7 @@ export default function App() {
         {/* ============================================================
             B. MAIN CONTENT AREA (SIMPLIFIED & STREAMLINED)
            ============================================================ */}
-        <main className={`flex-1 min-h-0 overflow-x-hidden bg-[#F5F5F7] p-4 flex flex-col ${showHistory || showCalendar || selectedRecordId ? "overflow-y-auto" : "overflow-hidden"}`}>
+        <main className={`flex-1 min-h-0 overflow-x-hidden bg-[#F5F5F7] p-0 flex flex-col ${showHistory || showCalendar || selectedRecordId ? "overflow-y-auto" : "overflow-hidden"}`}>
           {showHistory ? (
             <section className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl border border-neutral-200 p-3 shadow-2xs">
               <div className="shrink-0 flex items-center justify-between gap-3 pb-3 border-b border-neutral-200">
