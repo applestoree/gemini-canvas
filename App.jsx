@@ -22,6 +22,7 @@ import {
   ArrowLeft,
   CalendarDays,
   LayoutGrid,
+  Settings,
 } from 'lucide-react';
 
 // Exact Edge Function Endpoints
@@ -191,6 +192,7 @@ export default function App() {
   const [showKeyConfig, setShowKeyConfig] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [calendarRecords, setCalendarRecords] = useState([]);
   const [isLoadingCalendar, setIsLoadingCalendar] = useState(false);
   const [calendarError, setCalendarError] = useState(null);
@@ -313,6 +315,7 @@ export default function App() {
   const handleOpenHistory = async () => {
     setShowHistory(true);
     setShowCalendar(false);
+    setShowSettings(false);
     await loadHistory();
   };
 
@@ -342,15 +345,23 @@ export default function App() {
   const handleOpenCalendar = async () => {
     setShowHistory(false);
     setShowCalendar(true);
+    setShowSettings(false);
     await loadCalendar();
   };
 
   const handleOpenTemplates = () => {
     setShowHistory(false);
     setShowCalendar(false);
+    setShowSettings(false);
     setSelectedHistoryId(null);
     setSelectedRecordId(null);
     setSelectedRecord(null);
+  };
+
+  const handleOpenSettings = () => {
+    setShowHistory(false);
+    setShowCalendar(false);
+    setShowSettings(true);
   };
 
   // Handle Logo File Selection
@@ -961,6 +972,57 @@ export default function App() {
                 })}
               </div>
             </section>
+          ) : showSettings ? (
+            <section className="flex-1 min-h-0 overflow-y-auto bg-white rounded-2xl border border-neutral-200 p-4 space-y-4 shadow-2xs">
+              <div>
+                <h2 className="text-sm font-semibold text-black">Settings</h2>
+                <p className="mt-1 text-[11px] text-neutral-500">
+                  Manage your brand assets and application preferences
+                </p>
+              </div>
+
+              <div className="rounded-xl border border-neutral-200 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <CloudUpload className="w-4 h-4 text-neutral-600" />
+                  <div>
+                    <h3 className="text-xs font-semibold text-black">Brand Logo</h3>
+                    <p className="text-[10px] text-neutral-500">Logo used when generating product advertisements</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="w-16 h-16 shrink-0 rounded-xl border border-neutral-200 bg-neutral-50 overflow-hidden flex items-center justify-center">
+                    {logoPreviewUrl ? (
+                      <img src={logoPreviewUrl} alt="Brand logo preview" className="w-full h-full object-contain" />
+                    ) : (
+                      <CloudUpload className="w-5 h-5 text-neutral-400" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <p className="text-[11px] text-neutral-600 truncate">
+                      {logoFile ? logoFile.name : 'Default brand logo'}
+                    </p>
+                    <label
+                      htmlFor="logo-upload-input"
+                      className="inline-flex h-9 px-3 items-center justify-center gap-1.5 rounded-lg bg-black text-white text-[11px] font-medium cursor-pointer hover:bg-neutral-800"
+                    >
+                      <CloudUpload className="w-3.5 h-3.5" />
+                      Upload Logo
+                    </label>
+                    <input
+                      id="logo-upload-input"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoChange}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
+                <p className="text-[10px] leading-relaxed text-neutral-400">
+                  The selected logo is used for image generation in this app session.
+                </p>
+              </div>
+            </section>
           ) : (
             <>
           {/* Template Selection Cards: fill available height and hide after selection */}
@@ -977,24 +1039,6 @@ export default function App() {
                 </p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <label
-                  htmlFor="logo-upload-input"
-                  title={logoFile ? logoFile.name : 'Upload brand logo'}
-                  className="w-9 h-9 rounded-xl border border-neutral-200 bg-white flex items-center justify-center cursor-pointer overflow-hidden"
-                >
-                  {logoPreviewUrl ? (
-                    <img src={logoPreviewUrl} alt="Brand logo" className="w-full h-full object-cover" />
-                  ) : (
-                    <CloudUpload className="w-4 h-4 text-neutral-500" />
-                  )}
-                </label>
-                <input
-                  id="logo-upload-input"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoChange}
-                  className="hidden"
-                />
                 <button
                   type="button"
                   onClick={loadRecords}
@@ -1276,12 +1320,12 @@ export default function App() {
           )}
         </main>
 
-        <nav className="shrink-0 h-16 border-t border-neutral-200 bg-white px-5 flex items-center justify-around z-20" aria-label="Main navigation">
+        <nav className="shrink-0 h-16 border-t border-neutral-200 bg-white px-2 flex items-center justify-around z-20" aria-label="Main navigation">
           <button
             type="button"
             onClick={handleOpenTemplates}
-            aria-current={!showHistory && !showCalendar ? 'page' : undefined}
-            className={`min-w-[76px] h-full flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition ${!showHistory && !showCalendar ? 'text-black' : 'text-neutral-400 hover:text-neutral-700'}`}
+            aria-current={!showHistory && !showCalendar && !showSettings ? 'page' : undefined}
+            className={`min-w-0 flex-1 h-full flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition ${!showHistory && !showCalendar && !showSettings ? 'text-black' : 'text-neutral-400 hover:text-neutral-700'}`}
           >
             <LayoutGrid className="w-5 h-5" />
             <span>Template</span>
@@ -1291,7 +1335,7 @@ export default function App() {
             onClick={handleOpenHistory}
             disabled={isLoadingHistory}
             aria-current={showHistory ? 'page' : undefined}
-            className={`min-w-[76px] h-full flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition disabled:opacity-50 ${showHistory ? 'text-black' : 'text-neutral-400 hover:text-neutral-700'}`}
+            className={`min-w-0 flex-1 h-full flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition disabled:opacity-50 ${showHistory ? 'text-black' : 'text-neutral-400 hover:text-neutral-700'}`}
           >
             <History className="w-5 h-5" />
             <span>Jadwal</span>
@@ -1301,10 +1345,19 @@ export default function App() {
             onClick={handleOpenCalendar}
             disabled={isLoadingCalendar}
             aria-current={showCalendar ? 'page' : undefined}
-            className={`min-w-[76px] h-full flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition disabled:opacity-50 ${showCalendar ? 'text-black' : 'text-neutral-400 hover:text-neutral-700'}`}
+            className={`min-w-0 flex-1 h-full flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition disabled:opacity-50 ${showCalendar ? 'text-black' : 'text-neutral-400 hover:text-neutral-700'}`}
           >
             <CalendarDays className="w-5 h-5" />
             <span>Calendar</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleOpenSettings}
+            aria-current={showSettings ? 'page' : undefined}
+            className={`min-w-0 flex-1 h-full flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition ${showSettings ? 'text-black' : 'text-neutral-400 hover:text-neutral-700'}`}
+          >
+            <Settings className="w-5 h-5" />
+            <span>Settings</span>
           </button>
         </nav>
 
