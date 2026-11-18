@@ -1,96 +1,134 @@
 # Gemini Canvas — Product Ad Image Generator
 
-Aplikasi web untuk membuat visual iklan produk, menghasilkan prompt dan caption dengan AI, mengelola hasil gambar, serta mengatur kalender konten.
+Aplikasi web untuk membuat visual iklan produk berbasis template, menyusun prompt dengan bantuan AI, menyimpan hasil gambar, dan mengelola riwayat serta jadwal konten.
 
-Aplikasi menggunakan **Gemini Canvas Native API Runtime** untuk fitur AI. Karena dijalankan di dalam Gemini Canvas, aplikasi tidak meminta pengguna memasukkan atau menyimpan Gemini API key.
+Aplikasi utama berada di `index.html` dan ditulis menggunakan HTML, CSS, serta Vanilla JavaScript. Antarmuka dirender langsung ke elemen `#app`.
 
-## Cara Kerja
+> **Catatan penting tentang AI runtime:** kode `index.html` saat ini belum memanggil Gemini Canvas Native API Runtime. Dua fitur AI masih mengirim HTTP request langsung ke Google Gemini Generative Language API. Nilai API key di kode saat ini adalah string kosong (`''`). Karena itu, README ini tidak menyatakan bahwa integrasi AI sudah berjalan tanpa API key atau sudah menggunakan native runtime.
 
-### AI — Gemini Canvas Native API Runtime
+## Fitur Aplikasi
 
-- Fitur AI dijalankan melalui native API runtime yang disediakan oleh Gemini Canvas.
-- Tidak memerlukan Gemini API key dari pengguna.
-- Tidak perlu menambahkan atau menyimpan API key Gemini di `index.html`.
-- Aplikasi harus dijalankan di lingkungan Gemini Canvas yang menyediakan native runtime tersebut.
-- Jika dijalankan di browser biasa atau hosting di luar Gemini Canvas, fitur yang bergantung pada native runtime tidak otomatis tersedia.
+### Templates
+- Mengambil daftar template produk dari Supabase Edge Function.
+- Memilih template untuk memulai pembuatan visual iklan.
+- Membaca ulang detail template berdasarkan ID.
+- Menampilkan status template dan hasil proses.
 
-> **Penting:** Tidak menggunakan Gemini API key bukan berarti aplikasi tidak menggunakan layanan backend. Koneksi ke Supabase tetap digunakan untuk operasi data dan file.
+### AI Prompt Generator
+- Menerima nama produk dan instruksi tambahan.
+- Mengambil data referensi prompt dari backend.
+- Mengirim instruksi dan referensi ke model `gemini-3-flash-preview`.
+- Menampilkan prompt yang dihasilkan dan menyediakan tombol salin.
 
-### Backend — Supabase
+### Image Generation
+- Membuat prompt visual dari variabel template.
+- Menyertakan logo brand sebagai gambar referensi.
+- Meminta gambar dengan model `gemini-3.1-flash-image`.
+- Mengatur rasio gambar menjadi 4:5.
+- Menampilkan hasil gambar dan menyediakan fitur unduh.
 
-Aplikasi terhubung ke Supabase Edge Functions untuk mengambil dan memperbarui data aplikasi.
+### Image Upload dan Penyimpanan
+- Mengunggah gambar hasil generasi ke endpoint upload.
+- Menerima public image URL dari backend.
+- Menyimpan `image_url` dan status `is_ready` pada record template.
 
-Endpoint yang digunakan:
+### History dan Content Calendar
+- Melihat daftar hasil yang telah selesai.
+- Melihat detail gambar dan caption yang tersedia pada record.
+- Menjadwalkan post melalui backend.
+- Menampilkan kalender dengan tiga slot harian: 09:00, 13:00, dan 19:00.
+- Menggunakan zona waktu `Asia/Kuala_Lumpur` (MYT).
 
-| Fungsi | Endpoint |
-| --- | --- |
-| Prompt data | `/functions/v1/crud-make-prompt` |
-| Calendar webhook | `/functions/v1/crud-make-webhook` |
-| Upload gambar | `/functions/v1/crud-make-prompt/upload` |
+### Settings
+- Mengunggah logo brand untuk sesi aplikasi.
+- Mengatur nama produk dan instruksi tambahan untuk AI Prompt Generator.
 
-Base URL yang dikonfigurasi saat ini:
+**AI Caption Generator terpisah belum diimplementasikan** dalam `index.html`. Caption yang ditampilkan pada History atau Calendar berasal dari data record backend.
+
+## Arsitektur dan Alur Kerja
+
+```
+index.html
+   |
+   +-- UI: HTML + Tailwind CSS + Vanilla JavaScript
+   |
+   +-- Google Gemini Generative Language API
+   |      +-- gemini-3-flash-preview (AI Prompt Generator)
+   |      +-- gemini-3.1-flash-image (Image Generation)
+   |
+   +-- Supabase Edge Functions
+          +-- crud-make-prompt
+          +-- crud-make-prompt/upload
+          +-- crud-make-webhook
+   |
+   +-- Supabase Storage
+          +-- Default brand logo
+          +-- Uploaded generated images
+```
+
+## Integrasi AI Saat Ini
+
+Saat ini `index.html` menggunakan request HTTP langsung ke endpoint Google:
+
+| Fitur | Model | Mekanisme |
+| --- | --- | --- |
+| AI Prompt Generator | `gemini-3-flash-preview` | REST `generateContent` |
+| Image Generation | `gemini-3.1-flash-image` | REST `generateContent` dengan output image |
+
+Kedua request membangun URL dengan parameter `?key=` dan variabel `apiKey` yang saat ini diisi string kosong.
+
+Konsekuensinya:
+- Integrasi ini **bukan** pemanggilan Gemini Canvas Native API Runtime.
+- Kode saat ini tidak menyediakan API key yang valid.
+- Keberhasilan request AI tidak dapat dijamin sampai mekanisme autentikasi/API key dikonfigurasi atau integrasi diganti dengan API runtime yang benar.
+- Menjalankan file di Gemini Canvas saja tidak otomatis mengubah request REST tersebut menjadi native runtime.
+
+Jika tujuan pengembangan adalah menggunakan Gemini Canvas Native API Runtime tanpa API key yang dikelola aplikasi, implementasi pemanggilan AI di `index.html` masih perlu disesuaikan. README ini mendokumentasikan kondisi kode saat ini, bukan target integrasi yang belum diterapkan.
+
+## Integrasi Supabase
+
+Base URL yang ditetapkan di kode:
 
 `https://jhpbtooefyzdndstlzva.supabase.co`
 
-Aplikasi juga menggunakan logo publik dari Supabase Storage.
+Endpoint yang digunakan:
 
-## Fitur
+| Kegunaan | Endpoint |
+| --- | --- |
+| Membaca dan memperbarui data prompt/template | `/functions/v1/crud-make-prompt` |
+| Upload gambar | `/functions/v1/crud-make-prompt/upload` |
+| Operasi kalender dan penjadwalan melalui webhook | `/functions/v1/crud-make-webhook` |
+| Default brand logo | `/storage/v1/object/public/apple/logo.png` |
 
-- **Template** — melihat dan memilih data prompt/template produk.
-- **AI Prompt Generator** — membuat prompt berdasarkan produk dan data referensi yang tersedia.
-- **Image Generation** — menghasilkan visual iklan produk melalui AI runtime.
-- **AI Caption** — membuat caption berdasarkan konten/gambar yang dihasilkan.
-- **Image Preview** — melihat hasil gambar dalam rasio 4:5 dan tampilan penuh.
-- **Download Image** — mengunduh hasil gambar.
-- **Logo Upload** — memilih logo untuk digunakan pada proses pembuatan visual.
-- **Image Upload** — mengunggah hasil gambar dan memperoleh public URL.
-- **Save Image URL** — menyimpan URL gambar ke data prompt.
-- **History / Schedule** — melihat hasil yang siap dijadwalkan.
-- **Content Calendar** — melihat data jadwal konten.
-- **Schedule Post** — menjadwalkan konten pada slot waktu yang tersedia.
+Header Supabase `apikey` dan `Authorization` hanya ditambahkan oleh helper aplikasi jika `state.anonKey` memiliki nilai. Pada kode saat ini, nilai awal `state.anonKey` adalah string kosong.
 
-Slot jadwal yang digunakan:
-
-- 09:00
-- 13:00
-- 19:00
-
-Zona waktu kalender: **Asia/Kuala_Lumpur (MYT)**.
+Edge Functions harus dikonfigurasi sesuai metode akses yang digunakan aplikasi, termasuk CORS, autentikasi, validasi input, dan otorisasi. Jangan menaruh Supabase service-role key atau secret server di frontend.
 
 ## Teknologi
 
-- HTML
-- JavaScript
-- Tailwind CSS
+- HTML5
+- Vanilla JavaScript
+- Tailwind CSS melalui CDN
 - Lucide Icons
-- Gemini Canvas Native API Runtime
+- Google Fonts — Inter
+- Google Gemini Generative Language API (REST)
 - Supabase Edge Functions
 - Supabase Storage
 
-## Menjalankan Aplikasi
+## Menjalankan di Gemini Canvas
 
-1. Buka Gemini Canvas.
-2. Buka atau buat aplikasi di lingkungan Gemini Canvas.
-3. Gunakan `index.html` sebagai dokumen aplikasi.
-4. Jalankan aplikasi melalui preview/runtime Gemini Canvas.
-5. Pastikan Gemini Canvas menyediakan akses ke native API runtime.
-6. Pastikan endpoint Supabase yang digunakan aplikasi aktif dan dapat diakses.
+1. Buka project di Gemini Canvas.
+2. Gunakan `index.html` sebagai file aplikasi.
+3. Jalankan melalui preview Gemini Canvas.
+4. Pastikan koneksi ke endpoint Supabase tersedia.
+5. Untuk fitur AI, pastikan mekanisme autentikasi Google Gemini API telah dikonfigurasi dengan benar atau implementasi AI telah diperbarui agar menggunakan runtime yang disediakan Gemini Canvas.
 
-Tidak diperlukan konfigurasi Gemini API key di dalam `index.html`.
+## Menjalankan di Browser atau Hosting Lain
 
-## Konfigurasi Backend
-
-Endpoint Supabase saat ini ditetapkan di kode aplikasi. Jika project atau endpoint backend berubah, sesuaikan URL Edge Function dan URL Storage yang digunakan.
-
-Pastikan Edge Functions memiliki konfigurasi CORS yang mengizinkan origin/runtime aplikasi dan menerapkan validasi serta otorisasi sesuai kebutuhan.
-
-Jangan menaruh Supabase service-role key, secret key, atau kredensial server di kode frontend. Jika backend memerlukan autentikasi, gunakan mekanisme autentikasi yang aman dan sesuai dengan konfigurasi Edge Functions.
-
-## Menjalankan di Luar Gemini Canvas
-
-Aplikasi ini ditujukan untuk berjalan di Gemini Canvas. Runtime AI native yang tersedia di Gemini Canvas tidak boleh diasumsikan tersedia pada browser biasa, GitHub Pages, atau hosting statis.
-
-Jika ingin menjalankan aplikasi di luar Gemini Canvas, integrasi AI perlu disesuaikan dengan runtime/provider yang tersedia di lingkungan tujuan. Perubahan tersebut berada di luar konfigurasi tanpa API key untuk Gemini Canvas.
+Aplikasi menggunakan HTML dan JavaScript standar, tetapi operasionalnya bergantung pada akses jaringan ke Google Gemini API dan Supabase. Jika dijalankan di browser atau hosting lain, pastikan:
+- Endpoint backend mengizinkan origin aplikasi melalui CORS.
+- Mekanisme autentikasi API tersedia dan aman.
+- Tidak ada kredensial rahasia server yang disimpan di kode frontend.
 
 ## Repository
 
@@ -99,5 +137,6 @@ Source code: https://github.com/applestoree/gemini-canvas
 ---
 
 **Project:** Gemini Canvas — Product Ad Image Generator  
-**Runtime AI:** Gemini Canvas Native API Runtime  
-**Gemini API Key:** Tidak diperlukan saat berjalan di Gemini Canvas  
+**Main file:** `index.html`  
+**AI integration in current code:** Google Gemini REST API  
+**Gemini Canvas Native API Runtime:** Belum diimplementasikan pada pemanggilan AI saat ini  
