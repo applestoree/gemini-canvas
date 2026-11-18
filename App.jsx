@@ -1,634 +1,569 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
-  Sparkles,
   RefreshCw,
-  ArrowLeft,
-  Upload,
+  Check,
+  Copy,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
+  RotateCcw,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  ExternalLink,
+  Download,
+  Maximize2,
   X,
   Image as ImageIcon,
-  Download,
-  RotateCcw,
-  CheckCircle2,
-  AlertCircle,
   Sliders,
-  Layers,
-  Type,
-  Sun,
-  Palette,
-  Layout,
-  Plus,
-  Trash2,
-  ChevronRight,
-  Cpu,
-  Eye,
-  FileImage,
-  ShieldAlert
+  FileText,
+  CloudUpload,
+  Key
 } from 'lucide-react';
 
-// ============================================================================
-// CONSTANTS & CONFIGURATION
-// ============================================================================
-const SUPABASE_API_URL = 'https://jhpbtooefyzdndstlzva.supabase.co/functions/v1/crud-make-prompt';
-const DEFAULT_GEMINI_MODEL = 'gemini-3.1-flash-image';
-const MAX_LOGO_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
-const ALLOWED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+// Exact Edge Function Endpoints
+const CRUD_MAKE_PROMPT_URL = 'https://jhpbtooefyzdndstlzva.supabase.co/functions/v1/crud-make-prompt';
+const UPLOAD_IMAGE_URL = 'https://jhpbtooefyzdndstlzva.supabase.co/functions/v1/upload-image';
 
-// ============================================================================
-// HELPER UTILITIES
-// ============================================================================
+// Exact 10 Variable Keys (preserving exact spelling including 'typographhy')
+const VARIABLE_KEYS = [
+  'product',
+  'style',
+  'visual_style',
+  'headline',
+  'subheadline',
+  'feature_items',
+  'composition',
+  'background',
+  'typographhy',
+  'lighting'
+];
+
+const EMPTY_VARIABLES = {
+  product: '',
+  style: '',
+  visual_style: '',
+  headline: '',
+  subheadline: '',
+  feature_items: '',
+  composition: '',
+  background: '',
+  typographhy: '',
+  lighting: ''
+};
 
 /**
- * Safely deep-clones an object so the original API payload is never mutated.
+ * Formats any API field (string, array, or nested object) into a clean editable string
+ * without inventing missing data.
  */
-function deepClone(obj) {
-  if (obj === null || typeof obj !== 'object') return obj;
+function serializeFieldForEditor(value) {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value) || typeof value === 'object') {
+    return JSON.stringify(value, null, 2);
+  }
+  return String(value);
+}
+
+/**
+ * Extracts the exact 10 variables from a Supabase record without inventing missing values.
+ * Maps both `typographhy` and `typography` from source record into the `typographhy` variable.
+ */
+function extractVariablesFromRecord(record) {
+  if (!record || typeof record !== 'object') return { ...EMPTY_VARIABLES };
+
+  const typographySource =
+    record.typographhy !== undefined ? record.typographhy : record.typography;
+
+  return {
+    product: serializeFieldForEditor(record.product),
+    style: serializeFieldForEditor(record.style),
+    visual_style: serializeFieldForEditor(record.visual_style),
+    headline: serializeFieldForEditor(record.headline),
+    subheadline: serializeFieldForEditor(record.subheadline),
+    feature_items: serializeFieldForEditor(record.feature_items),
+    composition: serializeFieldForEditor(record.composition),
+    background: serializeFieldForEditor(record.background),
+    typographhy: serializeFieldForEditor(typographySource),
+    lighting: serializeFieldForEditor(record.lighting)
+  };
+}
+
+/**
+ * Master Prompt Builder:
+ * Preserves the exact master prompt verbatim and substitutes only the 10 placeholders.
+ */
+function buildMasterPrompt(vars) {
+  return `Create a premium Instagram Feed advertising design for @appletheexchangetrx.
+Design a visually striking Apple product advertisement inspired by the clean, minimalist, premium aesthetic of Apple's official product campaigns, adapted for @appletheexchangetrx's Instagram branding.
+product
+${vars.product}
+style
+${vars.style}
+visual_style
+${vars.visual_style}
+headline
+${vars.headline}
+subheadline
+${vars.subheadline}
+feature_items
+${vars.feature_items}
+composition
+${vars.composition}
+background
+${vars.background}
+typographhy
+${vars.typographhy}
+lighting
+${vars.lighting}
+CREATIVE DIRECTION:
+Create a premium product-focused Instagram advertisement with a sophisticated Apple-inspired art direction.
+- Make the product the main visual attraction.
+- Use elegant and minimal visual composition.
+- Maintain a clean and luxurious aesthetic.
+- Create strong visual hierarchy.
+- Use precise product details and realistic materials.
+- Integrate headline and subheadline naturally.
+- Present product features with elegant visual callouts.
+- Avoid unnecessary decorative elements.
+- Maintain generous negative space.
+- Ensure excellent readability on mobile screens.
+BRAND DIRECTION:
+The overall appearance should communicate premium quality, innovation, trust, and exclusivity.
+The design should feel like a professionally art-directed Apple product campaign while maintaining a distinctive identity for @appletheexchangetrx.
+OUTPUT REQUIREMENTS:
+- Instagram Feed format.
+- Aspect ratio: 4:5.
+- Resolution: 1080 × 1350 px.
+- Premium commercial advertising quality.
+- Sharp details and refined typography.
+- Balanced visual hierarchy.
+- Product-centric composition.
+IMPORTANT:
+Follow all 10 variables precisely. Do not invent additional headlines, product specifications, or promotional text. Render all supplied text accurately.`;
+}
+
+/**
+ * Clipboard copy helper compatible with sandboxed iFrames
+ */
+function copyTextToClipboard(text) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  document.body.appendChild(textarea);
+  textarea.select();
+  let ok = false;
   try {
-    return JSON.parse(JSON.stringify(obj));
+    ok = document.execCommand('copy');
   } catch {
-    return Array.isArray(obj) ? [...obj] : { ...obj };
+    ok = false;
   }
+  document.body.removeChild(textarea);
+  return ok;
 }
 
 /**
- * Safely extracts a human-readable string from fields that may be strings,
- * objects (e.g. { text: '...' } or { name: '...' }), or arrays.
+ * Exponential backoff fetch wrapper for Gemini API reliability
  */
-function extractDisplayValue(val, fallback = '') {
-  if (val === null || val === undefined) return fallback;
-  if (typeof val === 'string') return val;
-  if (typeof val === 'number' || typeof val === 'boolean') return String(val);
-  if (Array.isArray(val)) {
-    return val.map((item) => extractDisplayValue(item)).filter(Boolean).join(', ') || fallback;
-  }
-  if (typeof val === 'object') {
-    if (typeof val.text === 'string') return val.text;
-    if (typeof val.title === 'string') return val.title;
-    if (typeof val.name === 'string') return val.name;
-    if (typeof val.description === 'string') return val.description;
-    if (typeof val.value === 'string') return val.value;
-    if (typeof val.preset === 'string') return val.preset;
-    return Object.entries(val)
-      .filter(([, v]) => v !== null && v !== undefined && typeof v !== 'object')
-      .map(([k, v]) => `${formatKey(k)}: ${v}`)
-      .join(' • ') || fallback;
-  }
-  return fallback;
-}
-
-/**
- * Formats snake_case or camelCase keys into Title Case labels.
- */
-function formatKey(key) {
-  return String(key)
-    .replace(/_/g, ' ')
-    .replace(/([a-z])([A-Z])/g, '$1 $2')
-    .replace(/\b\w/g, (l) => l.toUpperCase());
-}
-
-/**
- * Normalizes categories from a template object into an array of strings.
- */
-function extractCategories(template) {
-  if (!template) return [];
-  const raw = template.categories ?? template.category;
-  if (!raw) return ['Uncategorized'];
-  if (Array.isArray(raw)) {
-    const cleaned = raw
-      .map((c) => extractDisplayValue(c).trim())
-      .filter(Boolean);
-    return cleaned.length > 0 ? cleaned : ['Uncategorized'];
-  }
-  if (typeof raw === 'string') {
-    const parts = raw.split(',').map((s) => s.trim()).filter(Boolean);
-    return parts.length > 0 ? parts : ['Uncategorized'];
-  }
-  const single = extractDisplayValue(raw).trim();
-  return single ? [single] : ['Uncategorized'];
-}
-
-/**
- * Transforms the structured template JSON configuration into a coherent,
- * production-grade commercial advertising prompt for Gemini.
- */
-function buildGeminiPrompt(config) {
-  const productName = extractDisplayValue(config.product, 'Featured Product');
-  const categories = extractCategories(config).join(', ');
-  const style = extractDisplayValue(config.style);
-  const visualStyle = extractDisplayValue(config.visual_style);
-
-  // Headline extraction
-  const headlineObj = typeof config.headline === 'object' && config.headline !== null ? config.headline : { text: config.headline };
-  const headlineText = extractDisplayValue(headlineObj.text);
-  const headlineTone = extractDisplayValue(headlineObj.tone);
-  const headlineFocus = extractDisplayValue(headlineObj.focus);
-  const headlineLang = extractDisplayValue(headlineObj.language);
-  const headlineStrategy = extractDisplayValue(headlineObj.strategy);
-
-  // Subheadline extraction
-  const subheadlineObj = typeof config.subheadline === 'object' && config.subheadline !== null ? config.subheadline : { text: config.subheadline };
-  const subheadlineText = extractDisplayValue(subheadlineObj.text || subheadlineObj.description || config.subheadline);
-
-  // Feature items extraction
-  const features = Array.isArray(config.feature_items) ? config.feature_items : [];
-  const featureLines = features
-    .map((item, idx) => {
-      if (typeof item === 'string') return `${idx + 1}. ${item}`;
-      if (item && typeof item === 'object') {
-        const title = extractDisplayValue(item.title || item.text || item.name);
-        const icon = extractDisplayValue(item.icon);
-        return title ? `${idx + 1}. ${title}${icon ? ` (paired with minimal ${icon} icon)` : ''}` : '';
-      }
-      return '';
-    })
-    .filter(Boolean);
-
-  // Composition extraction
-  const comp = typeof config.composition === 'object' && config.composition !== null ? config.composition : {};
-  const compDetails = Object.entries(comp)
-    .map(([k, v]) => {
-      const valStr = extractDisplayValue(v);
-      return valStr ? `- ${formatKey(k)}: ${valStr}` : '';
-    })
-    .filter(Boolean);
-
-  // Background extraction
-  const bg = typeof config.background === 'object' && config.background !== null ? config.background : { preset: config.background };
-  const bgDetails = Object.entries(bg)
-    .map(([k, v]) => {
-      const valStr = extractDisplayValue(v);
-      return valStr ? `- ${formatKey(k)}: ${valStr}` : '';
-    })
-    .filter(Boolean);
-
-  // Typography extraction
-  const typo = typeof config.typography === 'object' && config.typography !== null ? config.typography : {};
-  const typoDetails = Object.entries(typo)
-    .map(([k, v]) => {
-      const valStr = extractDisplayValue(v);
-      return valStr ? `- ${formatKey(k)}: ${valStr}` : '';
-    })
-    .filter(Boolean);
-
-  // Lighting extraction
-  const light = typeof config.lighting === 'object' && config.lighting !== null ? config.lighting : {};
-  const lightDetails = Object.entries(light)
-    .map(([k, v]) => {
-      const valStr = extractDisplayValue(v);
-      return valStr ? `- ${formatKey(k)}: ${valStr}` : '';
-    })
-    .filter(Boolean);
-
-  const sections = [];
-
-  sections.push(
-    `Create a high-end commercial product advertisement photograph in a 4:5 portrait aspect ratio (1024x1280).`
-  );
-
-  sections.push(
-    `1. MAIN PRODUCT & IDENTITY:\n` +
-    `- Product: "${productName}"${categories ? ` (Category: ${categories})` : ''}.\n` +
-    `- Maintain strict product authenticity and physical accuracy. Do not invent unrequested features or alter the core product identity.\n` +
-    (style ? `- Advertising Style: ${style}.\n` : '') +
-    (visualStyle ? `- Visual Aesthetic: ${visualStyle}.` : '')
-  );
-
-  sections.push(
-    `2. BRAND LOGO INTEGRATION (CRITICAL VISUAL REFERENCE):\n` +
-    `- Use the attached reference image as the official brand logo.\n` +
-    `- Place the uploaded logo cleanly in the upper-left corner of the advertisement.\n` +
-    `- Keep the logo small, subtle, and refined with generous breathing room from the top and left edges.\n` +
-    `- Strictly preserve the logo's original aspect ratio, exact proportions, brand colors, symbols, and lettering.\n` +
-    `- Do NOT redesign, stylize, distort, warp, or replace the logo, and ensure it does not overpower or compete with the main product.`
-  );
-
-  if (compDetails.length > 0) {
-    sections.push(`3. COMPOSITION & LAYOUT:\n${compDetails.join('\n')}`);
-  } else {
-    sections.push(`3. COMPOSITION & LAYOUT:\n- Hero-centric commercial framing with clear negative space reserved for typography and upper-left brand mark.`);
-  }
-
-  if (bgDetails.length > 0) {
-    sections.push(`4. BACKGROUND & ENVIRONMENT:\n${bgDetails.join('\n')}`);
-  }
-
-  const copyParts = [];
-  if (headlineText) {
-    copyParts.push(
-      `- Primary Headline Text: "${headlineText}"` +
-      (headlineTone ? ` | Tone: ${headlineTone}` : '') +
-      (headlineFocus ? ` | Focus: ${headlineFocus}` : '') +
-      (headlineLang ? ` | Language: ${headlineLang}` : '') +
-      (headlineStrategy ? ` | Strategy: ${headlineStrategy}` : '')
-    );
-  }
-  if (subheadlineText) {
-    copyParts.push(`- Subheadline Text: "${subheadlineText}"`);
-  }
-  if (featureLines.length > 0) {
-    copyParts.push(`- Key Product Callouts / Features:\n  ${featureLines.join('\n  ')}`);
-  }
-  if (copyParts.length > 0) {
-    sections.push(
-      `5. ON-IMAGE ADVERTISING COPY & CALLOUTS:\n` +
-      `Render the following text crisply, legibly, and accurately with zero spelling errors:\n` +
-      copyParts.join('\n')
-    );
-  }
-
-  if (typoDetails.length > 0) {
-    sections.push(`6. TYPOGRAPHY & HIERARCHY:\n${typoDetails.join('\n')}`);
-  }
-
-  if (lightDetails.length > 0) {
-    sections.push(`7. LIGHTING, SHADOWS & REFLECTIONS:\n${lightDetails.join('\n')}`);
-  }
-
-  sections.push(
-    `8. PRODUCTION QUALITY:\n` +
-    `- Studio-grade commercial photography, sharp focus on product materials and textures, balanced color grading, print and social media campaign ready.`
-  );
-
-  return sections.join('\n\n');
-}
-
-/**
- * Exponential backoff fetch wrapper for Gemini API reliability.
- */
-async function fetchWithBackoff(url, options, maxRetries = 3) {
+async function fetchWithBackoff(url, options, retries = 3) {
   let delay = 1000;
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    const response = await fetch(url, options);
-    if (response.status !== 429 && response.status < 500) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await fetch(url, options);
+      if (response.ok) return response;
+      if (response.status === 429 || response.status >= 500) {
+        if (i < retries - 1) {
+          await new Promise((r) => setTimeout(r, delay));
+          delay *= 2;
+          continue;
+        }
+      }
       return response;
+    } catch (err) {
+      if (i === retries - 1) throw err;
+      await new Promise((r) => setTimeout(r, delay));
+      delay *= 2;
     }
-    if (attempt === maxRetries) {
-      return response;
-    }
-    await new Promise((resolve) => setTimeout(resolve, delay));
-    delay *= 2;
   }
 }
 
-// ============================================================================
-// SUB-COMPONENTS
-// ============================================================================
-
 /**
- * Renders structured nested properties cleanly in read-only or inspector cards.
+ * Helper: Safely extract a short display headline for record cards
  */
-function PropertyGrid({ data, excludeKeys = [] }) {
-  if (!data || typeof data !== 'object') return null;
-
-  const entries = Object.entries(data).filter(([key, val]) => {
-    if (excludeKeys.includes(key)) return false;
-    if (val === null || val === undefined || val === '') return false;
-    if (Array.isArray(val) && val.length === 0) return false;
-    if (typeof val === 'object' && !Array.isArray(val) && Object.keys(val).length === 0) return false;
-    return true;
-  });
-
-  if (entries.length === 0) return null;
-
-  return (
-    <div className="grid grid-cols-1 gap-2.5 mt-3 pt-3 border-t border-neutral-100">
-      {entries.map(([key, val]) => (
-        <div key={key} className="flex flex-col bg-neutral-50/80 rounded-xl p-2.5 border border-neutral-100">
-          <span className="text-[11px] font-medium uppercase tracking-wider text-neutral-400">
-            {formatKey(key)}
-          </span>
-          <span className="text-xs font-medium text-neutral-800 mt-0.5 leading-relaxed break-words">
-            {extractDisplayValue(val, '—')}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
+function getRecordHeadlinePreview(record) {
+  if (!record?.headline) return '';
+  if (typeof record.headline === 'string') return record.headline;
+  if (typeof record.headline === 'object' && record.headline.text) {
+    return String(record.headline.text);
+  }
+  return '';
 }
-
-/**
- * Section accordion/card wrapper for the Template Editor.
- */
-function EditorSection({ icon: Icon, title, badge, children }) {
-  return (
-    <section className="bg-white rounded-2xl border border-neutral-200/80 p-4 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-700">
-            <Icon className="w-3.5 h-3.5" />
-          </div>
-          <h3 className="text-sm font-semibold text-neutral-900 tracking-tight">{title}</h3>
-        </div>
-        {badge && (
-          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600">
-            {badge}
-          </span>
-        )}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-// ============================================================================
-// MAIN APPLICATION COMPONENT
-// ============================================================================
 
 export default function App() {
-  // Navigation & View State: 'library' | 'editor' | 'result'
-  const [activeScreen, setActiveScreen] = useState('library');
+  // Optional Supabase Anon Key if gateway/RLS requires it
+  const [anonKey, setAnonKey] = useState('');
+  const [showKeyConfig, setShowKeyConfig] = useState(false);
 
-  // Template API State
-  const [templates, setTemplates] = useState([]);
-  const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
-  const [templatesError, setTemplatesError] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  // Step 1: Template Selection State
+  const [records, setRecords] = useState([]);
+  const [isLoadingRecords, setIsLoadingRecords] = useState(true);
+  const [recordsError, setRecordsError] = useState(null);
+  const [selectedRecordId, setSelectedRecordId] = useState(null);
+  const [selectedRecord, setSelectedRecord] = useState(null);
+  const [isLoadingSingleRecord, setIsLoadingSingleRecord] = useState(false);
 
-  // Selected Template & Editable Copy State (Original API response preserved in `templates`)
-  const [selectedTemplateId, setSelectedTemplateId] = useState(null);
-  const [editableConfig, setEditableConfig] = useState(null);
-  const [showPromptPreview, setShowPromptPreview] = useState(false);
+  // Step 2: 10 Variables Configuration State
+  const [originalVariables, setOriginalVariables] = useState({ ...EMPTY_VARIABLES });
+  const [variables, setVariables] = useState({ ...EMPTY_VARIABLES });
+  const [validationErrors, setValidationErrors] = useState([]);
 
-  // Brand Logo State
-  const [logoFile, setLogoFile] = useState(null); // { name, size, mimeType, base64Data, dataUrl }
-  const [logoError, setLogoError] = useState(null);
-  const fileInputRef = useRef(null);
+  // Step 3: Prompt Preview State
+  const [isPromptExpanded, setIsPromptExpanded] = useState(false);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
 
-  // Gemini Model & Generation State
-  const [geminiModel, setGeminiModel] = useState(DEFAULT_GEMINI_MODEL);
-  const [showModelConfig, setShowModelConfig] = useState(false);
+  // Step 4: Gemini Image Generation State
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generationStep, setGenerationStep] = useState('');
   const [generationError, setGenerationError] = useState(null);
-  const [generatedImage, setGeneratedImage] = useState(null); // { dataUrl, mimeType, promptUsed, modelUsed, timestamp }
-  const [downloadStatus, setDownloadStatus] = useState(null);
+  const [generatedImageBase64, setGeneratedImageBase64] = useState(null);
+  const [generatedImageMimeType, setGeneratedImageMimeType] = useState('image/png');
 
-  // --------------------------------------------------------------------------
-  // 1. FETCH TEMPLATES FROM REAL SUPABASE ENDPOINT
-  // --------------------------------------------------------------------------
-  const fetchTemplates = async () => {
-    setIsLoadingTemplates(true);
-    setTemplatesError(null);
+  // Step 5: Edge Function Upload State (upload-image -> images bucket)
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState(null);
+  const [copiedImageUrl, setCopiedImageUrl] = useState(false);
+
+  // Step 6: Save image_url to crud-make-prompt (PATCH /?id={id})
+  const [isSavingUrl, setIsSavingUrl] = useState(false);
+  const [saveUrlError, setSaveUrlError] = useState(null);
+  const [isImageUrlSaved, setIsImageUrlSaved] = useState(false);
+
+  // Fullscreen Modal Preview
+  const [isFullViewOpen, setIsFullViewOpen] = useState(false);
+
+  // Toast Feedback
+  const [toast, setToast] = useState(null);
+
+  const showToast = (type, message) => {
+    setToast({ type, message });
+  };
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  // Build headers for Supabase Edge Functions
+  const getEdgeHeaders = (includeJsonContentType = false) => {
+    const headers = {};
+    if (includeJsonContentType) {
+      headers['Content-Type'] = 'application/json';
+    }
+    if (anonKey.trim()) {
+      headers['apikey'] = anonKey.trim();
+      headers['Authorization'] = `Bearer ${anonKey.trim()}`;
+    }
+    return headers;
+  };
+
+  // Retrieve all prompt records from GET /
+  const loadRecords = async () => {
+    setIsLoadingRecords(true);
+    setRecordsError(null);
     try {
-      const response = await fetch(SUPABASE_API_URL, {
+      const response = await fetch(CRUD_MAKE_PROMPT_URL, {
         method: 'GET',
-        headers: {
-          'Accept': 'application/json'
-        }
+        headers: getEdgeHeaders(false)
       });
 
       if (!response.ok) {
-        throw new Error(`Supabase API responded with status ${response.status} (${response.statusText || 'Request Failed'})`);
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(
+          errData.error || `Edge Function returned HTTP ${response.status}.`
+        );
       }
 
-      const payload = await response.json();
-
-      // Handle either direct array or wrapped { data: [...] } / { prompts: [...] } responses
-      let list = [];
-      if (Array.isArray(payload)) {
-        list = payload;
-      } else if (payload && typeof payload === 'object') {
-        if (Array.isArray(payload.data)) list = payload.data;
-        else if (Array.isArray(payload.prompts)) list = payload.prompts;
-        else if (Array.isArray(payload.items)) list = payload.items;
-        else {
-          throw new Error('Unexpected response format from template API: expected an array of templates.');
-        }
+      const data = await response.json();
+      if (!Array.isArray(data)) {
+        throw new Error('Invalid response format: expected an array of prompt records.');
       }
 
-      // Ensure each record has a stable unique identifier
-      const normalized = list.map((item, index) => ({
-        ...item,
-        id: item.id !== undefined && item.id !== null ? item.id : `template-${index}`
-      }));
-
-      setTemplates(normalized);
+      setRecords(data);
     } catch (err) {
-      setTemplatesError(err.message || 'Failed to load prompt templates from Supabase.');
+      setRecordsError(err.message || 'Failed to connect to crud-make-prompt Edge Function.');
     } finally {
-      setIsLoadingTemplates(false);
+      setIsLoadingRecords(false);
     }
   };
 
   useEffect(() => {
-    fetchTemplates();
+    loadRecords();
   }, []);
 
-  // --------------------------------------------------------------------------
-  // 2. DYNAMIC CATEGORIES & FILTERING
-  // --------------------------------------------------------------------------
-  const categories = useMemo(() => {
-    const set = new Set(['All']);
-    templates.forEach((tpl) => {
-      extractCategories(tpl).forEach((cat) => set.add(cat));
-    });
-    return Array.from(set);
-  }, [templates]);
-
-  const filteredTemplates = useMemo(() => {
-    if (selectedCategory === 'All') return templates;
-    return templates.filter((tpl) => extractCategories(tpl).includes(selectedCategory));
-  }, [templates, selectedCategory]);
-
-  // --------------------------------------------------------------------------
-  // 3. TEMPLATE SELECTION & IMMUTABLE EDITING HANDLERS
-  // --------------------------------------------------------------------------
-  const handleSelectTemplate = (template) => {
-    setSelectedTemplateId(template.id);
-    // Create a clean editable deep clone so original API template is never mutated
-    const clone = deepClone(template);
-
-    // Normalize editable fields safely while preserving all nested metadata
-    if (typeof clone.headline !== 'object' || clone.headline === null) {
-      clone.headline = { text: extractDisplayValue(clone.headline) };
-    } else if (clone.headline.text === undefined) {
-      clone.headline.text = '';
-    }
-
-    if (typeof clone.subheadline !== 'object' || clone.subheadline === null) {
-      clone.subheadline = { text: extractDisplayValue(clone.subheadline) };
-    } else if (clone.subheadline.text === undefined && clone.subheadline.description !== undefined) {
-      clone.subheadline.text = clone.subheadline.description;
-    } else if (clone.subheadline.text === undefined) {
-      clone.subheadline.text = '';
-    }
-
-    if (!Array.isArray(clone.feature_items)) {
-      clone.feature_items = [];
-    }
-
-    setEditableConfig(clone);
+  // Retrieve specific record via GET /?id={id} and populate all 10 variables
+  const handleSelectRecord = async (recordItem) => {
+    setSelectedRecordId(recordItem.id);
+    setIsLoadingSingleRecord(true);
+    setValidationErrors([]);
     setGenerationError(null);
-    setActiveScreen('editor');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const updateProductField = (value) => {
-    setEditableConfig((prev) => {
-      if (!prev) return prev;
-      if (typeof prev.product === 'object' && prev.product !== null) {
-        return { ...prev, product: { ...prev.product, name: value, text: value } };
-      }
-      return { ...prev, product: value };
-    });
-  };
-
-  const updateHeadlineText = (value) => {
-    setEditableConfig((prev) => {
-      if (!prev) return prev;
-      const currentHeadline = typeof prev.headline === 'object' && prev.headline !== null ? prev.headline : {};
-      return {
-        ...prev,
-        headline: { ...currentHeadline, text: value }
-      };
-    });
-  };
-
-  const updateSubheadlineText = (value) => {
-    setEditableConfig((prev) => {
-      if (!prev) return prev;
-      const currentSub = typeof prev.subheadline === 'object' && prev.subheadline !== null ? prev.subheadline : {};
-      return {
-        ...prev,
-        subheadline: {
-          ...currentSub,
-          text: value,
-          ...(currentSub.description !== undefined ? { description: value } : {})
-        }
-      };
-    });
-  };
-
-  const updateFeatureTitle = (index, value) => {
-    setEditableConfig((prev) => {
-      if (!prev || !Array.isArray(prev.feature_items)) return prev;
-      const updated = prev.feature_items.map((item, i) => {
-        if (i !== index) return item;
-        if (typeof item === 'object' && item !== null) {
-          return { ...item, title: value };
-        }
-        return { title: value, icon: '' };
-      });
-      return { ...prev, feature_items: updated };
-    });
-  };
-
-  const addFeatureItem = () => {
-    setEditableConfig((prev) => {
-      if (!prev) return prev;
-      const current = Array.isArray(prev.feature_items) ? prev.feature_items : [];
-      return {
-        ...prev,
-        feature_items: [...current, { icon: 'sparkles', title: '' }]
-      };
-    });
-  };
-
-  const removeFeatureItem = (index) => {
-    setEditableConfig((prev) => {
-      if (!prev || !Array.isArray(prev.feature_items)) return prev;
-      return {
-        ...prev,
-        feature_items: prev.feature_items.filter((_, i) => i !== index)
-      };
-    });
-  };
-
-  // --------------------------------------------------------------------------
-  // 4. BRAND LOGO UPLOAD, VALIDATION & BASE64 CONVERSION
-  // --------------------------------------------------------------------------
-  const handleLogoUpload = (e) => {
-    setLogoError(null);
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-      setLogoError('Unsupported format. Please upload a PNG, JPG, JPEG, or WebP image.');
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      return;
-    }
-
-    if (file.size > MAX_LOGO_SIZE_BYTES) {
-      setLogoError('File is too large. Maximum allowed logo size is 5 MB.');
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result;
-      if (typeof dataUrl === 'string') {
-        const base64Data = dataUrl.split(',')[1];
-        setLogoFile({
-          name: file.name,
-          size: file.size,
-          mimeType: file.type,
-          base64Data,
-          dataUrl
-        });
-      }
-    };
-    reader.onerror = () => {
-      setLogoError('Unable to read the selected image file. Please try another file.');
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleRemoveLogo = () => {
-    setLogoFile(null);
-    setLogoError(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  // --------------------------------------------------------------------------
-  // 5. CONSTRUCTED PROMPT MEMO
-  // --------------------------------------------------------------------------
-  const constructedPrompt = useMemo(() => {
-    if (!editableConfig) return '';
-    return buildGeminiPrompt(editableConfig);
-  }, [editableConfig]);
-
-  // --------------------------------------------------------------------------
-  // 6. GEMINI IMAGE GENERATION (WITH STRICT MODEL CHECK & LOGO REFERENCE)
-  // --------------------------------------------------------------------------
-  const handleGenerateImage = async () => {
-    if (isGenerating) return; // Prevent duplicate generation requests
-    if (!editableConfig) return;
-
-    if (!logoFile || !logoFile.base64Data) {
-      setGenerationError('Brand logo is mandatory. Please upload your brand logo before generating.');
-      return;
-    }
-
-    const trimmedModel = geminiModel.trim();
-    if (!trimmedModel) {
-      setGenerationError('Gemini model identifier is required. Configure a valid model name.');
-      return;
-    }
-
-    setIsGenerating(true);
-    setGenerationError(null);
-    setGenerationStep('Constructing commercial ad prompt & encoding brand logo...');
 
     try {
-      const promptText = buildGeminiPrompt(editableConfig);
-      const apiKey = ''; // Runtime-injected by Gemini Canvas environment
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(trimmedModel)}:generateContent?key=${apiKey}`;
+      const response = await fetch(
+        `${CRUD_MAKE_PROMPT_URL}?id=${encodeURIComponent(recordItem.id)}`,
+        {
+          method: 'GET',
+          headers: getEdgeHeaders(false)
+        }
+      );
 
-      const payload = {
+      let authoritativeRecord = recordItem;
+      if (response.ok) {
+        const fetchedSingle = await response.json();
+        if (fetchedSingle && typeof fetchedSingle === 'object' && !Array.isArray(fetchedSingle)) {
+          authoritativeRecord = fetchedSingle;
+        }
+      }
+
+      setSelectedRecord(authoritativeRecord);
+      const extracted = extractVariablesFromRecord(authoritativeRecord);
+      setOriginalVariables(extracted);
+      setVariables({ ...extracted });
+      showToast('success', `Loaded variables for ${authoritativeRecord.product || authoritativeRecord.id}`);
+    } catch {
+      // Fallback to list record object if single fetch fails due to transient network error
+      setSelectedRecord(recordItem);
+      const extracted = extractVariablesFromRecord(recordItem);
+      setOriginalVariables(extracted);
+      setVariables({ ...extracted });
+    } finally {
+      setIsLoadingSingleRecord(false);
+    }
+  };
+
+  // Live built prompt
+  const finalPrompt = useMemo(() => buildMasterPrompt(variables), [variables]);
+
+  // Handle variable edit
+  const handleVariableChange = (key, value) => {
+    setVariables((prev) => ({
+      ...prev,
+      [key]: value
+    }));
+    if (validationErrors.length > 0) {
+      setValidationErrors((prev) => prev.filter((k) => k !== key));
+    }
+  };
+
+  // Reset Variables to original record values
+  const handleResetVariables = () => {
+    setVariables({ ...originalVariables });
+    setValidationErrors([]);
+    showToast('success', 'Variables restored to original record values.');
+  };
+
+  // Copy Final Prompt
+  const handleCopyPrompt = () => {
+    const ok = copyTextToClipboard(finalPrompt);
+    if (ok) {
+      setCopiedPrompt(true);
+      showToast('success', 'Final prompt copied to clipboard.');
+      setTimeout(() => setCopiedPrompt(false), 2000);
+    } else {
+      showToast('error', 'Unable to copy prompt.');
+    }
+  };
+
+  // Copy Uploaded Image URL
+  const handleCopyImageUrl = () => {
+    if (!uploadedImageUrl) return;
+    const ok = copyTextToClipboard(uploadedImageUrl);
+    if (ok) {
+      setCopiedImageUrl(true);
+      showToast('success', 'Public image URL copied.');
+      setTimeout(() => setCopiedImageUrl(false), 2000);
+    } else {
+      showToast('error', 'Unable to copy image URL.');
+    }
+  };
+
+  // Convert Base64 image to File preserving format and binary integrity
+  const base64ToImageFile = (base64Data, mimeType) => {
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const ext =
+      mimeType === 'image/jpeg'
+        ? 'jpg'
+        : mimeType === 'image/webp'
+        ? 'webp'
+        : 'png';
+    const safeSlug = (variables.product || selectedRecord?.id || 'apple-ad')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+    const fileName = `${safeSlug || 'ad'}-${Date.now()}.${ext}`;
+    const blob = new Blob([byteArray], { type: mimeType });
+    return new File([blob], fileName, { type: mimeType });
+  };
+
+  /**
+   * Save returned image_url to the selected record via PATCH /?id={id} on crud-make-prompt
+   */
+  const saveImageUrlToPromptRecord = async (recordId, imageUrl) => {
+    if (!recordId || !imageUrl) return;
+    setIsSavingUrl(true);
+    setSaveUrlError(null);
+    setIsImageUrlSaved(false);
+
+    try {
+      const response = await fetch(
+        `${CRUD_MAKE_PROMPT_URL}?id=${encodeURIComponent(recordId)}`,
+        {
+          method: 'PATCH',
+          headers: getEdgeHeaders(true),
+          body: JSON.stringify({ image_url: imageUrl })
+        }
+      );
+
+      const responseText = await response.text();
+      let payload = {};
+      try {
+        payload = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        throw new Error(`Invalid response from crud-make-prompt PATCH (HTTP ${response.status}).`);
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          payload.error ||
+            payload.message ||
+            `Failed to update image_url (HTTP ${response.status}).`
+        );
+      }
+
+      setIsImageUrlSaved(true);
+      setSelectedRecord((prev) =>
+        prev && prev.id === recordId ? { ...prev, ...payload, image_url: imageUrl } : prev
+      );
+      setRecords((prev) =>
+        prev.map((item) =>
+          item.id === recordId ? { ...item, ...payload, image_url: imageUrl } : item
+        )
+      );
+      showToast('success', 'image_url saved to prompt record.');
+    } catch (err) {
+      setSaveUrlError(err.message || 'Failed to save image_url to database.');
+      showToast('error', 'Failed to save image_url. You can retry below.');
+    } finally {
+      setIsSavingUrl(false);
+    }
+  };
+
+  /**
+   * Upload generated image to POST https://jhpbtooefyzdndstlzva.supabase.co/functions/v1/upload-image
+   * Handles multipart/form-data (primary Edge Function storage contract) with JSON fallback if required,
+   * and strictly extracts the returned public image URL without fabricating URLs.
+   */
+  const uploadGeneratedImageToEdge = async (base64Data, mimeType) => {
+    setIsUploading(true);
+    setUploadError(null);
+    setSaveUrlError(null);
+    setIsImageUrlSaved(false);
+
+    try {
+      const imageFile = base64ToImageFile(base64Data, mimeType);
+      const formData = new FormData();
+      formData.append('file', imageFile);
+
+      const response = await fetch(UPLOAD_IMAGE_URL, {
+        method: 'POST',
+        headers: getEdgeHeaders(false),
+        body: formData
+      });
+
+      const responseText = await response.text();
+      let payload = {};
+      try {
+        payload = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        throw new Error(`Invalid non-JSON response from upload-image (HTTP ${response.status}).`);
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          payload.error ||
+            payload.message ||
+            `Upload failed with HTTP ${response.status}.`
+        );
+      }
+
+      // Extract returned public URL from documented response structure
+      const returnedUrl =
+        payload.image_url ||
+        payload.publicUrl ||
+        payload.public_url ||
+        payload.url ||
+        payload?.data?.image_url ||
+        payload?.data?.publicUrl;
+
+      if (!returnedUrl || typeof returnedUrl !== 'string') {
+        throw new Error(
+          'Upload succeeded, but upload-image response did not include a valid public image URL.'
+        );
+      }
+
+      setUploadedImageUrl(returnedUrl);
+      setIsUploading(false);
+
+      // Automatically save returned URL to selected record's image_url via PATCH /?id={id}
+      if (selectedRecord?.id) {
+        await saveImageUrlToPromptRecord(selectedRecord.id, returnedUrl);
+      } else {
+        showToast('success', 'Image uploaded to Supabase Storage.');
+      }
+    } catch (err) {
+      setUploadError(err.message || 'Network interruption or failure during image upload.');
+      showToast('error', 'Image upload failed. You can retry upload below.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Validate all 10 variables, generate 4:5 image via Gemini, then automatically upload
+  const handleGenerateAndUpload = async () => {
+    if (isGenerating || isUploading || isSavingUrl) return;
+
+    // 1. Validate all 10 variables
+    const missingKeys = VARIABLE_KEYS.filter((key) => !variables[key] || !variables[key].trim());
+    if (missingKeys.length > 0) {
+      setValidationErrors(missingKeys);
+      showToast('error', `Missing required variables: ${missingKeys.join(', ')}`);
+      return;
+    }
+
+    setValidationErrors([]);
+    setIsGenerating(true);
+    setGenerationError(null);
+    setUploadError(null);
+    setUploadedImageUrl(null);
+    setSaveUrlError(null);
+    setIsImageUrlSaved(false);
+
+    try {
+      const promptToSend = buildMasterPrompt(variables);
+      const apiKey = ''; // Provided automatically by Gemini Canvas runtime
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${apiKey}`;
+
+      const requestPayload = {
         contents: [
           {
             role: 'user',
-            parts: [
-              { text: promptText },
-              {
-                inlineData: {
-                  mimeType: logoFile.mimeType,
-                  data: logoFile.base64Data
-                }
-              }
-            ]
+            parts: [{ text: promptToSend }]
           }
         ],
         generationConfig: {
@@ -639,874 +574,787 @@ export default function App() {
         }
       };
 
-      setGenerationStep(`Generating 4:5 product visual with ${trimmedModel}...`);
-
-      const response = await fetchWithBackoff(apiUrl, {
+      const response = await fetchWithBackoff(geminiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestPayload)
       });
 
       const result = await response.json().catch(() => null);
 
-      if (!response.ok) {
-        const apiErrMsg =
-          result?.error?.message ||
-          `HTTP ${response.status}: ${response.statusText || 'Gemini API request failed'}`;
-
-        if (response.status === 404 || apiErrMsg.toLowerCase().includes('not found') || apiErrMsg.toLowerCase().includes('supported')) {
-          throw new Error(
-            `Model "${trimmedModel}" is unavailable or unsupported in this environment (${apiErrMsg}). No fallback model was substituted. Verify model access or adjust the model configuration.`
-          );
-        }
-
-        if (response.status === 401 || response.status === 403 || apiErrMsg.toLowerCase().includes('api key')) {
-          throw new Error(
-            `Gemini API authentication or permission error (${apiErrMsg}). Ensure the Canvas environment or backend proxy is configured with valid Gemini credentials.`
-          );
-        }
-
-        throw new Error(`Gemini Generation Error: ${apiErrMsg}`);
-      }
-
-      const candidate = result?.candidates?.[0];
-      const imagePart = candidate?.content?.parts?.find((p) => p.inlineData && p.inlineData.data);
-
-      if (!imagePart) {
-        const finishReason = candidate?.finishReason;
-        const textFeedback = candidate?.content?.parts?.find((p) => p.text)?.text;
+      if (!response.ok || !result) {
         throw new Error(
-          `Gemini did not return an image payload.${finishReason ? ` Finish reason: ${finishReason}.` : ''}${textFeedback ? ` Message: ${textFeedback}` : ''}`
+          result?.error?.message ||
+            `Gemini Image Generation unavailable or failed (HTTP ${response.status}).`
         );
       }
 
-      const outMime = imagePart.inlineData.mimeType || 'image/png';
-      const outDataUrl = `data:${outMime};base64,${imagePart.inlineData.data}`;
+      const inlinePart = result?.candidates?.[0]?.content?.parts?.find((p) => p.inlineData);
 
-      setGeneratedImage({
-        dataUrl: outDataUrl,
-        mimeType: outMime,
-        promptUsed: promptText,
-        modelUsed: trimmedModel,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      });
+      if (!inlinePart?.inlineData?.data) {
+        throw new Error(
+          'Gemini returned an invalid or empty image output. Please verify your prompt variables and try again.'
+        );
+      }
 
-      setDownloadStatus(null);
-      setActiveScreen('result');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (err) {
-      setGenerationError(err.message || 'An unexpected error occurred during image generation.');
-    } finally {
+      const b64 = inlinePart.inlineData.data;
+      const mime = inlinePart.inlineData.mimeType || 'image/png';
+
+      // Preserve generated image in state immediately
+      setGeneratedImageBase64(b64);
+      setGeneratedImageMimeType(mime);
       setIsGenerating(false);
-      setGenerationStep('');
+
+      // Automatically proceed to upload-image Edge Function
+      await uploadGeneratedImageToEdge(b64, mime);
+    } catch (err) {
+      setIsGenerating(false);
+      setGenerationError(err.message || 'Image generation failed.');
+      showToast('error', 'Image generation failed.');
     }
   };
 
-  // --------------------------------------------------------------------------
-  // 7. IMAGE DOWNLOAD HANDLER WITH ERROR FEEDBACK
-  // --------------------------------------------------------------------------
-  const handleDownloadImage = () => {
-    setDownloadStatus(null);
-    if (!generatedImage?.dataUrl) {
-      setDownloadStatus({ type: 'error', message: 'No generated image available to download.' });
-      return;
-    }
+  // Retry upload without regenerating the image
+  const handleRetryUpload = () => {
+    if (!generatedImageBase64 || isUploading) return;
+    uploadGeneratedImageToEdge(generatedImageBase64, generatedImageMimeType);
+  };
 
-    try {
-      const productSlug = extractDisplayValue(editableConfig?.product, 'product-ad')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
-      const ext = generatedImage.mimeType.includes('jpeg') || generatedImage.mimeType.includes('jpg')
+  // Retry saving image_url to crud-make-prompt without re-uploading or regenerating
+  const handleRetrySaveUrl = () => {
+    if (!selectedRecord?.id || !uploadedImageUrl || isSavingUrl) return;
+    saveImageUrlToPromptRecord(selectedRecord.id, uploadedImageUrl);
+  };
+
+  // Download generated image locally
+  const handleDownloadImage = () => {
+    if (!generatedImageBase64) return;
+    const ext =
+      generatedImageMimeType === 'image/jpeg'
         ? 'jpg'
-        : generatedImage.mimeType.includes('webp')
+        : generatedImageMimeType === 'image/webp'
         ? 'webp'
         : 'png';
-
-      const link = document.createElement('a');
-      link.href = generatedImage.dataUrl;
-      link.download = `${productSlug || 'prompt-studio'}-4x5.${ext}`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      setDownloadStatus({ type: 'success', message: 'Image downloaded to your device.' });
-    } catch (err) {
-      setDownloadStatus({
-        type: 'error',
-        message: `Download failed: ${err.message || 'Unable to trigger file download in this browser.'}`
-      });
-    }
+    const link = document.createElement('a');
+    link.href = `data:${generatedImageMimeType};base64,${generatedImageBase64}`;
+    link.download = `appletheexchangetrx-${selectedRecord?.id || 'ad'}-1080x1350.${ext}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
-  // ==========================================================================
-  // RENDER: CENTERED MOBILE-ONLY SHELL
-  // ==========================================================================
+  // Active preview source: prefer persistent uploaded URL whenever available, else local generated base64
+  const activePreviewSrc =
+    uploadedImageUrl ||
+    (generatedImageBase64 ? `data:${generatedImageMimeType};base64,${generatedImageBase64}` : null);
+
   return (
-    <div className="min-h-screen bg-neutral-100/90 text-neutral-900 font-sans antialiased flex justify-center selection:bg-neutral-900 selection:text-white">
-      {/* Centered Mobile Viewport Frame (max-w-[440px] on desktop, full width on mobile) */}
-      <div className="w-full max-w-[440px] min-h-screen bg-neutral-50 border-x border-neutral-200/80 shadow-[0_0_40px_rgba(0,0,0,0.04)] flex flex-col relative">
-        
-        {/* ====================================================================
-            SCREEN 1: TEMPLATE LIBRARY
-           ==================================================================== */}
-        {activeScreen === 'library' && (
-          <>
-            {/* Sticky Top Header */}
-            <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-neutral-200/80 px-5 pt-5 pb-4">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-xl bg-neutral-900 text-white flex items-center justify-center shadow-sm">
-                      <Sparkles className="w-3.5 h-3.5" />
-                    </div>
-                    <h1 className="text-lg font-bold tracking-tight text-neutral-900">
-                      Prompt Studio
-                    </h1>
-                  </div>
-                  <p className="text-xs text-neutral-500 mt-1">
-                    Create premium product visuals.
-                  </p>
-                </div>
+    <div className="h-full w-full bg-[#F5F5F7] flex justify-center overflow-hidden">
+      {/* Mobile-Only Shell: max-width 500px, flex column, overflow hidden */}
+      <div className="w-full max-w-[500px] h-full bg-white flex flex-col border-x border-neutral-200 overflow-hidden relative">
+        {/* ============================================================
+            A. HEADER
+           ============================================================ */}
+        <header className="shrink-0 bg-white border-b border-neutral-200 px-4 py-3.5 flex items-center justify-between z-20">
+          <div className="min-w-0">
+            <h1 className="text-[17px] font-semibold tracking-tight text-black truncate">
+              Apple Advertisement Studio
+            </h1>
+            <p className="text-xs text-neutral-500 mt-0.5">
+              AI Image Generator • @appletheexchangetrx
+            </p>
+          </div>
 
-                <button
-                  type="button"
-                  onClick={fetchTemplates}
-                  disabled={isLoadingTemplates}
-                  aria-label="Refresh templates"
-                  className="p-2.5 rounded-xl border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50 active:scale-95 transition-all disabled:opacity-50"
-                >
-                  <RefreshCw className={`w-4 h-4 ${isLoadingTemplates ? 'animate-spin' : ''}`} />
-                </button>
-              </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => setShowKeyConfig((prev) => !prev)}
+              className={`h-9 px-2.5 rounded-xl border text-xs font-medium flex items-center gap-1 transition ${
+                anonKey.trim()
+                  ? 'bg-neutral-100 border-neutral-300 text-black'
+                  : 'bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50'
+              }`}
+              title="Optional Supabase API Key"
+            >
+              <Key className="w-3.5 h-3.5" />
+              <span>Key</span>
+            </button>
 
-              {/* Horizontally Scrollable Category Chips */}
-              <div className="mt-4 -mx-5 px-5 overflow-x-auto no-scrollbar">
-                <div className="flex items-center gap-2 pb-1">
-                  {categories.map((cat) => {
-                    const isActive = selectedCategory === cat;
-                    return (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => setSelectedCategory(cat)}
-                        className={`shrink-0 px-3.5 py-2 rounded-full text-xs font-medium transition-all ${
-                          isActive
-                            ? 'bg-neutral-900 text-white shadow-sm'
-                            : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200/70'
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </header>
+            <button
+              type="button"
+              onClick={loadRecords}
+              disabled={isLoadingRecords}
+              className="h-9 px-3 rounded-xl bg-neutral-100 hover:bg-neutral-200/80 active:scale-[0.98] text-black text-xs font-medium flex items-center gap-1.5 transition disabled:opacity-50"
+              aria-label="Refresh records"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoadingRecords ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
+            </button>
+          </div>
+        </header>
 
-            {/* Main Template Feed */}
-            <main className="flex-1 px-5 py-5 space-y-4">
-              {/* Loading Skeletons */}
-              {isLoadingTemplates && (
-                <div className="space-y-4" aria-label="Loading templates">
-                  {[1, 2, 3].map((n) => (
-                    <div
-                      key={n}
-                      className="bg-white rounded-2xl border border-neutral-200/80 p-4 space-y-3 animate-pulse"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="h-4 w-24 bg-neutral-200 rounded-full" />
-                        <div className="h-4 w-16 bg-neutral-100 rounded-full" />
-                      </div>
-                      <div className="h-5 w-3/4 bg-neutral-200 rounded-lg" />
-                      <div className="h-12 w-full bg-neutral-100 rounded-xl" />
-                      <div className="h-11 w-full bg-neutral-200 rounded-xl" />
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Error State */}
-              {!isLoadingTemplates && templatesError && (
-                <div className="bg-white rounded-2xl border border-red-200 p-6 text-center space-y-3 shadow-sm">
-                  <div className="w-11 h-11 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto">
-                    <AlertCircle className="w-5 h-5" />
-                  </div>
-                  <h2 className="text-sm font-semibold text-neutral-900">
-                    Unable to Load Templates
-                  </h2>
-                  <p className="text-xs text-neutral-600 leading-relaxed">
-                    {templatesError}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={fetchTemplates}
-                    className="w-full py-3 px-4 rounded-xl bg-neutral-900 text-white text-xs font-semibold hover:bg-neutral-800 active:scale-[0.99] transition-all inline-flex items-center justify-center gap-2"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    Retry Connection
-                  </button>
-                </div>
-              )}
-
-              {/* Empty State */}
-              {!isLoadingTemplates && !templatesError && filteredTemplates.length === 0 && (
-                <div className="bg-white rounded-2xl border border-neutral-200 p-8 text-center space-y-3">
-                  <div className="w-11 h-11 rounded-2xl bg-neutral-100 text-neutral-500 flex items-center justify-center mx-auto">
-                    <Layers className="w-5 h-5" />
-                  </div>
-                  <h2 className="text-sm font-semibold text-neutral-900">
-                    No Templates Found
-                  </h2>
-                  <p className="text-xs text-neutral-500 leading-relaxed">
-                    {selectedCategory === 'All'
-                      ? 'The Supabase endpoint returned an empty template collection.'
-                      : `No prompt templates match the "${selectedCategory}" category.`}
-                  </p>
-                  {selectedCategory !== 'All' ? (
-                    <button
-                      type="button"
-                      onClick={() => setSelectedCategory('All')}
-                      className="px-4 py-2.5 rounded-xl bg-neutral-900 text-white text-xs font-medium"
-                    >
-                      Show All Templates
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={fetchTemplates}
-                      className="px-4 py-2.5 rounded-xl bg-neutral-900 text-white text-xs font-medium"
-                    >
-                      Refresh Library
-                    </button>
-                  )}
-                </div>
-              )}
-
-              {/* Template Cards */}
-              {!isLoadingTemplates &&
-                !templatesError &&
-                filteredTemplates.map((tpl) => {
-                  const productName = extractDisplayValue(tpl.product, 'Untitled Product');
-                  const tplCategories = extractCategories(tpl);
-                  const adStyle = extractDisplayValue(tpl.style);
-                  const visualStyle = extractDisplayValue(tpl.visual_style);
-                  const headlinePreview = extractDisplayValue(
-                    typeof tpl.headline === 'object' && tpl.headline !== null ? tpl.headline.text : tpl.headline,
-                    extractDisplayValue(tpl.caption, 'No headline preview available.')
-                  );
-
-                  return (
-                    <article
-                      key={tpl.id}
-                      className="bg-white rounded-2xl border border-neutral-200/90 p-4 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:border-neutral-300 transition-all flex flex-col justify-between gap-3.5"
-                    >
-                      <div>
-                        {/* Top Metadata Row: Categories & Ready Badge */}
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            {tplCategories.map((cat) => (
-                              <span
-                                key={cat}
-                                className="px-2.5 py-0.5 rounded-full bg-neutral-100 text-neutral-700 text-[11px] font-medium"
-                              >
-                                {cat}
-                              </span>
-                            ))}
-                          </div>
-                          {tpl.is_ready !== undefined && (
-                            <span
-                              className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
-                                tpl.is_ready
-                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
-                                  : 'bg-amber-50 text-amber-700 border border-amber-200/60'
-                              }`}
-                            >
-                              {tpl.is_ready ? 'Ready' : 'Draft'}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Product Title */}
-                        <h2 className="text-base font-bold text-neutral-900 mt-2.5 tracking-tight">
-                          {productName}
-                        </h2>
-
-                        {/* Style & Visual Style Badges */}
-                        {(adStyle || visualStyle) && (
-                          <div className="flex flex-wrap gap-1.5 mt-2">
-                            {adStyle && (
-                              <span className="inline-flex items-center gap-1 text-[11px] text-neutral-600 bg-neutral-50 border border-neutral-200/70 px-2.5 py-1 rounded-lg">
-                                <Layout className="w-3 h-3 text-neutral-400" />
-                                {adStyle}
-                              </span>
-                            )}
-                            {visualStyle && (
-                              <span className="inline-flex items-center gap-1 text-[11px] text-neutral-600 bg-neutral-50 border border-neutral-200/70 px-2.5 py-1 rounded-lg">
-                                <Palette className="w-3 h-3 text-neutral-400" />
-                                {visualStyle}
-                              </span>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Headline Preview Box */}
-                        <div className="mt-3 p-3 rounded-xl bg-neutral-50 border border-neutral-100">
-                          <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 block mb-1">
-                            Headline Preview
-                          </span>
-                          <p className="text-xs font-medium text-neutral-800 line-clamp-2 leading-relaxed">
-                            “{headlinePreview}”
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Primary Action */}
-                      <button
-                        type="button"
-                        onClick={() => handleSelectTemplate(tpl)}
-                        className="w-full py-3 px-4 rounded-xl bg-neutral-900 text-white text-xs font-semibold hover:bg-neutral-800 active:scale-[0.99] transition-all flex items-center justify-center gap-2"
-                      >
-                        <span>Select Template</span>
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </article>
-                  );
-                })}
-            </main>
-          </>
+        {/* Optional Supabase Anon Key Drawer */}
+        {showKeyConfig && (
+          <div className="shrink-0 bg-neutral-50 border-b border-neutral-200 px-4 py-3 space-y-2 z-20">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-black">
+                Supabase Anon Key (Optional)
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowKeyConfig(false)}
+                className="text-neutral-400 hover:text-black"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="password"
+                value={anonKey}
+                onChange={(e) => setAnonKey(e.target.value)}
+                placeholder="Paste Supabase anon key if required..."
+                className="flex-1 h-9 px-3 rounded-xl bg-white border border-neutral-300 text-xs text-black placeholder-neutral-400 focus:outline-none focus:border-black"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setShowKeyConfig(false);
+                  loadRecords();
+                }}
+                className="h-9 px-3.5 rounded-xl bg-black text-white text-xs font-medium"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
         )}
 
-        {/* ====================================================================
-            SCREEN 2 & 3: TEMPLATE EDITOR + BRAND LOGO UPLOAD + GENERATION
-           ==================================================================== */}
-        {activeScreen === 'editor' && editableConfig && (
-          <>
-            {/* Sticky Editor Header */}
-            <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-neutral-200/80 px-4 py-3.5 flex items-center justify-between gap-2">
-              <button
-                type="button"
-                onClick={() => setActiveScreen('library')}
-                className="p-2.5 -ml-1 rounded-xl text-neutral-700 hover:bg-neutral-100 active:scale-95 transition-all flex items-center gap-1.5 text-xs font-medium"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Templates</span>
-              </button>
+        {/* Toast Notification Banner */}
+        {toast && (
+          <div className="absolute top-16 left-4 right-4 z-30 pointer-events-none flex justify-center">
+            <div
+              className={`pointer-events-auto flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border shadow-sm text-xs font-medium max-w-full ${
+                toast.type === 'error'
+                  ? 'bg-red-50 border-red-200 text-red-900'
+                  : 'bg-black border-neutral-800 text-white'
+              }`}
+            >
+              {toast.type === 'error' ? (
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              )}
+              <span className="truncate">{toast.message}</span>
+            </div>
+          </div>
+        )}
 
-              <div className="text-center">
-                <span className="text-xs font-bold text-neutral-900 block">
-                  Template Editor
+        {/* ============================================================
+            INDEPENDENTLY SCROLLABLE MAIN CONTENT (flex: 1)
+           ============================================================ */}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-[#F5F5F7] p-4 space-y-5">
+          {/* ------------------------------------------------------------
+              B. TEMPLATE SELECTION
+             ------------------------------------------------------------ */}
+          <section className="bg-white rounded-2xl border border-neutral-200 p-4 space-y-3 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-black text-white text-[11px] font-semibold flex items-center justify-center">
+                  1
                 </span>
-                <span className="text-[10px] text-neutral-400 block">
-                  4:5 Portrait • 1024×1280
-                </span>
+                <h2 className="text-sm font-semibold text-black">Select Prompt Data</h2>
               </div>
+              <span className="text-[11px] text-neutral-500">
+                {records.length} {records.length === 1 ? 'record' : 'records'}
+              </span>
+            </div>
 
-              <button
-                type="button"
-                onClick={() => setShowModelConfig((v) => !v)}
-                aria-label="Configure Gemini Model"
-                className={`p-2.5 rounded-xl border transition-all ${
-                  showModelConfig
-                    ? 'bg-neutral-900 text-white border-neutral-900'
-                    : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'
-                }`}
-              >
-                <Cpu className="w-4 h-4" />
-              </button>
-            </header>
+            {/* Loading State */}
+            {isLoadingRecords && (
+              <div className="space-y-2">
+                {[1, 2].map((skeleton) => (
+                  <div
+                    key={skeleton}
+                    className="p-3.5 rounded-xl border border-neutral-200 bg-neutral-50 animate-pulse space-y-2"
+                  >
+                    <div className="h-3.5 w-1/2 bg-neutral-200 rounded" />
+                    <div className="h-3 w-3/4 bg-neutral-200 rounded" />
+                  </div>
+                ))}
+              </div>
+            )}
 
-            {/* Collapsible Gemini Model Configuration Drawer */}
-            {showModelConfig && (
-              <div className="bg-neutral-900 text-white px-5 py-4 border-b border-neutral-800 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold flex items-center gap-1.5">
-                    <Cpu className="w-3.5 h-3.5 text-neutral-400" />
-                    Gemini Image Model
-                  </span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-300">
-                    Strict Mode
-                  </span>
+            {/* Error State */}
+            {!isLoadingRecords && recordsError && (
+              <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 space-y-2.5">
+                <div className="flex items-start gap-2 text-red-900">
+                  <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                  <div className="text-xs space-y-0.5">
+                    <p className="font-semibold">Unable to Load Prompt Records</p>
+                    <p className="text-red-700 leading-relaxed">{recordsError}</p>
+                  </div>
                 </div>
-                <input
-                  type="text"
-                  value={geminiModel}
-                  onChange={(e) => setGeminiModel(e.target.value)}
-                  placeholder="gemini-3.1-flash-image"
-                  className="w-full px-3 py-2 rounded-xl bg-neutral-800 border border-neutral-700 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-neutral-500"
-                />
-                <p className="text-[11px] text-neutral-400 leading-relaxed">
-                  Default: <code className="text-neutral-200">gemini-3.1-flash-image</code>. If unavailable, an explicit configuration error will be shown without silent substitution.
+                <button
+                  type="button"
+                  onClick={loadRecords}
+                  className="h-8 px-3 rounded-lg bg-black text-white text-xs font-medium inline-flex items-center gap-1.5"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {/* Empty Records State */}
+            {!isLoadingRecords && !recordsError && records.length === 0 && (
+              <div className="p-5 rounded-xl border border-neutral-200 bg-neutral-50 text-center space-y-1">
+                <p className="text-xs font-semibold text-black">No Prompt Records Found</p>
+                <p className="text-[11px] text-neutral-500">
+                  The crud-make-prompt Edge Function returned 0 records.
                 </p>
               </div>
             )}
 
-            {/* Editor Scroll Body */}
-            <main className="flex-1 px-4 py-5 space-y-4 pb-36">
-              {/* SECTION 3: MANDATORY BRAND LOGO UPLOAD */}
-              <section className="bg-white rounded-2xl border-2 border-neutral-900/10 p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-neutral-900 text-white flex items-center justify-center">
-                      <FileImage className="w-3.5 h-3.5" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-neutral-900">Brand Logo</h3>
-                    </div>
-                  </div>
-                  <span className="text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-neutral-900 text-white">
-                    Required
-                  </span>
-                </div>
+            {/* Records List */}
+            {!isLoadingRecords && !recordsError && records.length > 0 && (
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-0.5">
+                {records.map((rec) => {
+                  const isSelected = selectedRecordId === rec.id;
+                  const templateName = rec.name || rec.template_name || rec.id;
+                  const productName = rec.product || null;
+                  const description =
+                    rec.subheadline || getRecordHeadlinePreview(rec) || rec.caption || null;
 
-                <p className="text-xs text-neutral-500 leading-relaxed mb-3">
-                  Placed subtly in the upper-left corner with original proportions and colors preserved. PNG, JPG, JPEG, or WebP (max 5 MB).
-                </p>
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
-                  onChange={handleLogoUpload}
-                  className="hidden"
-                />
-
-                {!logoFile ? (
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full py-6 px-4 rounded-xl border-2 border-dashed border-neutral-300 bg-neutral-50/70 hover:bg-neutral-100/70 hover:border-neutral-400 transition-all flex flex-col items-center justify-center gap-2 text-center"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-white border border-neutral-200 flex items-center justify-center text-neutral-700 shadow-xs">
-                      <Upload className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <span className="text-xs font-semibold text-neutral-900 block">
-                        Tap to Upload Brand Logo
-                      </span>
-                      <span className="text-[11px] text-neutral-400 mt-0.5 block">
-                        PNG, JPG, JPEG, WebP
-                      </span>
-                    </div>
-                  </button>
-                ) : (
-                  <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3 flex items-center gap-3">
-                    <div className="w-14 h-14 rounded-lg bg-white border border-neutral-200 p-1.5 flex items-center justify-center shrink-0 overflow-hidden">
-                      <img
-                        src={logoFile.dataUrl}
-                        alt="Uploaded brand logo preview"
-                        className="max-w-full max-h-full object-contain"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-neutral-900 truncate">
-                        {logoFile.name}
-                      </p>
-                      <p className="text-[11px] text-neutral-500 mt-0.5">
-                        {(logoFile.size / 1024).toFixed(1)} KB • {logoFile.mimeType.split('/')[1].toUpperCase()}
-                      </p>
-                      <div className="flex items-center gap-2 mt-2">
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="px-2.5 py-1 rounded-lg bg-white border border-neutral-200 text-[11px] font-medium text-neutral-700 hover:bg-neutral-100"
-                        >
-                          Replace
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleRemoveLogo}
-                          className="px-2.5 py-1 rounded-lg bg-red-50 border border-red-100 text-[11px] font-medium text-red-600 hover:bg-red-100"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {logoError && (
-                  <div className="mt-2.5 p-2.5 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2 text-red-700 text-xs">
-                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span>{logoError}</span>
-                  </div>
-                )}
-              </section>
-
-              {/* A. PRODUCT INFORMATION */}
-              <EditorSection icon={Layers} title="A. Product Information" badge="Editable">
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-500 mb-1.5">
-                      Product Name
-                    </label>
-                    <input
-                      type="text"
-                      value={extractDisplayValue(editableConfig.product)}
-                      onChange={(e) => updateProductField(e.target.value)}
-                      placeholder="Enter product name"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50/50 text-sm font-medium text-neutral-900 focus:bg-white focus:outline-none focus:border-neutral-900 transition-colors"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div className="bg-neutral-50 rounded-xl p-2.5 border border-neutral-100">
-                      <span className="text-[10px] font-medium uppercase tracking-wider text-neutral-400 block">
-                        Category
-                      </span>
-                      <span className="text-xs font-medium text-neutral-800 mt-0.5 block">
-                        {extractCategories(editableConfig).join(', ')}
-                      </span>
-                    </div>
-                    <div className="bg-neutral-50 rounded-xl p-2.5 border border-neutral-100">
-                      <span className="text-[10px] font-medium uppercase tracking-wider text-neutral-400 block">
-                        Style
-                      </span>
-                      <span className="text-xs font-medium text-neutral-800 mt-0.5 block">
-                        {extractDisplayValue(editableConfig.style, 'Standard')}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </EditorSection>
-
-              {/* B. HEADLINE */}
-              <EditorSection icon={Type} title="B. Headline" badge="Editable">
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-500 mb-1.5">
-                      Headline Text
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={
-                        typeof editableConfig.headline === 'object' && editableConfig.headline !== null
-                          ? editableConfig.headline.text || ''
-                          : extractDisplayValue(editableConfig.headline)
-                      }
-                      onChange={(e) => updateHeadlineText(e.target.value)}
-                      placeholder="Enter primary advertisement headline"
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50/50 text-sm font-medium text-neutral-900 focus:bg-white focus:outline-none focus:border-neutral-900 transition-colors resize-none"
-                    />
-                  </div>
-
-                  {typeof editableConfig.headline === 'object' && editableConfig.headline !== null && (
-                    <PropertyGrid data={editableConfig.headline} excludeKeys={['text']} />
-                  )}
-                </div>
-              </EditorSection>
-
-              {/* C. SUBHEADLINE */}
-              <EditorSection icon={Type} title="C. Subheadline" badge="Editable">
-                <div>
-                  <label className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-500 mb-1.5">
-                    Subheadline Description
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={
-                      typeof editableConfig.subheadline === 'object' && editableConfig.subheadline !== null
-                        ? editableConfig.subheadline.text || editableConfig.subheadline.description || ''
-                        : extractDisplayValue(editableConfig.subheadline)
-                    }
-                    onChange={(e) => updateSubheadlineText(e.target.value)}
-                    placeholder="Enter supporting subheadline"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50/50 text-xs font-medium text-neutral-900 focus:bg-white focus:outline-none focus:border-neutral-900 transition-colors resize-none leading-relaxed"
-                  />
-                </div>
-                {typeof editableConfig.subheadline === 'object' && editableConfig.subheadline !== null && (
-                  <PropertyGrid data={editableConfig.subheadline} excludeKeys={['text', 'description']} />
-                )}
-              </EditorSection>
-
-              {/* D. FEATURES */}
-              <EditorSection icon={CheckCircle2} title="D. Features" badge="Editable">
-                <div className="space-y-2.5">
-                  {Array.isArray(editableConfig.feature_items) && editableConfig.feature_items.length > 0 ? (
-                    editableConfig.feature_items.map((item, index) => {
-                      const titleVal =
-                        typeof item === 'object' && item !== null
-                          ? item.title || item.text || ''
-                          : extractDisplayValue(item);
-                      const iconVal =
-                        typeof item === 'object' && item !== null ? extractDisplayValue(item.icon) : '';
-
-                      return (
-                        <div key={index} className="flex items-center gap-2">
-                          <div className="px-2.5 py-2.5 rounded-xl bg-neutral-100 border border-neutral-200/70 text-[11px] font-medium text-neutral-600 shrink-0 min-w-[72px] text-center truncate">
-                            {iconVal || `#${index + 1}`}
-                          </div>
-                          <input
-                            type="text"
-                            value={titleVal}
-                            onChange={(e) => updateFeatureTitle(index, e.target.value)}
-                            placeholder={`Feature ${index + 1} title`}
-                            className="flex-1 min-w-0 px-3 py-2.5 rounded-xl border border-neutral-200 bg-neutral-50/50 text-xs font-medium text-neutral-900 focus:bg-white focus:outline-none focus:border-neutral-900"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeFeatureItem(index)}
-                            aria-label="Remove feature"
-                            className="p-2.5 rounded-xl text-neutral-400 hover:text-red-600 hover:bg-red-50 transition-colors"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                  return (
+                    <button
+                      key={rec.id}
+                      type="button"
+                      onClick={() => handleSelectRecord(rec)}
+                      className={`w-full text-left p-3.5 rounded-xl border transition flex items-start justify-between gap-3 ${
+                        isSelected
+                          ? 'bg-neutral-50 border-black ring-1 ring-black'
+                          : 'bg-white border-neutral-200 hover:border-neutral-400'
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold text-black truncate">
+                            {templateName}
+                          </span>
+                          {rec.categories && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 truncate max-w-[110px]">
+                              {Array.isArray(rec.categories)
+                                ? rec.categories.join(', ')
+                                : String(rec.categories)}
+                            </span>
+                          )}
                         </div>
-                      );
-                    })
-                  ) : (
-                    <p className="text-xs text-neutral-400">No feature callouts configured.</p>
-                  )}
 
-                  <button
-                    type="button"
-                    onClick={addFeatureItem}
-                    className="w-full py-2.5 px-3 rounded-xl border border-dashed border-neutral-300 text-xs font-medium text-neutral-600 hover:bg-neutral-50 flex items-center justify-center gap-1.5 mt-1"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    Add Feature Callout
-                  </button>
+                        {productName && (
+                          <p className="text-xs font-medium text-neutral-800 truncate">
+                            {productName}
+                          </p>
+                        )}
+
+                        {description && (
+                          <p className="text-[11px] text-neutral-500 line-clamp-2 leading-relaxed">
+                            {description}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Selection Indicator */}
+                      <div
+                        className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 transition ${
+                          isSelected
+                            ? 'bg-black border-black text-white'
+                            : 'border-neutral-300 bg-white'
+                        }`}
+                      >
+                        {isSelected && <Check className="w-3 h-3" />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+
+          {/* ------------------------------------------------------------
+              C. VARIABLE CONFIGURATION (10 EXACT VARIABLES)
+             ------------------------------------------------------------ */}
+          <section className="bg-white rounded-2xl border border-neutral-200 p-4 space-y-3.5 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-black text-white text-[11px] font-semibold flex items-center justify-center">
+                  2
+                </span>
+                <div>
+                  <h2 className="text-sm font-semibold text-black">10 Prompt Variables</h2>
+                  <p className="text-[11px] text-neutral-500">
+                    {isLoadingSingleRecord
+                      ? 'Fetching full record...'
+                      : selectedRecord
+                      ? `Populated from ${selectedRecord.id}`
+                      : 'Select a record or edit variables directly'}
+                  </p>
                 </div>
-              </EditorSection>
-
-              {/* E. COMPOSITION */}
-              {editableConfig.composition && (
-                <EditorSection icon={Layout} title="E. Composition" badge="Preset">
-                  <PropertyGrid data={editableConfig.composition} />
-                </EditorSection>
-              )}
-
-              {/* F. BACKGROUND */}
-              {editableConfig.background && (
-                <EditorSection icon={ImageIcon} title="F. Background" badge="Preset">
-                  {typeof editableConfig.background === 'object' ? (
-                    <PropertyGrid data={editableConfig.background} />
-                  ) : (
-                    <p className="text-xs text-neutral-700">{extractDisplayValue(editableConfig.background)}</p>
-                  )}
-                </EditorSection>
-              )}
-
-              {/* G. TYPOGRAPHY */}
-              {editableConfig.typography && (
-                <EditorSection icon={Sliders} title="G. Typography" badge="Preset">
-                  <PropertyGrid data={editableConfig.typography} />
-                </EditorSection>
-              )}
-
-              {/* H. LIGHTING */}
-              {editableConfig.lighting && (
-                <EditorSection icon={Sun} title="H. Lighting" badge="Preset">
-                  <PropertyGrid data={editableConfig.lighting} />
-                </EditorSection>
-              )}
-
-              {/* I. VISUAL STYLE */}
-              {editableConfig.visual_style && (
-                <EditorSection icon={Palette} title="I. Visual Style" badge="Preset">
-                  <div className="bg-neutral-50 rounded-xl p-3 border border-neutral-100">
-                    <span className="text-xs font-medium text-neutral-800 leading-relaxed">
-                      {extractDisplayValue(editableConfig.visual_style)}
-                    </span>
-                  </div>
-                </EditorSection>
-              )}
-
-              {/* PROMPT INSPECTOR TOGGLE */}
-              <div className="bg-white rounded-2xl border border-neutral-200/80 p-4">
-                <button
-                  type="button"
-                  onClick={() => setShowPromptPreview((v) => !v)}
-                  className="w-full flex items-center justify-between text-xs font-semibold text-neutral-700"
-                >
-                  <span className="flex items-center gap-2">
-                    <Eye className="w-4 h-4 text-neutral-500" />
-                    Inspect Constructed Gemini Prompt
-                  </span>
-                  <span className="text-[11px] text-neutral-400">
-                    {showPromptPreview ? 'Hide' : 'View'}
-                  </span>
-                </button>
-                {showPromptPreview && (
-                  <pre className="mt-3 p-3 rounded-xl bg-neutral-900 text-neutral-200 text-[11px] whitespace-pre-wrap font-mono leading-relaxed max-h-60 overflow-y-auto">
-                    {constructedPrompt}
-                  </pre>
-                )}
               </div>
 
-              {/* GENERATION ERROR DISPLAY */}
-              {generationError && (
-                <div className="rounded-2xl bg-red-50 border border-red-200 p-4 space-y-2">
-                  <div className="flex items-start gap-2.5 text-red-800">
-                    <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5 text-red-600" />
-                    <div className="text-xs leading-relaxed">
-                      <span className="font-bold block mb-0.5">Generation Blocked / Error</span>
-                      {generationError}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </main>
-
-            {/* Sticky Bottom Generate CTA Bar */}
-            <div className="fixed bottom-0 w-full max-w-[440px] bg-white/95 backdrop-blur-md border-t border-neutral-200/80 p-4 z-30">
-              {isGenerating ? (
-                <div className="w-full py-3.5 px-4 rounded-2xl bg-neutral-900 text-white flex items-center justify-center gap-3">
-                  <RefreshCw className="w-4 h-4 animate-spin shrink-0" />
-                  <span className="text-xs font-semibold truncate">
-                    {generationStep || 'Generating advertisement...'}
-                  </span>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleGenerateImage}
-                  disabled={!logoFile}
-                  className={`w-full py-3.5 px-4 rounded-2xl text-xs font-bold tracking-wide transition-all flex items-center justify-center gap-2 shadow-sm ${
-                    logoFile
-                      ? 'bg-neutral-900 text-white hover:bg-neutral-800 active:scale-[0.99]'
-                      : 'bg-neutral-200 text-neutral-500 cursor-not-allowed'
-                  }`}
-                >
-                  <Sparkles className="w-4 h-4" />
-                  <span>
-                    {logoFile ? 'Generate 4:5 Product Image' : 'Upload Brand Logo to Generate'}
-                  </span>
-                </button>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* ====================================================================
-            SCREEN 5: IMAGE RESULT
-           ==================================================================== */}
-        {activeScreen === 'result' && generatedImage && (
-          <>
-            <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-neutral-200/80 px-4 py-3.5 flex items-center justify-between">
               <button
                 type="button"
-                onClick={() => setActiveScreen('editor')}
-                className="p-2.5 -ml-1 rounded-xl text-neutral-700 hover:bg-neutral-100 active:scale-95 transition-all flex items-center gap-1.5 text-xs font-medium"
+                onClick={handleResetVariables}
+                disabled={!selectedRecord}
+                className="h-8 px-2.5 rounded-lg border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 text-[11px] font-medium text-black inline-flex items-center gap-1 transition disabled:opacity-40"
               >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Editor</span>
+                <RotateCcw className="w-3 h-3" />
+                <span>Reset Variables</span>
               </button>
+            </div>
 
-              <span className="text-xs font-bold text-neutral-900">
-                Generated Visual
-              </span>
+            {validationErrors.length > 0 && (
+              <div className="p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2 text-xs text-red-900">
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold">All 10 variables are required before generation.</p>
+                  <p className="text-red-700 mt-0.5">
+                    Missing: {validationErrors.join(', ')}
+                  </p>
+                </div>
+              </div>
+            )}
 
-              <span className="text-[10px] font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/70">
-                4:5 Ready
-              </span>
-            </header>
+            <div className="space-y-3">
+              {VARIABLE_KEYS.map((key, idx) => {
+                const value = variables[key] ?? '';
+                const isMissingInSource = selectedRecord && value.trim() === '';
+                const hasValidationError = validationErrors.includes(key);
+                const isMultiline = [
+                  'headline',
+                  'subheadline',
+                  'feature_items',
+                  'composition',
+                  'background',
+                  'typographhy',
+                  'lighting'
+                ].includes(key);
 
-            <main className="flex-1 px-5 py-5 space-y-5">
-              {/* 4:5 Portrait Image Container */}
-              <div className="w-full aspect-[4/5] rounded-2xl overflow-hidden bg-neutral-200/70 border border-neutral-200 shadow-md relative">
-                <img
-                  src={generatedImage.dataUrl}
-                  alt={`Generated advertisement for ${extractDisplayValue(editableConfig?.product)}`}
-                  className="w-full h-full object-cover"
-                />
+                return (
+                  <div key={key} className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label
+                        htmlFor={`var-${key}`}
+                        className="text-xs font-mono font-semibold text-black flex items-center gap-1.5"
+                      >
+                        <span className="text-neutral-400">{idx + 1}.</span>
+                        <span>{key}</span>
+                      </label>
+
+                      {isMissingInSource && (
+                        <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                          Missing in record
+                        </span>
+                      )}
+                    </div>
+
+                    {isMultiline ? (
+                      <textarea
+                        id={`var-${key}`}
+                        rows={key === 'feature_items' ? 4 : 2}
+                        value={value}
+                        onChange={(e) => handleVariableChange(key, e.target.value)}
+                        placeholder={`Enter ${key}...`}
+                        className={`w-full px-3 py-2 rounded-xl border text-xs text-black placeholder-neutral-400 focus:outline-none transition font-sans leading-relaxed ${
+                          hasValidationError
+                            ? 'border-red-400 bg-red-50/40 focus:border-red-600'
+                            : 'border-neutral-200 bg-neutral-50/50 focus:bg-white focus:border-black'
+                        }`}
+                      />
+                    ) : (
+                      <input
+                        id={`var-${key}`}
+                        type="text"
+                        value={value}
+                        onChange={(e) => handleVariableChange(key, e.target.value)}
+                        placeholder={`Enter ${key}...`}
+                        className={`w-full h-9 px-3 rounded-xl border text-xs text-black placeholder-neutral-400 focus:outline-none transition ${
+                          hasValidationError
+                            ? 'border-red-400 bg-red-50/40 focus:border-red-600'
+                            : 'border-neutral-200 bg-neutral-50/50 focus:bg-white focus:border-black'
+                        }`}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* ------------------------------------------------------------
+              D. PROMPT PREVIEW
+             ------------------------------------------------------------ */}
+          <section className="bg-white rounded-2xl border border-neutral-200 p-4 space-y-3 shadow-2xs">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-black text-white text-[11px] font-semibold flex items-center justify-center">
+                  3
+                </span>
+                <h2 className="text-sm font-semibold text-black">Master Prompt Preview</h2>
               </div>
 
-              {/* Result Metadata Card */}
-              <div className="bg-white rounded-2xl border border-neutral-200/80 p-4 space-y-2.5">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
-                      Product
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={handleCopyPrompt}
+                  className="h-8 px-2.5 rounded-lg border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 text-[11px] font-medium text-black inline-flex items-center gap-1 transition"
+                >
+                  {copiedPrompt ? (
+                    <>
+                      <Check className="w-3 h-3 text-emerald-600" />
+                      <span>Copied</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3 h-3" />
+                      <span>Copy Prompt</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsPromptExpanded((prev) => !prev)}
+                  className="h-8 px-2.5 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 text-[11px] font-medium text-black inline-flex items-center gap-1 transition"
+                >
+                  <span>{isPromptExpanded ? 'Collapse' : 'Expand'}</span>
+                  {isPromptExpanded ? (
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div
+              className={`rounded-xl bg-neutral-50 border border-neutral-200 p-3 font-mono text-[11px] text-neutral-800 whitespace-pre-wrap break-words leading-relaxed overflow-y-auto transition-all ${
+                isPromptExpanded ? 'max-h-[420px]' : 'max-h-32'
+              }`}
+            >
+              {finalPrompt}
+            </div>
+          </section>
+
+          {/* ------------------------------------------------------------
+              E. GENERATE IMAGE ACTION
+             ------------------------------------------------------------ */}
+          <div className="space-y-2.5">
+            {generationError && (
+              <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 flex items-start gap-2.5 text-xs text-red-900">
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-semibold">Image Generation Error</p>
+                  <p className="text-red-700 leading-relaxed">{generationError}</p>
+                </div>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={handleGenerateAndUpload}
+              disabled={isGenerating || isUploading || isSavingUrl}
+              className="w-full h-12 rounded-2xl bg-black hover:bg-neutral-800 active:scale-[0.99] text-white text-sm font-semibold flex items-center justify-center gap-2 transition disabled:opacity-60"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Generating 4:5 Advertisement (1080×1350)...</span>
+                </>
+              ) : isUploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Uploading to Supabase Storage...</span>
+                </>
+              ) : isSavingUrl ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Saving image_url to Record...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" />
+                  <span>Generate Image</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* ------------------------------------------------------------
+              F. IMAGE RESULT INTERFACE
+             ------------------------------------------------------------ */}
+          {(activePreviewSrc || isGenerating || isUploading || isSavingUrl || uploadError) && (
+            <section className="bg-white rounded-2xl border border-neutral-200 p-4 space-y-4 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-black text-white text-[11px] font-semibold flex items-center justify-center">
+                    4
+                  </span>
+                  <h2 className="text-sm font-semibold text-black">Advertisement Result</h2>
+                </div>
+
+                {/* Generation & Upload Status Badges */}
+                <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                  {generatedImageBase64 && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-neutral-100 text-black border border-neutral-200">
+                      Generated
                     </span>
-                    <h2 className="text-base font-bold text-neutral-900">
-                      {extractDisplayValue(editableConfig?.product, 'Product Advertisement')}
-                    </h2>
-                  </div>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Generated
+                  )}
+                  {isUploading && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-neutral-100 text-neutral-700 inline-flex items-center gap-1">
+                      <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                      Uploading
+                    </span>
+                  )}
+                  {uploadedImageUrl && !isUploading && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      Uploaded
+                    </span>
+                  )}
+                  {isSavingUrl && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-neutral-100 text-neutral-700 inline-flex items-center gap-1">
+                      <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                      Saving URL
+                    </span>
+                  )}
+                  {isImageUrlSaved && !isSavingUrl && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-black text-white">
+                      image_url Saved
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Metadata Summary */}
+              <div className="grid grid-cols-2 gap-2 p-3 rounded-xl bg-neutral-50 border border-neutral-200/80 text-xs">
+                <div className="min-w-0">
+                  <span className="text-[10px] uppercase tracking-wider text-neutral-400 block">
+                    Product
+                  </span>
+                  <span className="font-semibold text-black truncate block mt-0.5">
+                    {variables.product || '—'}
                   </span>
                 </div>
-
-                <div className="pt-2 border-t border-neutral-100 grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <span className="text-[10px] text-neutral-400 block">Template ID</span>
-                    <span className="font-medium text-neutral-700 truncate block">
-                      {String(selectedTemplateId)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-neutral-400 block">Model</span>
-                    <span className="font-medium text-neutral-700 truncate block">
-                      {generatedImage.modelUsed}
-                    </span>
-                  </div>
+                <div className="min-w-0">
+                  <span className="text-[10px] uppercase tracking-wider text-neutral-400 block">
+                    Template Record
+                  </span>
+                  <span className="font-semibold text-black truncate block mt-0.5">
+                    {selectedRecord?.name || selectedRecord?.id || 'Custom'}
+                  </span>
                 </div>
               </div>
 
-              {/* Error feedback on regeneration or download */}
-              {generationError && (
-                <div className="rounded-2xl bg-red-50 border border-red-200 p-3.5 flex items-start gap-2 text-xs text-red-700">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span>{generationError}</span>
+              {/* 4:5 Portrait Preview Container */}
+              {activePreviewSrc && (
+                <div className="relative w-full aspect-[4/5] rounded-2xl overflow-hidden bg-neutral-100 border border-neutral-200">
+                  <img
+                    src={activePreviewSrc}
+                    alt={variables.product || 'Generated Advertisement'}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsFullViewOpen(true)}
+                    className="absolute bottom-3 right-3 h-9 px-3 rounded-xl bg-white/95 backdrop-blur-xs border border-neutral-200 text-black text-xs font-medium inline-flex items-center gap-1.5 shadow-xs hover:bg-white transition"
+                  >
+                    <Maximize2 className="w-3.5 h-3.5" />
+                    <span>View Full Image</span>
+                  </button>
                 </div>
               )}
 
-              {downloadStatus && (
-                <div
-                  className={`rounded-2xl p-3.5 border text-xs flex items-center gap-2 ${
-                    downloadStatus.type === 'error'
-                      ? 'bg-red-50 border-red-200 text-red-700'
-                      : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                  }`}
+              {/* Upload Error Banner + Retry Upload Button */}
+              {uploadError && (
+                <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 space-y-2.5">
+                  <div className="flex items-start gap-2 text-xs text-red-900">
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="font-semibold">Supabase Storage Upload Failed</p>
+                      <p className="text-red-700 leading-relaxed">{uploadError}</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRetryUpload}
+                    disabled={isUploading}
+                    className="h-9 px-3.5 rounded-xl bg-black text-white text-xs font-medium inline-flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <CloudUpload className="w-3.5 h-3.5" />
+                    <span>Retry Upload</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Save image_url Error Banner + Retry Save Button */}
+              {saveUrlError && (
+                <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 space-y-2.5">
+                  <div className="flex items-start gap-2 text-xs text-red-900">
+                    <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="font-semibold">Failed to Save image_url to Record</p>
+                      <p className="text-red-700 leading-relaxed">{saveUrlError}</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRetrySaveUrl}
+                    disabled={isSavingUrl}
+                    className="h-9 px-3.5 rounded-xl bg-black text-white text-xs font-medium inline-flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isSavingUrl ? 'animate-spin' : ''}`} />
+                    <span>Retry Save image_url</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Returned Public Image URL Display & Copy Action */}
+              {uploadedImageUrl && (
+                <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-semibold text-neutral-700">
+                      Public Storage URL (bucket: images)
+                    </span>
+                    <a
+                      href={uploadedImageUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] font-medium text-black inline-flex items-center gap-1 hover:underline"
+                    >
+                      <span>Open</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+
+                  <div className="p-2 rounded-lg bg-white border border-neutral-200 font-mono text-[11px] text-neutral-700 break-all">
+                    {uploadedImageUrl}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyImageUrl}
+                    className="w-full h-9 rounded-xl bg-black text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5 hover:bg-neutral-800 transition"
+                  >
+                    {copiedImageUrl ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Image URL Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copy Image URL</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {/* Result Action Grid */}
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={handleGenerateAndUpload}
+                  disabled={isGenerating || isUploading}
+                  className="h-10 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-black text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition disabled:opacity-50"
                 >
-                  {downloadStatus.type === 'error' ? (
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                  ) : (
-                    <CheckCircle2 className="w-4 h-4 shrink-0" />
-                  )}
-                  <span>{downloadStatus.message}</span>
-                </div>
-              )}
+                  <RefreshCw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
+                  <span>Generate Again</span>
+                </button>
 
-              {/* Action Controls */}
-              <div className="space-y-2.5 pt-1 pb-6">
                 <button
                   type="button"
                   onClick={handleDownloadImage}
-                  className="w-full py-3.5 px-4 rounded-2xl bg-neutral-900 text-white text-xs font-bold hover:bg-neutral-800 active:scale-[0.99] transition-all flex items-center justify-center gap-2 shadow-sm"
+                  disabled={!generatedImageBase64}
+                  className="h-10 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-black text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition disabled:opacity-50"
                 >
-                  <Download className="w-4 h-4" />
+                  <Download className="w-3.5 h-3.5" />
                   <span>Download Image</span>
                 </button>
 
-                <div className="grid grid-cols-2 gap-2.5">
-                  <button
-                    type="button"
-                    onClick={handleGenerateImage}
-                    disabled={isGenerating}
-                    className="py-3 px-4 rounded-2xl bg-white border border-neutral-200 text-neutral-900 text-xs font-semibold hover:bg-neutral-50 active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    <RotateCcw className={`w-3.5 h-3.5 ${isGenerating ? 'animate-spin' : ''}`} />
-                    <span>{isGenerating ? 'Generating...' : 'Generate Again'}</span>
-                  </button>
+                <button
+                  type="button"
+                  onClick={handleCopyPrompt}
+                  className="h-10 rounded-xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 text-black text-xs font-medium inline-flex items-center justify-center gap-1.5 transition"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Copy Prompt</span>
+                </button>
 
+                {generatedImageBase64 && !uploadedImageUrl && !isUploading && (
                   <button
                     type="button"
-                    onClick={() => setActiveScreen('editor')}
-                    disabled={isGenerating}
-                    className="py-3 px-4 rounded-2xl bg-white border border-neutral-200 text-neutral-700 text-xs font-semibold hover:bg-neutral-50 active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    onClick={handleRetryUpload}
+                    className="h-10 rounded-xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 text-black text-xs font-medium inline-flex items-center justify-center gap-1.5 transition"
                   >
-                    <ArrowLeft className="w-3.5 h-3.5" />
-                    <span>Back to Editor</span>
+                    <CloudUpload className="w-3.5 h-3.5" />
+                    <span>Retry Upload</span>
                   </button>
-                </div>
+                )}
               </div>
-            </main>
-          </>
+            </section>
+          )}
+        </main>
+
+        {/* Fullscreen Image Preview Modal */}
+        {isFullViewOpen && activePreviewSrc && (
+          <div className="fixed inset-0 z-50 bg-black/90 flex flex-col justify-between p-4">
+            <div className="flex items-center justify-between text-white">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold truncate">
+                  {variables.product || 'Advertisement Preview'}
+                </p>
+                <p className="text-xs text-neutral-400">1080 × 1350 px (4:5)</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsFullViewOpen(false)}
+                className="w-9 h-9 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center text-white"
+                aria-label="Close full preview"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 flex items-center justify-center my-4 overflow-hidden">
+              <img
+                src={activePreviewSrc}
+                alt={variables.product || 'Full Advertisement'}
+                className="max-h-full max-w-full rounded-xl object-contain"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              {uploadedImageUrl && (
+                <button
+                  type="button"
+                  onClick={handleCopyImageUrl}
+                  className="flex-1 h-11 rounded-xl bg-white text-black text-xs font-semibold flex items-center justify-center gap-1.5"
+                >
+                  <Copy className="w-4 h-4" />
+                  <span>Copy Image URL</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleDownloadImage}
+                className="flex-1 h-11 rounded-xl bg-neutral-800 text-white border border-neutral-700 text-xs font-semibold flex items-center justify-center gap-1.5"
+              >
+                <Download className="w-4 h-4" />
+                <span>Download</span>
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>
