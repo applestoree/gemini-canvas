@@ -987,7 +987,7 @@ export default function App() {
                 </button>
               </div>
 
-              <div className="flex-1 min-h-0 overflow-y-auto pt-3 space-y-4">
+              <div className="flex-1 min-h-0 overflow-y-auto pt-3 space-y-5">
                 {isLoadingCalendar && (
                   <div className="py-8 flex items-center justify-center gap-2 text-xs text-neutral-500">
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -997,21 +997,13 @@ export default function App() {
                 {!isLoadingCalendar && calendarError && (
                   <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800 space-y-2">
                     <p>{calendarError}</p>
-                    <button
-                      type="button"
-                      onClick={loadCalendar}
-                      className="h-8 px-3 rounded-lg bg-black text-white"
-                    >
-                      Retry
-                    </button>
+                    <button type="button" onClick={loadCalendar} className="h-8 px-3 rounded-lg bg-black text-white">Retry</button>
                   </div>
                 )}
                 {!isLoadingCalendar && !calendarError && calendarRecords.length === 0 && (
-                  <div className="py-8 text-center text-xs text-neutral-500">
-                    No calendar records found.
-                  </div>
+                  <div className="py-12 text-center text-xs text-neutral-500">No calendar records found.</div>
                 )}
-                {!isLoadingCalendar && !calendarError && [...new Set(calendarRecords.map((record) => record.date).filter(Boolean))].sort().map((date) => {
+                {!isLoadingCalendar && !calendarError && [...new Set(calendarRecords.map((record) => String(record.date || '').slice(0, 10)).filter(Boolean))].sort().map((date) => {
                   const dayLabel = new Date(`${date}T00:00:00+08:00`).toLocaleDateString('en-MY', {
                     timeZone: 'Asia/Kuala_Lumpur',
                     weekday: 'long',
@@ -1021,40 +1013,34 @@ export default function App() {
                   });
                   return (
                     <section key={date} className="space-y-2">
-                      <h3 className="text-xs font-semibold text-neutral-800 sticky top-0 bg-white py-1">{dayLabel}</h3>
-                      <div className="space-y-2">
+                      <div className="flex items-center justify-between px-0.5">
+                        <h3 className="text-xs font-semibold text-neutral-900">{dayLabel}</h3>
+                        <span className="text-[10px] text-neutral-400">3 slots · MYT</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-[2px]">
                         {CALENDAR_SLOTS.map((slot) => {
-                          const record = calendarRecords.find((item) => item.date === date && String(item.time || '').slice(0, 5) === slot);
+                          const record = calendarRecords.find((item) => String(item.date || '').slice(0, 10) === date && String(item.time || '').slice(0, 5) === slot);
                           return (
-                            <article key={slot} className={`flex gap-3 rounded-xl border p-2.5 ${record ? 'border-neutral-200 bg-white' : 'border-dashed border-neutral-200 bg-neutral-50'}`}>
-                              <div className="w-14 shrink-0 flex flex-col items-center justify-center rounded-lg bg-neutral-100 py-2">
-                                <span className="text-[10px] font-semibold text-neutral-700">{slot}</span>
-                                <span className="text-[9px] text-neutral-400">MYT</span>
-                              </div>
-                              {record ? (
-                                <>
-                                  {record.image_url ? (
-                                    <img
-                                      src={record.image_url}
-                                      alt={`Calendar post ${slot}`}
-                                      className="w-16 h-20 shrink-0 rounded-lg object-cover bg-neutral-100"
-                                      loading="lazy"
-                                    />
-                                  ) : (
-                                    <div className="w-16 h-20 shrink-0 rounded-lg bg-neutral-100 flex items-center justify-center text-[9px] text-neutral-400 text-center px-1">
-                                      No image
-                                    </div>
-                                  )}
-                                  <div className="min-w-0 flex-1 py-0.5">
-                                    <p className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wide">Scheduled content</p>
-                                    <p className="mt-1 text-[11px] leading-relaxed text-neutral-700 whitespace-pre-wrap break-words line-clamp-4">
-                                      {record.caption || 'No caption'}
-                                    </p>
-                                  </div>
-                                </>
+                            <article key={slot} className="relative aspect-square min-w-0 overflow-hidden bg-neutral-100">
+                              {record?.image_url ? (
+                                <img
+                                  src={record.image_url}
+                                  alt={`Scheduled post ${date} ${slot}`}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                />
                               ) : (
-                                <div className="flex-1 flex items-center">
-                                  <p className="text-[11px] text-neutral-400">Empty slot</p>
+                                <div className="w-full h-full flex flex-col items-center justify-center gap-1 text-neutral-400">
+                                  <span className="text-xl leading-none">{record ? '▧' : '+'}</span>
+                                  <span className="text-[9px] font-medium">{record ? 'No image' : 'Empty'}</span>
+                                </div>
+                              )}
+                              <div className="absolute inset-x-0 bottom-0 px-1.5 py-1 bg-gradient-to-t from-black/75 to-transparent">
+                                <p className="text-[9px] font-semibold text-white text-center">{slot}</p>
+                              </div>
+                              {record && (
+                                <div className="absolute top-1 right-1 w-4 h-4 rounded-full bg-black/55 flex items-center justify-center">
+                                  <Check className="w-2.5 h-2.5 text-white" />
                                 </div>
                               )}
                             </article>
