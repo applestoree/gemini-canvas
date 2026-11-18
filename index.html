@@ -125,7 +125,8 @@
       if (!window.Babel) throw new Error('Babel compiler tidak berhasil dimuat.');
 
       const imports = extractImports(source);
-      const compiled = Babel.transform(imports.code, {
+      const componentCode = imports.code.replace(/export\\s+default\\s+function\\s+App\\s*\\(/, 'function App(');
+      const compiled = Babel.transform(componentCode, {
         presets: [['react', { runtime: 'classic' }]],
         sourceType: 'script',
         comments: false
