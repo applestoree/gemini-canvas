@@ -1,842 +1,845 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Image Generator - Apple Store Malaysia</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Ad Poster Studio - Template Generator</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        dark: {
+                            900: '#09090b',
+                            800: '#121215',
+                            700: '#1c1c21',
+                            600: '#27272e'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body class="min-h-screen bg-neutral-50 text-neutral-900 flex flex-col items-center justify-center p-4 sm:p-6">
-  <main class="max-w-lg w-full bg-white p-6 sm:p-8 rounded-3xl shadow-sm border border-neutral-200">
-    <!-- Header -->
-    <div class="mb-6">
-      <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-100 text-neutral-600 text-xs font-medium mb-3">
-        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i>
-        <span>Apple Visual Studio</span>
-      </div>
-      <h1 class="text-2xl font-bold tracking-tight text-neutral-900">
-        AI Image Generator
-      </h1>
-      <p class="text-sm text-neutral-500 mt-1">
-        Pilih kategori konten dan subkategori untuk menyusun arahan visual bergaya Apple.
-      </p>
-    </div>
+<body class="bg-dark-900 text-zinc-100 min-h-screen flex flex-col font-sans antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
 
-    <form id="imageForm" class="space-y-4">
-      <!-- Kategori Konten -->
-      <div>
-        <label for="categorySelect" class="block text-sm font-medium text-neutral-700 mb-1.5">Kategori Konten</label>
-        <select id="categorySelect" required class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 transition">
-          <option value="">Pilih kategori konten</option>
-          <option value="product">Product Content</option>
-          <option value="education">Education Content</option>
-        </select>
-      </div>
+    <!-- Navbar -->
+    <header class="sticky top-0 z-30 border-b border-zinc-800/80 bg-dark-900/80 backdrop-blur-xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-display font-bold text-lg tracking-tight text-white">AdStudio <span class="text-indigo-400">AI</span></h1>
+                    <p class="text-[11px] text-zinc-400 hidden sm:block">Product Poster & Commercial Generator</p>
+                </div>
+            </div>
 
-      <!-- Panel Objective -->
-      <div id="objectivePanel" class="hidden rounded-2xl border border-neutral-200/80 bg-neutral-50/80 p-3.5 transition-all">
-        <p class="text-[11px] font-semibold uppercase tracking-wider text-neutral-400 mb-1">Objective</p>
-        <p id="objectiveText" class="text-sm text-neutral-700 leading-relaxed"></p>
-      </div>
-
-      <!-- Subkategori -->
-      <div>
-        <label for="subcategorySelect" class="block text-sm font-medium text-neutral-700 mb-1.5">Subkategori</label>
-        <select id="subcategorySelect" required disabled class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 disabled:opacity-50 disabled:cursor-not-allowed transition">
-          <option value="">Pilih kategori terlebih dahulu</option>
-        </select>
-      </div>
-
-      <!-- Ide / Informasi Tambahan -->
-      <div>
-        <label for="ideaInput" class="block text-sm font-medium text-neutral-700 mb-1.5">
-          Ide atau Informasi Tambahan <span class="font-normal text-neutral-400">(opsional)</span>
-        </label>
-        <textarea id="ideaInput" rows="3" placeholder="Contoh: iPhone 17 Pro Max dengan fokus pada desain titanium dan kemampuan kamera..." class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 placeholder:text-neutral-400 transition"></textarea>
-        <p class="text-xs text-neutral-400 mt-1.5">AI akan mengembangkan ide ini berdasarkan kategori dan subkategori yang dipilih.</p>
-      </div>
-
-      <!-- Tombol Generate Prompt AI -->
-      <button type="button" id="generatePromptBtn" class="w-full py-3 px-4 bg-white hover:bg-neutral-50 active:bg-neutral-100 text-neutral-900 border border-neutral-300 font-semibold text-sm rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-2xs">
-        <i id="promptBtnIcon" data-lucide="bot" class="w-4 h-4"></i>
-        <span id="promptBtnText">Generate Detail Prompt dengan AI</span>
-      </button>
-
-      <!-- Detail Prompt Visual -->
-      <div>
-        <div class="flex items-center justify-between mb-1.5">
-          <label for="promptInput" class="block text-sm font-medium text-neutral-700">Detail Prompt Visual</label>
-          <div class="flex items-center gap-2">
-            <span id="promptStatus" class="text-xs text-neutral-400">Bisa diedit</span>
-            <button type="button" id="copyPromptBtn" title="Salin Prompt" class="text-xs text-neutral-500 hover:text-neutral-900 flex items-center gap-1 px-2 py-0.5 rounded-md hover:bg-neutral-100 transition cursor-pointer">
-              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-              <span id="copyBtnText">Salin</span>
-            </button>
-          </div>
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button onclick="fetchTemplates()" id="refreshBtn" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-dark-700 hover:bg-dark-600 border border-zinc-700/70 text-xs font-medium text-zinc-200 transition-all active:scale-95">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">Muat Ulang Template</span>
+                </button>
+            </div>
         </div>
-        <textarea id="promptInput" rows="8" placeholder="Klik Generate Detail Prompt dengan AI, atau tulis prompt secara manual..." class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 placeholder:text-neutral-400 transition" required></textarea>
-        <p class="text-xs text-neutral-400 mt-1.5">Periksa dan sesuaikan hasil prompt sebelum membuat gambar.</p>
-      </div>
+    </header>
 
-      <!-- Text Element Skills -->
-      <section class="rounded-2xl border border-neutral-200 p-4 space-y-3">
-        <div><h2 class="text-sm font-semibold text-neutral-900">Text Element Skills</h2><p class="text-xs text-neutral-500 mt-1">Aktifkan atau nonaktifkan setiap elemen teks. Value otomatis mengikuti kategori dan subkategori, serta dapat diedit.</p></div>
-        <div id="textElementsContainer" class="space-y-3"><p class="text-xs text-neutral-400">Pilih kategori dan subkategori terlebih dahulu.</p></div>
-      </section>
+    <!-- Notification Toast Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-      <!-- Dynamic Visual Direction -->
-      <section class="rounded-2xl border border-neutral-200 p-4 space-y-3">
-        <div><h2 class="text-sm font-semibold text-neutral-900">Visual Direction</h2><p class="text-xs text-neutral-500 mt-1">Atur lima elemen visual secara independen berdasarkan Category dan Subcategory.</p></div>
-        <div id="visualDirectionContainer" class="space-y-3"><p class="text-xs text-neutral-400">Pilih kategori dan subkategori terlebih dahulu.</p></div>
-      </section>
+    <!-- Main Workspace -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <!-- Left Column: Template List (3 Cols on Desktop) -->
+            <section class="lg:col-span-3 flex flex-col gap-4 bg-dark-800/60 border border-zinc-800/80 rounded-2xl p-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-sm font-semibold text-zinc-200 flex items-center gap-2">
+                        <i data-lucide="layout-template" class="w-4 h-4 text-indigo-400"></i>
+                        Pilih Template
+                    </h2>
+                    <span id="templateCount" class="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 font-medium">0</span>
+                </div>
 
-      <!-- Aspect Ratio Selector -->
-      <div>
-        <label for="aspectRatioSelect" class="block text-sm font-medium text-neutral-700 mb-1.5">Rasio Aspek Gambar</label>
-        <select id="aspectRatioSelect" class="w-full bg-neutral-50 text-neutral-900 border border-neutral-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 transition">
-          <option value="1:1">1:1 (Square - Instagram Feed)</option>
-          <option value="4:5">4:5 (Portrait - Social Media Post)</option>
-          <option value="9:16">9:16 (Vertical - Stories / Reels)</option>
-          <option value="16:9">16:9 (Landscape - Banner / Presentasi)</option>
-        </select>
-      </div>
+                <!-- Search input -->
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                    <input type="text" id="searchInput" oninput="filterTemplates()" placeholder="Cari produk..." class="w-full pl-9 pr-3 py-2 bg-dark-900 border border-zinc-800 rounded-xl text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors">
+                </div>
 
-      <!-- Tombol Buat Gambar -->
-      <button type="submit" id="submitBtn" class="w-full py-3.5 px-4 bg-neutral-900 hover:bg-neutral-800 active:bg-neutral-950 text-white font-semibold text-sm rounded-xl flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer shadow-sm">
-        <i id="btnIcon" data-lucide="sparkles" class="w-4 h-4"></i>
-        <span id="btnText">Buat Gambar</span>
-      </button>
-    </form>
+                <!-- Template Cards Container -->
+                <div id="templateList" class="flex flex-col gap-2.5 max-h-[320px] lg:max-h-[calc(100vh-250px)] overflow-y-auto pr-1">
+                    <!-- Loading Skeletons -->
+                    <div class="animate-pulse flex flex-col gap-2.5">
+                        <div class="h-20 bg-dark-700 rounded-xl"></div>
+                        <div class="h-20 bg-dark-700 rounded-xl"></div>
+                        <div class="h-20 bg-dark-700 rounded-xl"></div>
+                    </div>
+                </div>
+            </section>
 
-    <!-- Pesan Error -->
-    <div id="errorBox" class="hidden mt-4 p-3.5 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2.5 text-red-700 text-sm">
-      <i data-lucide="alert-circle" class="w-4 h-4 shrink-0 mt-0.5"></i>
-      <p id="errorMsg" class="leading-snug"></p>
-    </div>
+            <!-- Middle Column: Prompt Builder & Editor (5 Cols on Desktop) -->
+            <section class="lg:col-span-5 flex flex-col gap-5 bg-dark-800/60 border border-zinc-800/80 rounded-2xl p-5">
+                <div class="flex items-center justify-between border-b border-zinc-800/80 pb-3.5">
+                    <div>
+                        <h2 class="text-base font-display font-bold text-white">Kustomisasi Prompt</h2>
+                        <p class="text-xs text-zinc-400">Sesuaikan detail template sebelum membuat gambar</p>
+                    </div>
+                    <button onclick="resetForm()" class="text-xs text-zinc-400 hover:text-zinc-200 flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-dark-700 transition-colors">
+                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reset
+                    </button>
+                </div>
 
-    <!-- Loading Placeholder saat Membuat Gambar -->
-    <div id="imageLoadingSkeleton" class="hidden mt-6 flex flex-col items-center justify-center p-8 rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 space-y-3">
-      <i data-lucide="loader-2" class="w-8 h-8 text-neutral-400 animate-spin"></i>
-      <p class="text-sm font-medium text-neutral-600">Sedang merender visual studio...</p>
-      <p class="text-xs text-neutral-400 text-center">Proses ini membutuhkan beberapa detik untuk hasil detail terbaik.</p>
-    </div>
+                <form id="promptForm" onsubmit="event.preventDefault(); generateImage();" class="flex flex-col gap-4">
+                    <!-- Product & Ratio -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Nama Produk</label>
+                            <input type="text" id="fieldProduct" required placeholder="Contoh: Apple AirPods Max" class="w-full px-3.5 py-2.5 bg-dark-900 border border-zinc-700/80 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Rasio Aspek</label>
+                            <select id="fieldRatio" class="w-full px-3 py-2.5 bg-dark-900 border border-zinc-700/80 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                                <option value="1:1">1:1 (Square)</option>
+                                <option value="4:5" selected>4:5 (Portrait IG)</option>
+                                <option value="9:16">9:16 (Story / Reels)</option>
+                                <option value="16:9">16:9 (Landscape)</option>
+                                <option value="3:4">3:4 (Poster)</option>
+                            </select>
+                        </div>
+                    </div>
 
-    <!-- Hasil Gambar -->
-    <div id="resultContainer" class="hidden mt-6 pt-6 border-t border-neutral-100 flex flex-col items-center space-y-4">
-      <div class="w-full overflow-hidden rounded-2xl shadow-sm border border-neutral-200 bg-white">
-        <img id="resultImage" src="" alt="Generated Visual" class="w-full h-auto object-contain block" />
-      </div>
-      <a id="downloadBtn" href="" download="apple-store-visual.png" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 border border-neutral-200 px-5 py-2.5 rounded-xl text-sm font-medium transition">
-        <i data-lucide="download" class="w-4 h-4"></i> Download Gambar
-      </a>
-    </div>
-  </main>
+                    <!-- Brand Logo Upload (Top-Left Placement) -->
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-300 mb-1.5">
+                            Logo Brand <span class="text-zinc-500 font-normal">(Opsional — ditempatkan di sudut kiri atas)</span>
+                        </label>
+                        <!-- Input URL Logo Otomatis -->
+                        <div class="flex items-center gap-2 mb-2">
+                            <div class="relative flex-1">
+                                <i data-lucide="link" class="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                                <input type="url" id="fieldLogoUrl" value="https://jhpbtooefyzdndstlzva.supabase.co/storage/v1/object/public/apple/logo.png" placeholder="https://example.com/logo.png" onchange="loadLogoFromUrl(this.value)" class="w-full pl-8 pr-3 py-2 bg-dark-900 border border-zinc-700/80 rounded-xl text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors">
+                            </div>
+                            <button type="button" onclick="loadLogoFromUrl(document.getElementById('fieldLogoUrl').value, true)" class="px-3 py-2 rounded-xl bg-dark-700 hover:bg-dark-600 border border-zinc-700/80 text-xs font-medium text-zinc-200 transition-colors shrink-0 flex items-center gap-1.5" title="Muat Logo dari URL">
+                                <i data-lucide="download-cloud" class="w-3.5 h-3.5 text-indigo-400"></i>
+                                <span>Muat URL</span>
+                            </button>
+                        </div>
+                        <!-- File Upload & Preview Box -->
+                        <div class="flex items-center gap-3 p-2.5 bg-dark-900 border border-zinc-700/80 rounded-xl">
+                            <div id="logoPreviewBox" class="w-11 h-11 rounded-lg bg-dark-800 border border-zinc-700/70 flex items-center justify-center overflow-hidden shrink-0">
+                                <i data-lucide="image" id="logoPlaceholderIcon" class="w-5 h-5 text-zinc-500"></i>
+                                <img id="logoPreviewImg" src="" alt="Logo Preview" class="hidden w-full h-full object-contain p-1" />
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <input type="file" id="fieldLogo" accept="image/png, image/jpeg, image/webp, image/svg+xml" onchange="handleLogoUpload(event)" class="block w-full text-xs text-zinc-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-indigo-600/20 file:text-indigo-300 hover:file:bg-indigo-600/30 file:cursor-pointer cursor-pointer">
+                                <p id="logoFileName" class="text-[11px] text-zinc-500 mt-1 truncate">Belum ada logo dipilih (PNG transparan disarankan)</p>
+                            </div>
+                            <button type="button" id="removeLogoBtn" onclick="removeLogo()" title="Hapus Logo" class="hidden p-1.5 rounded-lg text-zinc-400 hover:text-rose-400 hover:bg-dark-700 transition-colors shrink-0">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
 
-  <script>
-    // Inisialisasi ikon Lucide
-    lucide.createIcons();
+                    <!-- Headline & Subheadline -->
+                    <div class="grid grid-cols-1 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Headline Utama (Teks Poster)</label>
+                            <input type="text" id="fieldHeadline" placeholder="Contoh: A masterpiece of sound." class="w-full px-3.5 py-2 bg-dark-900 border border-zinc-700/80 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Subheadline</label>
+                            <input type="text" id="fieldSubheadline" placeholder="Deskripsi singkat produk..." class="w-full px-3.5 py-2 bg-dark-900 border border-zinc-700/80 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                        </div>
+                    </div>
 
-    // Konfigurasi API (Key diisi otomatis oleh environment runtime)
-    const apiKey = "";
+                    <!-- Features -->
+                    <div>
+                        <label class="block text-xs font-medium text-zinc-300 mb-1.5">Fitur Utama <span class="text-zinc-500 font-normal">(Pisahkan dengan koma)</span></label>
+                        <input type="text" id="fieldFeatures" placeholder="High-fidelity audio, Active Noise Cancellation, Spatial Audio" class="w-full px-3.5 py-2 bg-dark-900 border border-zinc-700/80 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                    </div>
 
-    // Data Kategori & Subkategori
-    const categories = {
-      product: {
-        name: 'Product Content',
-        objective: 'Memperkenalkan produk Apple dan meningkatkan product awareness.',
-        subcategories: [
-          'New Product Showcase',
-          'Product Features & Highlights',
-          'Product Launch',
-          'Product Comparison',
-          'Product in Detail',
-          'Best-Selling Products',
-          'Apple Ecosystem Showcase',
-          'Product Recommendation'
-        ]
-      },
-      education: {
-        name: 'Education Content',
-        objective: 'Memberikan edukasi kepada audiens mengenai fitur, fungsi, dan manfaat produk Apple.',
-        subcategories: [
-          'Tips & Tricks',
-          'How-to Tutorials',
-          'Hidden Features',
-          'Product Knowledge',
-          'iPhone Photography Tips',
-          'Productivity Tips',
-          'Apple Ecosystem Tips',
-          'Frequently Asked Questions (FAQ)'
-        ]
-      }
-    };
+                    <!-- Layout & Background -->
+                    <div class="grid grid-cols-1 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Gaya Layout / Tema Iklan</label>
+                            <input type="text" id="fieldLayout" placeholder="Luxury audio product advertising" class="w-full px-3.5 py-2 bg-dark-900 border border-zinc-700/80 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Latar Belakang (Background)</label>
+                            <textarea id="fieldBackground" rows="2" placeholder="Deskripsi pencahayaan dan latar belakang..." class="w-full px-3.5 py-2 bg-dark-900 border border-zinc-700/80 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors resize-none"></textarea>
+                        </div>
+                    </div>
 
-    // Referensi Elemen DOM
-    const form = document.getElementById('imageForm');
-    const categorySelect = document.getElementById('categorySelect');
-    const subcategorySelect = document.getElementById('subcategorySelect');
-    const objectivePanel = document.getElementById('objectivePanel');
-    const objectiveText = document.getElementById('objectiveText');
-    const ideaInput = document.getElementById('ideaInput');
-    const promptInput = document.getElementById('promptInput');
-    const aspectRatioSelect = document.getElementById('aspectRatioSelect');
-    const textElementsContainer = document.getElementById('textElementsContainer');
-    const generatePromptBtn = document.getElementById('generatePromptBtn');
-    const promptBtnText = document.getElementById('promptBtnText');
-    const promptStatus = document.getElementById('promptStatus');
-    const copyPromptBtn = document.getElementById('copyPromptBtn');
-    const copyBtnText = document.getElementById('copyBtnText');
-    const submitBtn = document.getElementById('submitBtn');
-    const btnText = document.getElementById('btnText');
-    const errorBox = document.getElementById('errorBox');
-    const errorMsg = document.getElementById('errorMsg');
-    const imageLoadingSkeleton = document.getElementById('imageLoadingSkeleton');
-    const resultContainer = document.getElementById('resultContainer');
-    const resultImage = document.getElementById('resultImage');
-    const downloadBtn = document.getElementById('downloadBtn');
+                    <!-- Composition & Quality -->
+                    <div class="grid grid-cols-1 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Komposisi Visual</label>
+                            <textarea id="fieldComposition" rows="2" placeholder="Posisi produk, teks headline, sudut kamera..." class="w-full px-3.5 py-2 bg-dark-900 border border-zinc-700/80 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors resize-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Kualitas & Rendering</label>
+                            <textarea id="fieldQuality" rows="2" placeholder="Photorealistic, sharp focus, studio lighting..." class="w-full px-3.5 py-2 bg-dark-900 border border-zinc-700/80 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors resize-none"></textarea>
+                        </div>
+                    </div>
 
-    // Helper: Menampilkan dan menyembunyikan pesan error
-    function showError(message) {
-      errorMsg.textContent = message;
-      errorBox.classList.remove('hidden');
-    }
+                    <!-- Compiled Prompt Preview Accordion -->
+                    <div class="bg-dark-900/90 border border-zinc-800 rounded-xl p-3">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                                <i data-lucide="terminal" class="w-3.5 h-3.5 text-indigo-400"></i>
+                                Preview Prompt Final
+                            </span>
+                            <button type="button" onclick="copyPromptText()" class="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors">
+                                <i data-lucide="copy" class="w-3 h-3"></i> Salin
+                            </button>
+                        </div>
+                        <p id="compiledPromptPreview" class="text-xs text-zinc-400 leading-relaxed line-clamp-3 hover:line-clamp-none transition-all cursor-pointer" title="Klik untuk melihat seluruh prompt"></p>
+                    </div>
 
-    function hideError() {
-      errorBox.classList.add('hidden');
-      errorMsg.textContent = '';
-    }
+                    <!-- Generate Button -->
+                    <button type="submit" id="generateBtn" class="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed">
+                        <i data-lucide="wand-2" class="w-4 h-4"></i>
+                        <span>Buat Gambar Iklan Sekarang</span>
+                    </button>
+                </form>
+            </section>
 
-    // Helper: Fetch dengan Exponential Backoff untuk menangani throttling
-    async function fetchWithRetry(url, options, maxRetries = 4) {
-      let delay = 1000;
-      for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        try {
-          const response = await fetch(url, options);
-          if (response.ok) {
-            return response;
-          }
-          // Jika status 429 (Too Many Requests) atau 5xx (Server Error), lakukan retry
-          if ((response.status === 429 || response.status >= 500) && attempt < maxRetries) {
-            await new Promise(resolve => setTimeout(resolve, delay));
-            delay *= 2;
-            continue;
-          }
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData?.error?.message || `Permintaan gagal dengan status ${response.status}`);
-        } catch (err) {
-          if (attempt === maxRetries) {
-            throw err;
-          }
-          await new Promise(resolve => setTimeout(resolve, delay));
-          delay *= 2;
-        }
-      }
-    }
+            <!-- Right Column: Result Preview & Actions (4 Cols on Desktop) -->
+            <section class="lg:col-span-4 flex flex-col gap-4 bg-dark-800/60 border border-zinc-800/80 rounded-2xl p-5 sticky top-22">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-base font-display font-bold text-white flex items-center gap-2">
+                        <i data-lucide="image" class="w-4 h-4 text-indigo-400"></i>
+                        Hasil Gambar
+                    </h2>
+                    <span id="ratioBadge" class="text-xs px-2.5 py-1 rounded-lg bg-dark-700 border border-zinc-700 text-zinc-300 font-mono">4:5</span>
+                </div>
 
-    // Dynamic Element System: setiap Category dan Subcategory mempunyai daftar elemen sendiri.
-    // Jika Subcategory mempunyai konfigurasi, daftar tersebut menjadi daftar final (bukan merge).
-    const element = (id, name, type='text', description='', options={}) => ({
-      id, name, type, description,
-      enabled: options.enabled !== false,
-      required: options.required === true,
-      value: options.value ?? '',
-      allow_ai_generation: options.allow_ai_generation !== false,
-      exact_value: options.exact_value === true,
-      prompt_instruction: options.prompt_instruction || ''
-    });
+                <!-- Image Stage -->
+                <div id="imageStage" class="relative w-full min-h-[360px] bg-dark-900 border-2 border-dashed border-zinc-800 rounded-2xl flex flex-col items-center justify-center overflow-hidden group">
+                    
+                    <!-- Empty State -->
+                    <div id="emptyState" class="flex flex-col items-center text-center p-6 max-w-xs">
+                        <div class="w-14 h-14 rounded-2xl bg-dark-800 border border-zinc-700/80 flex items-center justify-center mb-3 text-zinc-500">
+                            <i data-lucide="image-plus" class="w-7 h-7"></i>
+                        </div>
+                        <h3 class="text-sm font-semibold text-zinc-200 mb-1">Belum Ada Gambar</h3>
+                        <p class="text-xs text-zinc-500 leading-relaxed">Pilih salah satu template di sebelah kiri, sesuaikan teksnya, lalu klik tombol <b>Buat Gambar Iklan</b>.</p>
+                    </div>
 
-    const categoryElementConfig = {
-      product: [
-        element('headline','Headline','text','Pesan utama konten.',{required:true}),
-        element('product_name','Product Name','text','Nama produk Apple yang dibahas.',{required:true,allow_ai_generation:false,exact_value:true}),
-        element('subheadline','Subheadline','text','Penjelas singkat headline.'),
-        element('feature_text','Feature Text','list','Daftar fitur produk.'),
-        element('highlight_text','Highlight Text','text','Keunggulan utama.'),
-        element('price_text','Price Text','price','Harga produk yang diberikan pengguna.',{allow_ai_generation:false,exact_value:true}),
-        element('cta_text','CTA Text','text','Ajakan tindakan.'),
-        element('footer_text','Footer Text','text','Informasi penutup.')
-      ],
-      education: [
-        element('headline','Headline','text','Topik edukasi.',{required:true}),
-        element('subheadline','Subheadline','text','Penjelasan singkat topik.'),
-        element('introduction_text','Introduction Text','textarea','Pengantar materi.'),
-        element('key_takeaway','Key Takeaway','text','Pesan utama yang perlu diingat.'),
-        element('example_text','Example Text','textarea','Contoh penggunaan atau penerapan.'),
-        element('cta_text','CTA Text','text','Ajakan tindakan.'),
-        element('footer_text','Footer Text','text','Informasi penutup.')
-      ]
-    };
+                    <!-- Loading State -->
+                    <div id="loadingState" class="hidden absolute inset-0 bg-dark-900/95 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6 text-center">
+                        <div class="relative w-16 h-16 mb-4">
+                            <div class="absolute inset-0 rounded-full border-4 border-indigo-500/20"></div>
+                            <div class="absolute inset-0 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin"></div>
+                            <i data-lucide="sparkles" class="w-6 h-6 text-indigo-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse"></i>
+                        </div>
+                        <p class="text-sm font-semibold text-white mb-1">Merender Poster Iklan...</p>
+                        <p class="text-xs text-zinc-400">AI sedang menyusun komposisi, pencahayaan & tipografi</p>
+                    </div>
 
-    const subcategoryElementConfig = {
-      'New Product Showcase': [
-        element('headline','Headline','text','Judul peluncuran atau pengenalan.',{required:true}),
-        element('product_name','Product Name','text','Nama produk.',{required:true,allow_ai_generation:false,exact_value:true}),
-        element('launch_badge','Launch Badge','text','Label seperti NEW atau JUST ARRIVED.'),
-        element('hero_feature','Hero Feature','text','Fitur unggulan utama.'),
-        element('supporting_features','Supporting Features','list','Fitur pendukung.'),
-        element('cta_text','CTA Text','text','Ajakan untuk mengenal produk.')
-      ],
-      'Product Features & Highlights': [
-        element('headline','Headline','text','Judul fitur.',{required:true}),
-        element('product_name','Product Name','text','Nama produk.',{required:true,allow_ai_generation:false,exact_value:true}),
-        element('feature_title','Feature Title','text','Nama fitur utama.',{required:true}),
-        element('feature_description','Feature Description','textarea','Penjelasan fitur.'),
-        element('key_benefits','Key Benefits','list','Manfaat utama fitur.'),
-        element('highlight_text','Highlight Text','text','Poin yang paling menonjol.')
-      ],
-      'Product Launch': [
-        element('launch_headline','Launch Headline','text','Judul pengumuman peluncuran.',{required:true}),
-        element('product_name','Product Name','text','Nama produk.',{required:true,allow_ai_generation:false,exact_value:true}),
-        element('launch_date','Launch Date','text','Tanggal peluncuran jika tersedia.',{allow_ai_generation:false,exact_value:true}),
-        element('launch_badge','Launch Badge','text','Label peluncuran.'),
-        element('launch_message','Launch Message','textarea','Pesan utama peluncuran.'),
-        element('cta_text','CTA Text','text','Ajakan tindakan.')
-      ],
-      'Product Comparison': [
-        element('headline','Headline','text','Judul perbandingan.',{required:true}),
-        element('product_a_name','Product A Name','text','Nama produk pertama.',{required:true,allow_ai_generation:false,exact_value:true}),
-        element('product_b_name','Product B Name','text','Nama produk kedua.',{required:true,allow_ai_generation:false,exact_value:true}),
-        element('comparison_rows','Comparison Rows','comparison','Format setiap baris: fitur | nilai produk A | nilai produk B.',{required:true}),
-        element('comparison_result','Comparison Result','textarea','Ringkasan perbedaan atau kesimpulan.'),
-        element('cta_text','CTA Text','text','Ajakan untuk memilih atau membandingkan.')
-      ],
-      'Product in Detail': [
-        element('headline','Headline','text','Judul pembahasan detail.',{required:true}),
-        element('product_name','Product Name','text','Nama produk.',{required:true,allow_ai_generation:false,exact_value:true}),
-        element('design_details','Design Details','list','Detail desain dan material.'),
-        element('technical_specs','Technical Specifications','list','Spesifikasi terverifikasi.'),
-        element('feature_explanation','Feature Explanation','textarea','Penjelasan fitur secara mendalam.'),
-        element('detail_highlight','Detail Highlight','text','Detail paling penting.')
-      ],
-      'Best-Selling Products': [
-        element('headline','Headline','text','Judul daftar produk.',{required:true}),
-        element('ranking_label','Ranking Label','text','Label seperti BEST SELLER atau CUSTOMER FAVORITE.'),
-        element('product_list','Product List','list','Daftar nama produk yang direkomendasikan.',{required:true,allow_ai_generation:false}),
-        element('reason_to_buy','Reasons to Choose','list','Alasan produk diminati.'),
-        element('cta_text','CTA Text','text','Ajakan melihat produk.')
-      ],
-      'Apple Ecosystem Showcase': [
-        element('headline','Headline','text','Pesan utama ekosistem.',{required:true}),
-        element('ecosystem_devices','Ecosystem Devices','list','Perangkat yang ditampilkan.',{required:true,allow_ai_generation:false}),
-        element('connected_features','Connected Features','list','Fitur lintas perangkat.'),
-        element('workflow_example','Workflow Example','textarea','Contoh alur kerja antarperangkat.'),
-        element('ecosystem_benefit','Ecosystem Benefit','text','Manfaat utama ekosistem.')
-      ],
-      'Product Recommendation': [
-        element('headline','Headline','text','Judul rekomendasi.',{required:true}),
-        element('recommended_product','Recommended Product','text','Nama produk rekomendasi.',{required:true,allow_ai_generation:false,exact_value:true}),
-        element('target_user','Ideal For','text','Pengguna yang cocok.'),
-        element('recommendation_reasons','Reasons to Recommend','list','Alasan rekomendasi.',{required:true}),
-        element('key_benefit','Key Benefit','text','Manfaat utama.'),
-        element('cta_text','CTA Text','text','Ajakan melihat rekomendasi.')
-      ],
-      'Tips & Tricks': [
-        element('headline','Headline','text','Judul tips.',{required:true}),
-        element('problem_text','Problem / Context','text','Masalah atau konteks yang dibantu.'),
-        element('tip_text','Tip','textarea','Tips utama.',{required:true}),
-        element('quick_steps','Quick Steps','steps','Format setiap baris: judul langkah | deskripsi langkah.'),
-        element('benefit_text','Benefit','text','Manfaat setelah mengikuti tips.')
-      ],
-      'How-to Tutorials': [
-        element('headline','Headline','text','Judul tutorial.',{required:true}),
-        element('introduction_text','Introduction','textarea','Pengantar tutorial.'),
-        element('required_items','What You Need','list','Perangkat atau persiapan.'),
-        element('tutorial_steps','Tutorial Steps','steps','Format setiap baris: judul langkah | deskripsi langkah.',{required:true}),
-        element('expected_result','Expected Result','textarea','Hasil akhir yang diharapkan.'),
-        element('cta_text','CTA Text','text','Ajakan mencoba tutorial.')
-      ],
-      'Hidden Features': [
-        element('headline','Headline','text','Judul fitur tersembunyi.',{required:true}),
-        element('feature_name','Hidden Feature','text','Nama fitur.',{required:true}),
-        element('supported_device','Supported Device','text','Perangkat atau versi yang didukung.',{allow_ai_generation:false}),
-        element('how_to_access','How to Access','steps','Format setiap baris: judul langkah | deskripsi langkah.'),
-        element('why_it_matters','Why It Matters','textarea','Manfaat fitur.'),
-        element('discovery_badge','Discovery Badge','text','Label seperti DID YOU KNOW?')
-      ],
-      'Product Knowledge': [
-        element('headline','Headline','text','Judul pengetahuan produk.',{required:true}),
-        element('subject_name','Product / Feature','text','Nama produk atau fitur.',{required:true,allow_ai_generation:false}),
-        element('definition','Definition','textarea','Definisi yang akurat.',{required:true}),
-        element('key_facts','Key Facts','list','Fakta utama yang telah diverifikasi.'),
-        element('common_misconception','Common Misconception','textarea','Kesalahpahaman yang perlu diluruskan.'),
-        element('source_note','Source / Verification Note','text','Catatan sumber atau verifikasi.')
-      ],
-      'iPhone Photography Tips': [
-        element('headline','Headline','text','Judul tips fotografi.',{required:true}),
-        element('photography_goal','Photography Goal','text','Hasil foto yang ingin dicapai.',{required:true}),
-        element('camera_setting','Camera Setting','list','Pengaturan kamera yang relevan.'),
-        element('shooting_steps','Shooting Steps','steps','Format setiap baris: judul langkah | deskripsi langkah.'),
-        element('composition_tip','Composition Tip','text','Tips komposisi.'),
-        element('final_result','Expected Photo Result','text','Gambaran hasil foto.')
-      ],
-      'Productivity Tips': [
-        element('headline','Headline','text','Judul produktivitas.',{required:true}),
-        element('productivity_goal','Productivity Goal','text','Tujuan workflow.',{required:true}),
-        element('apps_features','Apps & Features','list','Aplikasi atau fitur yang digunakan.'),
-        element('workflow_steps','Workflow Steps','steps','Format setiap baris: judul langkah | deskripsi langkah.'),
-        element('time_saving_benefit','Time-saving Benefit','text','Manfaat produktivitas.'),
-        element('pro_tip','Pro Tip','textarea','Tips tambahan.')
-      ],
-      'Apple Ecosystem Tips': [
-        element('headline','Headline','text','Judul tips ekosistem.',{required:true}),
-        element('devices_involved','Devices Involved','list','Perangkat yang terlibat.',{required:true,allow_ai_generation:false}),
-        element('ecosystem_feature','Ecosystem Feature','text','Fitur lintas perangkat.'),
-        element('setup_steps','Setup Steps','steps','Format setiap baris: judul langkah | deskripsi langkah.'),
-        element('use_case','Use Case','textarea','Contoh penggunaan sehari-hari.'),
-        element('ecosystem_benefit','Ecosystem Benefit','text','Manfaat penggunaan.')
-      ],
-      'Frequently Asked Questions (FAQ)': [
-        element('headline','Headline','text','Judul FAQ.',{required:true}),
-        element('question','Question','text','Pertanyaan pengguna.',{required:true}),
-        element('short_answer','Short Answer','textarea','Jawaban singkat dan langsung.',{required:true}),
-        element('answer_details','Answer Details','textarea','Penjelasan tambahan.'),
-        element('related_tip','Related Tip','text','Tips terkait.'),
-        element('verification_note','Verification Note','text','Catatan verifikasi informasi.')
-      ]
-    };
+                    <!-- Generated Image -->
+                    <img id="resultImage" src="" alt="Hasil Poster Iklan" class="hidden w-full h-auto object-contain rounded-xl shadow-2xl transition-transform duration-300" />
+                </div>
 
-    let activeElementConfig = [];
+                <!-- Action Buttons (Shown after image generated) -->
+                <div id="resultActions" class="hidden grid grid-cols-2 gap-3 pt-1">
+                    <button onclick="downloadImage()" class="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all active:scale-95">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        Unduh PNG
+                    </button>
+                    <button onclick="generateImage()" class="py-2.5 px-4 rounded-xl bg-dark-700 hover:bg-dark-600 border border-zinc-700 text-zinc-200 font-medium text-xs flex items-center justify-center gap-2 transition-all active:scale-95">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        Buat Variasi
+                    </button>
+                </div>
+            </section>
 
-    function currentElementConfig() {
-      const subcategory = subcategorySelect.value;
-      return subcategoryElementConfig[subcategory] || categoryElementConfig[categorySelect.value] || [];
-    }
+        </div>
+    </main>
 
-    function escapeAttr(value) {
-      return String(value ?? '').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    }
+    <script>
+        // API Configuration
+        const TEMPLATE_API_URL = "https://jhpbtooefyzdndstlzva.supabase.co/functions/v1/get-template";
+        const DEFAULT_LOGO_URL = "https://jhpbtooefyzdndstlzva.supabase.co/storage/v1/object/public/apple/logo.png";
+        const apiKey = ""; // Otomatis diisi oleh environment saat runtime
 
-    function formatElementValue(value, type) {
-      if (Array.isArray(value)) {
-        if (type === 'steps') return value.map(item => typeof item === 'object' ? (item.title || '') + ' | ' + (item.description || '') : item).join('\n');
-        if (type === 'comparison') return value.map(item => [item.feature,item.product_a,item.product_b].join(' | ')).join('\n');
-        return value.join('\n');
-      }
-      return value ?? '';
-    }
-
-    function parseElementValue(raw, type) {
-      const lines = raw.split('\n').map(line => line.trim()).filter(Boolean);
-      if (type === 'list') return lines;
-      if (type === 'steps') return lines.map((line,index) => {
-        const [title,...description] = line.split('|').map(part=>part.trim());
-        return {step_number:index+1,title,description:description.join(' | ')};
-      });
-      if (type === 'comparison') return lines.map(line => {
-        const [feature,product_a,product_b] = line.split('|').map(part=>part.trim());
-        return {feature:feature||'',product_a:product_a||'',product_b:product_b||''};
-      });
-      return raw.trim();
-    }
-
-    function renderTextSkills() {
-      if(!categorySelect.value||!subcategorySelect.value) {
-        activeElementConfig = [];
-        textElementsContainer.innerHTML='<p class="text-xs text-neutral-400">Pilih kategori dan subkategori terlebih dahulu.</p>';
-        return;
-      }
-      activeElementConfig = currentElementConfig();
-      if (!activeElementConfig.length) {
-        textElementsContainer.innerHTML='<p class="text-xs text-neutral-400">Belum ada konfigurasi elemen untuk pilihan ini.</p>';
-        return;
-      }
-      textElementsContainer.innerHTML=activeElementConfig.map(item=>{
-        const isLong = ['textarea','list','steps','comparison'].includes(item.type);
-        const value = escapeAttr(formatElementValue(item.value,item.type));
-        const input = isLong
-          ? `<textarea data-skill-value="${item.id}" rows="3" placeholder="${escapeAttr(item.description || item.name)}" class="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-900/10">${value}</textarea>`
-          : `<input type="text" data-skill-value="${item.id}" value="${value}" placeholder="Value untuk ${escapeAttr(item.name)}" class="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-900/10">`;
-        const typeHint = item.type==='steps' ? 'Format: Judul langkah | Deskripsi langkah' : item.type==='comparison' ? 'Format: Fitur | Nilai produk A | Nilai produk B' : item.type==='list' ? 'Satu item per baris' : item.type;
-        return `<div class="rounded-xl border border-neutral-200 bg-neutral-50/70 p-3 space-y-2" data-element-card="${item.id}">
-          <div class="flex items-start gap-2">
-            <input type="checkbox" id="skill-${item.id}" data-skill-enabled="${item.id}" ${item.enabled?'checked':''} class="mt-0.5 h-4 w-4 rounded border-neutral-300 text-neutral-900">
-            <div class="min-w-0 flex-1"><label for="skill-${item.id}" class="block text-sm font-medium text-neutral-800">${escapeAttr(item.name)} ${item.required?'<span class="text-red-500">*</span>':''}</label><p class="text-[11px] text-neutral-500">${escapeAttr(item.description)}</p></div>
-            <span data-element-status="${item.id}" class="text-[10px] text-neutral-400">${item.enabled?'DIGUNAKAN':'TIDAK DIGUNAKAN'}</span>
-          </div>
-          ${input}
-          <p class="text-[10px] text-neutral-400">${escapeAttr(typeHint)} · ${item.required?'Wajib':'Opsional'} · ${item.allow_ai_generation?'AI boleh mengembangkan':'Value dari pengguna'}</p>
-        </div>`;
-      }).join('');
-      textElementsContainer.querySelectorAll('[data-skill-enabled]').forEach(toggle=>{
-        toggle.addEventListener('change',()=>{
-          const item=activeElementConfig.find(entry=>entry.id===toggle.dataset.skillEnabled);
-          if(item) item.enabled=toggle.checked;
-          const status=textElementsContainer.querySelector('[data-element-status="'+toggle.dataset.skillEnabled+'"]');
-          if(status) status.textContent=toggle.checked?'DIGUNAKAN':'TIDAK DIGUNAKAN';
-        });
-      });
-      textElementsContainer.querySelectorAll('[data-skill-value]').forEach(input=>{
-        input.addEventListener('input',()=>{
-          const item=activeElementConfig.find(entry=>entry.id===input.dataset.skillValue);
-          if(item) item.value=parseElementValue(input.value,item.type);
-        });
-      });
-    }
-
-    function getActiveElementValues() {
-      return activeElementConfig.map(item=>{
-        const toggle=textElementsContainer.querySelector('[data-skill-enabled="'+item.id+'"]');
-        const input=textElementsContainer.querySelector('[data-skill-value="'+item.id+'"]');
-        const raw=input ? input.value : formatElementValue(item.value,item.type);
-        item.enabled = toggle ? toggle.checked : item.enabled;
-        item.value = parseElementValue(raw,item.type);
-        return {...item,rawValue:raw.trim()};
-      });
-    }
-
-    function validateActiveElements() {
-      const invalid=getActiveElementValues().filter(item=>item.enabled&&item.required&&!item.rawValue&&(item.exact_value||!item.allow_ai_generation));
-      if(invalid.length) throw new Error('Lengkapi elemen wajib yang tidak boleh dibuat AI: '+invalid.map(item=>item.name).join(', ')+'.');
-      return getActiveElementValues();
-    }
-
-    function buildTextSkillPrompt() {
-      const values=getActiveElementValues();
-      const active=values.filter(item=>item.enabled&&item.rawValue);
-      const off=values.filter(item=>!item.enabled);
-      const blank=values.filter(item=>item.enabled&&!item.rawValue);
-      const generatableBlank=blank.filter(item=>!item.exact_value&&item.allow_ai_generation);
-      const eligible=active.concat(generatableBlank);
-      const renderValue=item => typeof item.value==='string' ? item.value : JSON.stringify(item.value);
-      const modeFor=item => item.exact_value
-        ? 'EXACT VALUE: reproduce the supplied wording and data exactly; exact_value overrides allow_ai_generation.'
-        : item.allow_ai_generation
-          ? 'AI GENERATION ALLOWED: preserve supplied facts and intent; AI may expand or refine wording, and may generate a value when blank, but must not invent factual claims.'
-          : 'USER SUPPLIED ONLY: use the supplied value without expanding, rewriting, or inventing missing content.';
-      return [
-        'TEXT ELEMENT SKILLS — AUTHORITATIVE TEXT RULES:',
-        eligible.length ? active.map(item=>'- '+item.name+' ['+item.type+']: '+renderValue(item)+' — '+modeFor(item)).join('\\n') : 'NO ACTIVE TEXT ELEMENTS: do not render any visible text, typography, labels, badges, numbers, logos-as-text, or captions.',
-        generatableBlank.length?'ENABLED BLANK ELEMENTS — AI MAY GENERATE: '+generatableBlank.map(item=>item.name+' ['+item.type+']').join(', ')+'.':'',
-        blank.filter(item=>!generatableBlank.includes(item)).length?'ENABLED BLANK ELEMENTS — LEAVE ABSENT: '+blank.filter(item=>!generatableBlank.includes(item)).map(item=>item.name).join(', ')+'.':'',
-        off.length?'DISABLED ELEMENTS: never render or reintroduce: '+off.map(item=>item.name).join(', ')+'.':'',
-        'Never invent product specifications, prices, performance claims, dates, or factual disclaimers.',
-        'Preserve the meaning and relationships in structured lists, tutorial steps, and comparison rows.'
-      ].filter(Boolean).join('\\n');
-    }
-
-    function buildFinalImagePrompt(category, subcategory, creativeBrief) {
-      return [
-        'CONTENT CATEGORY: '+category.name,
-        'CONTENT OBJECTIVE: '+category.objective,
-        'CONTENT SUBCATEGORY: '+subcategory,
-        'CREATIVE BRIEF: '+creativeBrief,
-        buildTextSkillPrompt(),
-        buildVisualDirectionPrompt(),
-        'ASPECT RATIO: '+(aspectRatioSelect.value||'1:1')+'. Adapt framing to this ratio while preserving the configured composition.',
-        'FINAL PRECEDENCE: user-enabled Text Element Skills and Visual Direction are authoritative. Do not add, duplicate, weaken, or contradict their instructions.'
-      ].join('\n');
-    }
-
-
-    // Dynamic Visual Direction: subcategory configuration replaces category configuration.
-    const visualElement = (id,name,value,description,options={}) => ({id,name,value,description,enabled:options.enabled !== false,prompt_instruction:options.prompt_instruction || ''});
-    const visualSet = (background,composition,lighting,visualStyle,negativeConstraints) => [
-      visualElement('background','Background',background,'Latar dan lingkungan utama.'),
-      visualElement('composition','Composition',composition,'Tata letak, framing, dan posisi objek.'),
-      visualElement('lighting','Lighting',lighting,'Karakter pencahayaan.'),
-      visualElement('visual_style','Visual Style',visualStyle,'Karakter estetika.'),
-      visualElement('negative_constraints','Negative Constraints',negativeConstraints,'Hal yang harus dihindari.')
-    ];
-    const categoryVisualConfig = {
-      product: visualSet("Clean premium studio environment; product clearly visible.", "Hero product with clear hierarchy, accurate proportions, and negative space.", "Soft controlled studio lighting, realistic reflections and shadows.", "Premium minimalist Apple-style photorealistic product advertising.", "No distorted geometry, incorrect ports, invented features, incorrect logos, watermark, or clutter."),
-      education: visualSet("Clean contextual environment relevant to the educational topic.", "Clear instructional hierarchy with device or subject as focal point.", "Balanced soft lighting with clear device details.", "Modern, approachable, accurate technology education editorial.", "No misleading interface, fabricated technical details, clutter, watermark, or illegible text."),
-    };
-    const subcategoryVisualConfig = {
-      "New Product Showcase": visualSet("Premium seamless white or neutral studio.", "Centered hero product, three-quarter view, generous negative space.", "Soft high-end key light with subtle rim highlights.", "Photorealistic premium launch advertising, minimalist and refined.", "No extra devices, distorted silhouette, invented features, fake logos, watermark, clutter."),
-      "Product Features & Highlights": visualSet("Minimal neutral studio.", "Product hero with close-up detail emphasizing selected feature.", "Directional soft lighting revealing material and details.", "Premium technical editorial, photorealistic macro detail.", "No unrelated callouts, invented specifications, inaccurate details, watermark, clutter."),
-      "Product Launch": visualSet("Bold launch-stage environment, refined dark or neutral backdrop.", "Dramatic centered hero product with strong hierarchy.", "Cinematic controlled lighting and elegant rim light.", "High-end cinematic product launch campaign.", "No unannounced variants, invented launch details, fake event logos, watermark, clutter."),
-      "Product Comparison": visualSet("Neutral split background with balanced visual weight.", "Side-by-side products at consistent scale, angle, and prominence.", "Consistent even studio lighting across both products.", "Clean symmetrical editorial comparison graphic.", "No unequal scale, misleading differences, invented specifications, merged devices, watermark."),
-      "Product in Detail": visualSet("Quiet neutral studio for close-up photography.", "Macro composition focusing on selected materials, controls, ports, or design details.", "Soft directional macro lighting revealing texture.", "Photorealistic premium industrial design editorial.", "No fabricated components, inaccurate ports, distorted geometry, watermark, irrelevant props."),
-      "Best-Selling Products": visualSet("Clean premium retail-inspired neutral background.", "Organized product lineup or ranked grid with consistent scale.", "Bright balanced commercial lighting.", "Polished premium retail campaign photography.", "No invented rankings, unsupported claims, duplicated products, watermark, clutter."),
-      "Apple Ecosystem Showcase": visualSet("Minimal modern workspace or seamless studio.", "Multiple Apple devices in a cohesive ecosystem composition.", "Soft ambient studio lighting and natural contact shadows.", "Premium photorealistic lifestyle-meets-product advertising.", "No unsupported interactions, impossible connections, duplicate devices, watermark, clutter."),
-      "Product Recommendation": visualSet("Warm clean lifestyle setting or neutral studio.", "Recommended product as hero; supporting details secondary.", "Natural soft key light with commercial highlights.", "Approachable premium editorial advertising.", "No unsupported claims, misleading use, unrelated devices, watermark, clutter."),
-      "Tips & Tricks": visualSet("Simple everyday setting related to the tip.", "Device and interaction clearly visible; space for concise tip.", "Bright natural-looking soft light.", "Friendly modern educational editorial, realistic and practical.", "No confusing gestures, fabricated UI, unreadable screen, watermark, clutter."),
-      "How-to Tutorials": visualSet("Clean practical environment for the tutorial action.", "Sequential instructional composition with clearly separated steps.", "Even soft lighting keeping actions and interface visible.", "Clear modern step-by-step instructional visual.", "No skipped steps, fabricated interface, confusing hand placement, watermark, clutter."),
-      "Hidden Features": visualSet("Subtle modern technology setting with restrained background.", "Focused device close-up revealing one hidden feature.", "Controlled accent lighting while preserving screen clarity.", "Curiosity-driven premium technology editorial.", "No fictional features, unsupported interface, misleading indicators, watermark, clutter."),
-      "Product Knowledge": visualSet("Neutral educational studio with minimal context.", "Clear explanatory layout centered on exact product or feature.", "Balanced soft lighting for accurate color, shape, and detail.", "Precise factual photorealistic product editorial.", "No incorrect specifications, fabricated labels, misleading diagrams, watermark."),
-      "iPhone Photography Tips": visualSet("Realistic photography location suited to the intended subject.", "Show iPhone camera perspective and subject; demonstrate stated technique.", "Lighting appropriate to the photography goal.", "Premium natural photorealistic mobile photography editorial.", "No impossible camera results, fake lens hardware, misleading UI, watermark, clutter."),
-      "Productivity Tips": visualSet("Organized modern workspace with restrained lifestyle background.", "Relevant Apple devices and workflow in a clear arrangement.", "Soft natural daylight with balanced exposure.", "Modern clean practical premium productivity editorial.", "No fictional app interfaces, impossible workflows, unreadable screens, watermark, clutter."),
-      "Apple Ecosystem Tips": visualSet("Realistic home or workspace environment.", "Show involved devices and their relationship in a clear workflow.", "Consistent natural ambient lighting.", "Approachable premium realistic ecosystem lifestyle photography.", "No unsupported cross-device behavior, impossible connections, watermark, clutter."),
-      "Frequently Asked Questions (FAQ)": visualSet("Simple neutral background with subtle relevant context.", "One clear focal device or subject with structured information area.", "Even soft lighting prioritizing legibility and product clarity.", "Minimal modern trustworthy information-led editorial design.", "No fabricated answers, misleading symbols, illegible typography, watermark, clutter."),
-    };
-    let activeVisualConfig = [];
-    function currentVisualConfig() {
-      const source = subcategoryVisualConfig[subcategorySelect.value] || categoryVisualConfig[categorySelect.value] || [];
-      return source;
-    }
-    function renderVisualDirection() {
-      const container = document.getElementById('visualDirectionContainer');
-      if (!categorySelect.value || !subcategorySelect.value) {
-        activeVisualConfig = [];
-        container.innerHTML = '<p class="text-xs text-neutral-400">Pilih kategori dan subkategori terlebih dahulu.</p>';
-        return;
-      }
-      activeVisualConfig = currentVisualConfig();
-      container.innerHTML = activeVisualConfig.map(item =>
-        '<div class="rounded-xl border border-neutral-200 bg-neutral-50/70 p-3 space-y-2">' +
-        '<div class="flex items-start gap-2"><input type="checkbox" data-visual-enabled="' + item.id + '" checked class="mt-0.5 h-4 w-4">' +
-        '<div class="min-w-0 flex-1"><p class="text-sm font-medium">' + item.name + '</p><p class="text-[11px] text-neutral-500">' + item.description + '</p></div>' +
-        '<span data-visual-status="' + item.id + '" class="text-[10px] text-neutral-400">DIGUNAKAN</span></div>' +
-        '<textarea data-visual-value="' + item.id + '" rows="2" class="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs">' + escapeAttr(item.value) + '</textarea></div>'
-      ).join('');
-      container.querySelectorAll('[data-visual-enabled]').forEach(toggle => toggle.addEventListener('change', () => {
-        const item = activeVisualConfig.find(entry => entry.id === toggle.dataset.visualEnabled);
-        if (item) item.enabled = toggle.checked;
-        const status = container.querySelector('[data-visual-status="' + toggle.dataset.visualEnabled + '"]');
-        if (status) status.textContent = toggle.checked ? 'DIGUNAKAN' : 'TIDAK DIGUNAKAN';
-      }));
-      container.querySelectorAll('[data-visual-value]').forEach(input => input.addEventListener('input', () => {
-        const item = activeVisualConfig.find(entry => entry.id === input.dataset.visualValue);
-        if (item) item.value = input.value;
-      }));
-    }
-    function getActiveVisualValues() {
-      const container = document.getElementById('visualDirectionContainer');
-      return activeVisualConfig.map(item => {
-        const toggle = container.querySelector('[data-visual-enabled="' + item.id + '"]');
-        const input = container.querySelector('[data-visual-value="' + item.id + '"]');
-        return {...item, enabled: !!(toggle && toggle.checked), value: input ? input.value.trim() : item.value};
-      });
-    }
-    function buildVisualDirectionPrompt() {
-      const values = getActiveVisualValues();
-      const active = values.filter(item => item.enabled && item.value);
-      const disabled = values.filter(item => !item.enabled);
-      return ['DYNAMIC VISUAL DIRECTION — AUTHORITATIVE:',
-        active.length ? active.map(item => item.name.toUpperCase() + ': ' + item.value + (item.prompt_instruction ? ' ' + item.prompt_instruction : '')).join('\n') : 'No predefined visual direction; follow the creative brief without imposing a fixed direction.',
-        disabled.length ? 'DISABLED VISUAL DIRECTIONS: do not apply or reintroduce ' + disabled.map(item => item.name).join(', ') + '.' : '',
-        'Treat enabled directions as authoritative. Negative Constraints apply only when enabled; do not restore disabled constraints from defaults.'
-      ].filter(Boolean).join('\n');
-    }
-
-    // Event Listener: Perubahan Kategori Konten
-    categorySelect.addEventListener('change', () => {
-      const selected = categories[categorySelect.value];
-      subcategorySelect.innerHTML = '';
-
-      if (!selected) {
-        objectivePanel.classList.add('hidden');
-        subcategorySelect.disabled = true;
-        subcategorySelect.add(new Option('Pilih kategori terlebih dahulu', ''));
-        renderTextSkills();
-        renderVisualDirection();
-        return;
-      }
-
-      objectiveText.textContent = selected.objective;
-      objectivePanel.classList.remove('hidden');
-      subcategorySelect.disabled = false;
-      subcategorySelect.add(new Option('Pilih subkategori', ''));
-      selected.subcategories.forEach(item => subcategorySelect.add(new Option(item, item)));
-      renderTextSkills();
-      renderVisualDirection();
-    });
-
-    subcategorySelect.addEventListener('change', () => {
-      renderTextSkills();
-      renderVisualDirection();
-    });
-
-    // Validasi Pilihan Kategori & Subkategori
-    function getSelectedContent() {
-      const category = categories[categorySelect.value];
-      const subcategory = subcategorySelect.value;
-      if (!category || !subcategory) {
-        throw new Error('Pilih kategori dan subkategori terlebih dahulu.');
-      }
-      return { category, subcategory };
-    }
-
-    // State Loading Tombol Generate Prompt
-    function setPromptLoadingState(isLoading) {
-      generatePromptBtn.disabled = isLoading;
-      promptBtnText.textContent = isLoading ? 'AI sedang menyusun prompt...' : 'Generate Detail Prompt dengan AI';
-      const icon = document.getElementById('promptBtnIcon');
-      icon.setAttribute('data-lucide', isLoading ? 'loader-2' : 'bot');
-      icon.classList.toggle('animate-spin', isLoading);
-      lucide.createIcons();
-    }
-
-    // Event Listener: Salin Prompt ke Clipboard
-    copyPromptBtn.addEventListener('click', () => {
-      if (!promptInput.value.trim()) return;
-      promptInput.select();
-      document.execCommand('copy');
-      copyBtnText.textContent = 'Tersalin!';
-      setTimeout(() => {
-        copyBtnText.textContent = 'Salin';
-      }, 2000);
-    });
-
-    // Event Listener: Generate Detail Prompt dengan AI (gemini-3-flash-preview)
-    generatePromptBtn.addEventListener('click', async () => {
-      hideError();
-
-      let selected;
-      try {
-        selected = getSelectedContent();
-      } catch (err) {
-        showError(err.message);
-        return;
-      }
-
-      try { validateActiveElements(); } catch (err) { showError(err.message); return; }
-
-      setPromptLoadingState(true);
-      promptStatus.textContent = 'Sedang dibuat...';
-
-      try {
-        const idea = ideaInput.value.trim() || 'Develop a strong visual concept based on the selected category and subcategory.';
-        const systemPrompt = [
-          'You are an expert Apple product advertising art director and visual prompt engineer.',
-          'Create a concise creative brief for the image concept, not the final assembled image prompt.',
-          'Return only these sections: SUBJECT; ACTION / CONCEPT; CAMERA & QUALITY; COLOR & MOOD; DETAILS.',
-          'Do not output or repeat environment, background, composition, visual style, lighting, typography, text overlay, or negative-constraint instructions. Those are assembled separately from the active user configuration.',
-          'Do not invent product specifications, logos, ports, colors, features, dates, prices, or factual claims.',
-          'For Product Content, keep the Apple product recognizable and central to the concept.',
-          'For Education Content, communicate the selected educational topic accurately without requesting visible text.',
-          'Respect the user idea and selected subcategory. Improve concept specificity without changing the intended message.',
-          'Return only the creative brief, with no commentary, markdown fences, or alternatives.'
-        ].join(' ');
-
-        const userQuery = [
-          'CONTENT CATEGORY: ' + selected.category.name,
-          'CONTENT OBJECTIVE: ' + selected.category.objective,
-          'CONTENT SUBCATEGORY: ' + selected.subcategory,
-          'USER IDEA / ADDITIONAL INFORMATION: ' + idea,
-          'Generate a creative concept only. Controlled text, visual direction, and aspect ratio will be assembled once after generation.'
-        ].join('\n');
-
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
-        const response = await fetchWithRetry(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: userQuery }] }],
-            systemInstruction: {
-              parts: [{ text: systemPrompt }]
-            },
-            generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 1800
+        // Fallback sample data jika endpoint mengalami kendala jaringan/CORS
+        const FALLBACK_TEMPLATES = [
+            {
+                "id": "277303ee-0b3a-4a28-b599-c7821d3a40ad",
+                "product": "Apple AirPods Max",
+                "headline": "A masterpiece of sound.",
+                "subheadline": "Over-ear listening with exceptional detail and a distinctive design.",
+                "features": [
+                    "High-fidelity audio",
+                    "Active Noise Cancellation",
+                    "Spatial Audio",
+                    "Premium over-ear design"
+                ],
+                "background": "Minimal dark-to-light gradient with soft metallic highlights and atmospheric studio lighting",
+                "layout": "Luxury audio product advertising",
+                "composition": "Headphones in a large centered hero pose, ear cushions and headband clearly visible, headline above, restrained feature text below",
+                "quality": "Photorealistic luxury product photography, fine material detail, soft cinematic lighting, sharp focus",
+                "ratio": "4:5",
+                "date": "2026-11-18",
+                "time": "19:00:00"
             }
-          })
-        });
+        ];
 
-        const data = await response.json();
-        const generatedPrompt = data?.candidates?.[0]?.content?.parts
-          ?.map(part => part.text || '')
-          .join('\n')
-          .trim();
+        // State
+        let allTemplates = [];
+        let selectedTemplateId = null;
+        let currentGeneratedImageUrl = null;
+        let uploadedLogoData = null; // { base64: string, mimeType: string, name: string }
 
-        if (!generatedPrompt) {
-          throw new Error('AI tidak mengembalikan Detail Prompt Visual.');
-        }
+        // DOM Elements
+        const formInputs = [
+            'fieldProduct', 'fieldRatio', 'fieldHeadline', 'fieldSubheadline',
+            'fieldFeatures', 'fieldLayout', 'fieldBackground', 'fieldComposition', 'fieldQuality'
+        ];
 
-        promptInput.value = generatedPrompt;
-        promptStatus.textContent = 'Dibuat oleh AI · Bisa diedit';
-      } catch (err) {
-        promptStatus.textContent = 'Belum dibuat';
-        showError(err.message || 'Terjadi kesalahan saat membuat prompt.');
-      } finally {
-        setPromptLoadingState(false);
-      }
-    });
+        // Initialize Icons & App
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            
+            // Attach real-time prompt preview listeners
+            formInputs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.addEventListener('input', updatePromptPreview);
+                    el.addEventListener('change', updatePromptPreview);
+                }
+            });
 
-    // State Loading Tombol Submit Gambar
-    function setLoadingState(isLoading) {
-      submitBtn.disabled = isLoading;
-      const currentIcon = document.getElementById('btnIcon');
+            // Fetch templates from Supabase Edge Function
+            fetchTemplates();
 
-      if (isLoading) {
-        currentIcon.setAttribute('data-lucide', 'loader-2');
-        currentIcon.classList.add('animate-spin');
-        btnText.textContent = 'Membuat Gambar...';
-        imageLoadingSkeleton.classList.remove('hidden');
-      } else {
-        currentIcon.setAttribute('data-lucide', 'sparkles');
-        currentIcon.classList.remove('animate-spin');
-        btnText.textContent = 'Buat Gambar';
-        imageLoadingSkeleton.classList.add('hidden');
-      }
-      lucide.createIcons();
-    }
-
-    // Event Listener: Submit Form untuk Membuat Gambar (gemini-3.1-flash-image)
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      hideError();
-
-      let selected;
-      try {
-        selected = getSelectedContent();
-      } catch (err) {
-        showError(err.message);
-        return;
-      }
-
-      const { category, subcategory } = selected;
-      try { validateActiveElements(); } catch (err) { showError(err.message); return; }
-      const userPrompt = promptInput.value.trim();
-
-      if (!userPrompt) {
-        showError('Generate atau isi Detail Prompt Visual terlebih dahulu.');
-        return;
-      }
-
-      const finalPrompt = buildFinalImagePrompt(category, subcategory, userPrompt);
-
-      setLoadingState(true);
-      resultContainer.classList.add('hidden');
-
-      try {
-        const payload = {
-          contents: [{ role: 'user', parts: [{ text: finalPrompt }] }],
-          generationConfig: {
-            responseModalities: ['IMAGE'],
-            imageConfig: {
-              aspectRatio: aspectRatioSelect.value || '1:1'
+            // Muat logo default secara otomatis dari input url_logo
+            const defaultUrlInput = document.getElementById('fieldLogoUrl');
+            if (defaultUrlInput && defaultUrlInput.value.trim()) {
+                loadLogoFromUrl(defaultUrlInput.value.trim(), false);
             }
-          }
-        };
-
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${apiKey}`;
-
-        const res = await fetchWithRetry(apiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
         });
 
-        const data = await res.json();
-        const part = data?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+        // Show custom notification toast
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            
+            const colors = {
+                info: 'bg-dark-700 border-zinc-700 text-zinc-100',
+                success: 'bg-emerald-950/90 border-emerald-700/80 text-emerald-200',
+                error: 'bg-rose-950/90 border-rose-700/80 text-rose-200'
+            };
 
-        if (!part || !part.inlineData?.data) {
-          throw new Error('Tidak ada data gambar yang dikembalikan oleh model.');
+            const icons = {
+                info: 'info',
+                success: 'check-circle-2',
+                error: 'alert-circle'
+            };
+
+            toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-xl backdrop-blur-md text-xs font-medium transition-all duration-300 translate-y-2 opacity-0 ${colors[type]}`;
+            toast.innerHTML = `<i data-lucide="${icons[type]}" class="w-4 h-4 shrink-0"></i><span>${message}</span>`;
+            
+            container.appendChild(toast);
+            lucide.createIcons({ root: toast });
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
         }
 
-        const mimeType = part.inlineData.mimeType || 'image/png';
-        const imageUrl = `data:${mimeType};base64,${part.inlineData.data}`;
+        // Fetch Templates from Endpoint
+        async function fetchTemplates() {
+            const refreshIcon = document.querySelector('#refreshBtn i');
+            if (refreshIcon) refreshIcon.classList.add('animate-spin');
 
-        resultImage.src = imageUrl;
-        resultImage.alt = `${category.name} - ${subcategory}`;
-        downloadBtn.href = imageUrl;
-        downloadBtn.download = `apple-visual-${subcategory.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`;
-        resultContainer.classList.remove('hidden');
-      } catch (err) {
-        showError(err.message || 'Terjadi kesalahan saat menghasilkan gambar.');
-      } finally {
-        setLoadingState(false);
-      }
-    });
-  </script>
+            try {
+                const response = await fetch(TEMPLATE_API_URL, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+                
+                const data = await response.json();
+                allTemplates = Array.isArray(data) ? data : (data.data || FALLBACK_TEMPLATES);
+                
+                if (allTemplates.length === 0) {
+                    allTemplates = FALLBACK_TEMPLATES;
+                }
+
+                renderTemplateList(allTemplates);
+                
+                // Select first template automatically if none selected
+                if (!selectedTemplateId && allTemplates.length > 0) {
+                    selectTemplate(allTemplates[0].id);
+                }
+                showToast(`${allTemplates.length} template berhasil dimuat`, 'success');
+            } catch (error) {
+                console.warn("Gagal mengambil data dari API, menggunakan template bawaan:", error);
+                allTemplates = FALLBACK_TEMPLATES;
+                renderTemplateList(allTemplates);
+                if (!selectedTemplateId && allTemplates.length > 0) {
+                    selectTemplate(allTemplates[0].id);
+                }
+                showToast("Menggunakan template default (offline/CORS fallback)", "info");
+            } finally {
+                if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+            }
+        }
+
+        // Render Template Cards
+        function renderTemplateList(templates) {
+            const container = document.getElementById('templateList');
+            const countBadge = document.getElementById('templateCount');
+            countBadge.textContent = templates.length;
+
+            if (templates.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-xs text-zinc-500">Tidak ada template yang cocok.</div>`;
+                return;
+            }
+
+            container.innerHTML = templates.map(tpl => {
+                const isSelected = tpl.id === selectedTemplateId;
+                const featuresCount = Array.isArray(tpl.features) ? tpl.features.length : 0;
+                
+                return `
+                    <button type="button" onclick="selectTemplate('${tpl.id}')" 
+                        class="w-full text-left p-3.5 rounded-xl border transition-all duration-200 flex flex-col gap-1.5 group
+                        ${isSelected 
+                            ? 'bg-indigo-600/15 border-indigo-500 shadow-md shadow-indigo-500/10' 
+                            : 'bg-dark-900/70 border-zinc-800/90 hover:border-zinc-700 hover:bg-dark-700/50'}">
+                        <div class="flex items-start justify-between gap-2">
+                            <span class="font-semibold text-xs ${isSelected ? 'text-indigo-300' : 'text-zinc-200 group-hover:text-white'} line-clamp-1">
+                                ${escapeHtml(tpl.product || 'Tanpa Nama Produk')}
+                            </span>
+                            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-dark-800 text-zinc-400 border border-zinc-700/70 shrink-0">
+                                ${escapeHtml(tpl.ratio || '4:5')}
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-zinc-400 line-clamp-1 italic">"${escapeHtml(tpl.headline || '')}"</p>
+                        <div class="flex items-center justify-between mt-1 pt-1.5 border-t border-zinc-800/60 text-[10px] text-zinc-500">
+                            <span class="truncate max-w-[140px]">${escapeHtml(tpl.layout || 'Commercial Ad')}</span>
+                            <span>${featuresCount} fitur</span>
+                        </div>
+                    </button>
+                `;
+            }).join('');
+        }
+
+        // Filter Templates via Search Input
+        function filterTemplates() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            if (!query) {
+                renderTemplateList(allTemplates);
+                return;
+            }
+            const filtered = allTemplates.filter(tpl => 
+                (tpl.product && tpl.product.toLowerCase().includes(query)) ||
+                (tpl.headline && tpl.headline.toLowerCase().includes(query)) ||
+                (tpl.layout && tpl.layout.toLowerCase().includes(query))
+            );
+            renderTemplateList(filtered);
+        }
+
+        // Populate Form with Selected Template
+        function selectTemplate(id) {
+            const tpl = allTemplates.find(t => t.id === id);
+            if (!tpl) return;
+
+            selectedTemplateId = id;
+            
+            document.getElementById('fieldProduct').value = tpl.product || '';
+            
+            // Check if ratio exists in dropdown, else default to 4:5
+            const ratioSelect = document.getElementById('fieldRatio');
+            const validRatios = Array.from(ratioSelect.options).map(o => o.value);
+            ratioSelect.value = validRatios.includes(tpl.ratio) ? tpl.ratio : '4:5';
+
+            document.getElementById('fieldHeadline').value = tpl.headline || '';
+            document.getElementById('fieldSubheadline').value = tpl.subheadline || '';
+            document.getElementById('fieldFeatures').value = Array.isArray(tpl.features) ? tpl.features.join(', ') : (tpl.features || '');
+            document.getElementById('fieldLayout').value = tpl.layout || '';
+            document.getElementById('fieldBackground').value = tpl.background || '';
+            document.getElementById('fieldComposition').value = tpl.composition || '';
+            document.getElementById('fieldQuality').value = tpl.quality || '';
+
+            // Re-render list to update active state & update prompt preview
+            filterTemplates();
+            updatePromptPreview();
+        }
+
+        // Reset Form to currently selected template
+        function resetForm() {
+            if (selectedTemplateId) {
+                const logoUrlInput = document.getElementById('fieldLogoUrl');
+                if (logoUrlInput) logoUrlInput.value = DEFAULT_LOGO_URL;
+                loadLogoFromUrl(DEFAULT_LOGO_URL, false);
+                selectTemplate(selectedTemplateId);
+                showToast("Form dikembalikan ke template asli", "info");
+            }
+        }
+
+        // Load Logo Automatically from URL and convert to Base64
+        async function loadLogoFromUrl(url, notify = true) {
+            const cleanUrl = (url || '').trim();
+            if (!cleanUrl) return;
+
+            const fileNameLabel = document.getElementById('logoFileName');
+            if (fileNameLabel) {
+                fileNameLabel.textContent = 'Mengunduh logo dari URL...';
+                fileNameLabel.classList.remove('text-zinc-500', 'text-indigo-300');
+                fileNameLabel.classList.add('text-amber-300');
+            }
+
+            try {
+                const response = await fetch(cleanUrl, { mode: 'cors' });
+                if (!response.ok) throw new Error(`Gagal memuat gambar (${response.status})`);
+
+                const blob = await response.blob();
+                if (!blob.type.startsWith('image/')) {
+                    throw new Error('URL tidak mengarah ke file gambar yang valid');
+                }
+
+                const reader = new FileReader();
+                reader.onloadend = function() {
+                    const dataUrl = reader.result;
+                    const [header, base64Data] = dataUrl.split(',');
+                    const mimeMatch = header.match(/:(.*?);/);
+                    const mimeType = mimeMatch ? mimeMatch[1] : (blob.type || 'image/png');
+                    const extractedName = cleanUrl.split('/').pop().split('?')[0] || 'logo-url.png';
+
+                    uploadedLogoData = {
+                        base64: base64Data,
+                        mimeType: mimeType,
+                        name: extractedName
+                    };
+
+                    // Update UI preview
+                    const previewImg = document.getElementById('logoPreviewImg');
+                    const placeholderIcon = document.getElementById('logoPlaceholderIcon');
+                    const removeBtn = document.getElementById('removeLogoBtn');
+                    const fileInput = document.getElementById('fieldLogo');
+
+                    if (fileInput) fileInput.value = '';
+                    previewImg.src = dataUrl;
+                    previewImg.classList.remove('hidden');
+                    placeholderIcon.classList.add('hidden');
+                    fileNameLabel.textContent = `${extractedName} (dari URL)`;
+                    fileNameLabel.classList.remove('text-zinc-500', 'text-amber-300');
+                    fileNameLabel.classList.add('text-indigo-300');
+                    removeBtn.classList.remove('hidden');
+
+                    updatePromptPreview();
+                    if (notify) {
+                        showToast("Logo dari URL berhasil dimuat!", "success");
+                    }
+                };
+                reader.readAsDataURL(blob);
+            } catch (error) {
+                console.error("Error loading logo from URL:", error);
+                if (fileNameLabel) {
+                    fileNameLabel.textContent = 'Gagal memuat logo dari URL (periksa CORS/URL)';
+                    fileNameLabel.classList.remove('text-amber-300', 'text-indigo-300');
+                    fileNameLabel.classList.add('text-rose-400');
+                }
+                if (notify) {
+                    showToast(error.message || "Gagal memuat logo dari URL", "error");
+                }
+            }
+        }
+
+        // Handle Logo File Upload
+        function handleLogoUpload(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                showToast("Harap pilih file gambar yang valid (PNG, JPG, WebP, SVG)", "error");
+                event.target.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const dataUrl = e.target.result;
+                const [header, base64Data] = dataUrl.split(',');
+                const mimeMatch = header.match(/:(.*?);/);
+                const mimeType = mimeMatch ? mimeMatch[1] : file.type;
+
+                uploadedLogoData = {
+                    base64: base64Data,
+                    mimeType: mimeType,
+                    name: file.name
+                };
+
+                // Update UI preview
+                const previewImg = document.getElementById('logoPreviewImg');
+                const placeholderIcon = document.getElementById('logoPlaceholderIcon');
+                const fileNameLabel = document.getElementById('logoFileName');
+                const removeBtn = document.getElementById('removeLogoBtn');
+                const urlInput = document.getElementById('fieldLogoUrl');
+
+                if (urlInput) urlInput.value = '';
+                previewImg.src = dataUrl;
+                previewImg.classList.remove('hidden');
+                placeholderIcon.classList.add('hidden');
+                fileNameLabel.textContent = file.name;
+                fileNameLabel.classList.remove('text-zinc-500', 'text-amber-300', 'text-rose-400');
+                fileNameLabel.classList.add('text-indigo-300');
+                removeBtn.classList.remove('hidden');
+
+                updatePromptPreview();
+                showToast("Logo berhasil ditambahkan untuk sudut kiri atas", "success");
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Remove Uploaded Logo
+        function removeLogo() {
+            uploadedLogoData = null;
+            const fileInput = document.getElementById('fieldLogo');
+            const urlInput = document.getElementById('fieldLogoUrl');
+            const previewImg = document.getElementById('logoPreviewImg');
+            const placeholderIcon = document.getElementById('logoPlaceholderIcon');
+            const fileNameLabel = document.getElementById('logoFileName');
+            const removeBtn = document.getElementById('removeLogoBtn');
+
+            if (fileInput) fileInput.value = '';
+            if (urlInput) urlInput.value = '';
+            if (previewImg) {
+                previewImg.src = '';
+                previewImg.classList.add('hidden');
+            }
+            if (placeholderIcon) placeholderIcon.classList.remove('hidden');
+            if (fileNameLabel) {
+                fileNameLabel.textContent = 'Belum ada logo dipilih (PNG transparan disarankan)';
+                fileNameLabel.classList.add('text-zinc-500');
+                fileNameLabel.classList.remove('text-indigo-300', 'text-amber-300', 'text-rose-400');
+            }
+            if (removeBtn) removeBtn.classList.add('hidden');
+
+            updatePromptPreview();
+        }
+
+        // Build Rich Prompt String from Fields
+        function buildPrompt() {
+            const product = document.getElementById('fieldProduct').value.trim();
+            const headline = document.getElementById('fieldHeadline').value.trim();
+            const subheadline = document.getElementById('fieldSubheadline').value.trim();
+            const featuresRaw = document.getElementById('fieldFeatures').value.trim();
+            const layout = document.getElementById('fieldLayout').value.trim();
+            const background = document.getElementById('fieldBackground').value.trim();
+            const composition = document.getElementById('fieldComposition').value.trim();
+            const quality = document.getElementById('fieldQuality').value.trim();
+
+            let parts = [];
+            if (layout) parts.push(`Style: ${layout}.`);
+            if (product) parts.push(`Featured Product: ${product}.`);
+            if (uploadedLogoData) {
+                parts.push(`Brand Logo Placement: Place the provided brand logo cleanly and prominently in the top-left corner of the poster with appropriate padding, preserving its original design and proportions.`);
+            }
+            if (composition) parts.push(`Composition: ${composition}.`);
+            if (background) parts.push(`Background & Lighting: ${background}.`);
+            
+            // Typography instructions
+            let textInstructions = [];
+            if (headline) textInstructions.push(`Main Headline text reading "${headline}"`);
+            if (subheadline) textInstructions.push(`Subheadline text reading "${subheadline}"`);
+            if (featuresRaw) {
+                const featureList = featuresRaw.split(',').map(f => f.trim()).filter(Boolean);
+                if (featureList.length > 0) {
+                    textInstructions.push(`Clean minimal feature callouts highlighting: ${featureList.join(' • ')}`);
+                }
+            }
+            if (textInstructions.length > 0) {
+                parts.push(`Typography & Text Elements: ${textInstructions.join(', ')}. Ensure all text is sharp, legible, and professionally typeset.`);
+            }
+
+            if (quality) parts.push(`Visual Quality: ${quality}.`);
+
+            return parts.join(' ');
+        }
+
+        // Update Live Prompt Preview & Aspect Ratio Badge
+        function updatePromptPreview() {
+            const promptText = buildPrompt();
+            document.getElementById('compiledPromptPreview').textContent = promptText || 'Isi form di atas untuk melihat prompt...';
+            
+            const ratio = document.getElementById('fieldRatio').value;
+            document.getElementById('ratioBadge').textContent = ratio;
+        }
+
+        // Copy Prompt to Clipboard (using execCommand fallback for iFrame safety)
+        function copyPromptText() {
+            const text = buildPrompt();
+            if (!text) return;
+
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast("Prompt berhasil disalin ke clipboard!", "success");
+            } catch (err) {
+                showToast("Gagal menyalin prompt", "error");
+            }
+            document.body.removeChild(textarea);
+        }
+
+        // Exponential Backoff Fetch Helper
+        async function fetchWithRetry(url, options, maxRetries = 4) {
+            let delay = 1000;
+            for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) return response;
+                    if (response.status !== 429 && response.status < 500) {
+                        return response; // Don't retry client errors (400, 401, etc.)
+                    }
+                } catch (err) {
+                    if (attempt === maxRetries) throw err;
+                }
+                if (attempt < maxRetries) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2;
+                }
+            }
+            throw new Error("Gagal terhubung ke server setelah beberapa percobaan.");
+        }
+
+        // Generate Image using Gemini 3.1 Flash Image API
+        async function generateImage() {
+            const prompt = buildPrompt();
+            const ratio = document.getElementById('fieldRatio').value || "4:5";
+
+            if (!prompt) {
+                showToast("Harap isi detail produk terlebih dahulu", "error");
+                return;
+            }
+
+            // UI Loading States
+            const generateBtn = document.getElementById('generateBtn');
+            const loadingState = document.getElementById('loadingState');
+            const emptyState = document.getElementById('emptyState');
+            const resultImage = document.getElementById('resultImage');
+            const resultActions = document.getElementById('resultActions');
+
+            generateBtn.disabled = true;
+            loadingState.classList.remove('hidden');
+
+            try {
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${apiKey}`;
+                
+                // Susun parts untuk API (teks prompt + inlineData logo jika diunggah)
+                const requestParts = [{ text: prompt }];
+                if (uploadedLogoData) {
+                    requestParts.push({
+                        inlineData: {
+                            mimeType: uploadedLogoData.mimeType,
+                            data: uploadedLogoData.base64
+                        }
+                    });
+                }
+
+                const payload = {
+                    contents: [{
+                        role: 'user',
+                        parts: requestParts
+                    }],
+                    generationConfig: {
+                        responseModalities: ['IMAGE'],
+                        imageConfig: { aspectRatio: ratio }
+                    }
+                };
+
+                const response = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    const errMsg = result?.error?.message || "Terjadi kesalahan saat memproses gambar.";
+                    throw new Error(errMsg);
+                }
+
+                const part = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+                
+                if (!part || !part.inlineData?.data) {
+                    throw new Error("Model tidak mengembalikan data gambar. Coba sesuaikan kembali prompt Anda.");
+                }
+
+                const mimeType = part.inlineData.mimeType || 'image/png';
+                currentGeneratedImageUrl = `data:${mimeType};base64,${part.inlineData.data}`;
+
+                // Update Preview Stage
+                resultImage.src = currentGeneratedImageUrl;
+                resultImage.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                resultActions.classList.remove('hidden');
+                
+                showToast("Poster iklan berhasil dibuat!", "success");
+
+            } catch (error) {
+                console.error("Image Generation Error:", error);
+                showToast(error.message || "Gagal membuat gambar", "error");
+            } finally {
+                generateBtn.disabled = false;
+                loadingState.classList.add('hidden');
+            }
+        }
+
+        // Download Generated Image
+        function downloadImage() {
+            if (!currentGeneratedImageUrl) return;
+            const productName = (document.getElementById('fieldProduct').value || 'ad-poster')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-');
+            
+            const link = document.createElement('a');
+            link.href = currentGeneratedImageUrl;
+            link.download = `${productName}-${Date.now()}.png`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("Gambar sedang diunduh", "success");
+        }
+
+        // Utility: Escape HTML to prevent XSS
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+    </script>
 </body>
 </html>
