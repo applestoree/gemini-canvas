@@ -424,10 +424,37 @@ export default function App() {
         throw new Error(payload?.error || `Failed to schedule slot ${selectedScheduleSlot}.`);
       }
 
-      showToast('success', `Post berhasil dijadwalkan pada ${scheduleDate} pukul ${selectedScheduleSlot}.`);
+      // Clear the source prompt only after the calendar record was created successfully.
+      let promptCleared = false;
+      try {
+        const clearResponse = await fetch(
+          `${CRUD_MAKE_PROMPT_URL}?id=${encodeURIComponent(record.id)}`,
+          {
+            method: 'PATCH',
+            headers: getEdgeHeaders(true),
+            body: JSON.stringify({
+              image_url: null,
+              caption: null
+            })
+          }
+        );
+        const clearPayload = await clearResponse.json().catch(() => ({}));
+        if (!clearResponse.ok || clearPayload?.error) {
+          throw new Error(clearPayload?.error || `Failed to clear prompt fields (HTTP ${clearResponse.status}).`);
+        }
+        promptCleared = true;
+      } catch (clearError) {
+        console.error('Schedule saved, but prompt fields could not be cleared:', clearError);
+      }
+
+      if (promptCleared) {
+        showToast('success', `Post berhasil dijadwalkan pada ${scheduleDate} pukul ${selectedScheduleSlot}. Image URL dan caption telah dikosongkan.`);
+      } else {
+        showToast('error', `Jadwal berhasil disimpan, tetapi image_url dan caption belum berhasil dikosongkan. Silakan coba lagi.`);
+      }
       setScheduleRecordId(null);
       setSelectedScheduleSlot('');
-      await loadCalendar();
+      await Promise.all([loadCalendar(), loadRecords(), loadHistory()]);
     } catch (err) {
       showToast('error', err.message || 'Failed to schedule this product.');
     } finally {
