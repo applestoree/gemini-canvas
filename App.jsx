@@ -205,6 +205,9 @@ export default function App() {
     new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur' }).format(new Date())
   );
   const [isScheduling, setIsScheduling] = useState(false);
+  const [availableScheduleSlots, setAvailableScheduleSlots] = useState([]);
+  const [isLoadingScheduleSlots, setIsLoadingScheduleSlots] = useState(false);
+  const [selectedScheduleSlot, setSelectedScheduleSlot] = useState('');
 
   // Logo upload state
   const [logoFile, setLogoFile] = useState(null);
@@ -347,62 +350,83 @@ export default function App() {
     }
   };
 
+  const loadScheduleAvailability = async (date) => {
+    if (!date) return;
+    setIsLoadingScheduleSlots(true);
+    setAvailableScheduleSlots([]);
+    setSelectedScheduleSlot('');
+    try {
+      const response = await fetch(`${CRUD_MAKE_WEBHOOK_URL}/get`, {
+        method: 'GET',
+        headers: getEdgeHeaders(false)
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload?.success === false || !Array.isArray(payload?.data)) {
+        throw new Error(payload?.error || 'Unable to load existing schedule date and time.');
+      }
+
+      const occupiedTimes = new Set(
+        payload.data
+          .filter((item) => String(item.date || '').slice(0, 10) === date)
+          .map((item) => String(item.time || '').slice(0, 5))
+      );
+      setAvailableScheduleSlots(CALENDAR_SLOTS.filter((slot) => !occupiedTimes.has(slot)));
+    } catch (err) {
+      showToast('error', err.message || 'Failed to check schedule availability.');
+    } finally {
+      setIsLoadingScheduleSlots(false);
+    }
+  };
+
   const handleScheduleRecord = async (record) => {
     if (!record?.image_url || !record?.caption) {
       showToast('error', 'Image URL or caption is missing for this product.');
       return;
     }
-    if (!scheduleDate) {
-      showToast('error', 'Please select a schedule date.');
+    if (!scheduleDate || !selectedScheduleSlot) {
+      showToast('error', 'Please select an available date and time slot.');
       return;
     }
 
     setIsScheduling(true);
     try {
-      const existingResponse = await fetch(
-        `${CRUD_MAKE_WEBHOOK_URL}/get`,
-        { method: 'GET', headers: getEdgeHeaders(false) }
-      );
+      // Re-fetch immediately before POST to avoid using stale availability data.
+      const existingResponse = await fetch(`${CRUD_MAKE_WEBHOOK_URL}/get`, {
+        method: 'GET',
+        headers: getEdgeHeaders(false)
+      });
       const existingPayload = await existingResponse.json().catch(() => ({}));
       if (!existingResponse.ok || existingPayload?.success === false || !Array.isArray(existingPayload?.data)) {
-        throw new Error(existingPayload?.error || 'Unable to check existing calendar slots.');
+        throw new Error(existingPayload?.error || 'Unable to verify existing calendar slots.');
       }
 
-      const existingTimes = new Set(
-        existingPayload.data
-          .filter((item) => item.date === scheduleDate)
-          .map((item) => String(item.time || '').slice(0, 5))
+      const slotIsOccupied = existingPayload.data.some((item) =>
+        String(item.date || '').slice(0, 10) === scheduleDate &&
+        String(item.time || '').slice(0, 5) === selectedScheduleSlot
       );
-      const availableSlots = CALENDAR_SLOTS.filter((slot) => !existingTimes.has(slot));
-      if (availableSlots.length === 0) {
-        showToast('error', 'All three schedule slots are already occupied for this date.');
-        return;
+      if (slotIsOccupied) {
+        await loadScheduleAvailability(scheduleDate);
+        throw new Error('Slot tersebut baru saja terisi. Silakan pilih slot waktu lain.');
       }
 
-      const createdSlots = [];
-      for (const slot of availableSlots) {
-        const response = await fetch(`${CRUD_MAKE_WEBHOOK_URL}/post`, {
-          method: 'POST',
-          headers: { ...getEdgeHeaders(true) },
-          body: JSON.stringify({
-            image_url: record.image_url,
-            caption: record.caption,
-            date: scheduleDate,
-            time: slot
-          })
-        });
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok || payload?.success === false) {
-          throw new Error(payload?.error || `Failed to schedule slot ${slot}.`);
-        }
-        createdSlots.push(slot);
+      const response = await fetch(`${CRUD_MAKE_WEBHOOK_URL}/post`, {
+        method: 'POST',
+        headers: { ...getEdgeHeaders(true) },
+        body: JSON.stringify({
+          image_url: record.image_url,
+          caption: record.caption,
+          date: scheduleDate,
+          time: selectedScheduleSlot
+        })
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || payload?.success === false) {
+        throw new Error(payload?.error || `Failed to schedule slot ${selectedScheduleSlot}.`);
       }
 
-      showToast(
-        'success',
-        `Scheduled ${createdSlots.length} slot(s): ${createdSlots.join(', ')}.`
-      );
+      showToast('success', `Post berhasil dijadwalkan pada ${scheduleDate} pukul ${selectedScheduleSlot}.`);
       setScheduleRecordId(null);
+      setSelectedScheduleSlot('');
       await loadCalendar();
     } catch (err) {
       showToast('error', err.message || 'Failed to schedule this product.');
@@ -411,7 +435,7 @@ export default function App() {
     }
   };
 
-  const handleOpenCalendar = async () => {
+    const handleOpenCalendar = async () => {
     setShowHistory(false);
     setShowCalendar(true);
     setShowSettings(false);
@@ -958,16 +982,50 @@ export default function App() {
                                       type="date"
                                       value={scheduleDate}
                                       min={new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur' }).format(new Date())}
-                                      onChange={(event) => setScheduleDate(event.target.value)}
+                                      onChange={(event) => {
+                                        const nextDate = event.target.value;
+                                        setScheduleDate(nextDate);
+                                        loadScheduleAvailability(nextDate);
+                                      }}
                                       disabled={isScheduling}
                                       className="w-full h-10 rounded-lg border border-neutral-200 bg-white px-3 text-xs text-neutral-800"
                                     />
-                                    <p className="text-[10px] text-neutral-500">Slot waktu: 09:00 · 13:00 · 19:00 (MYT)</p>
+                                    <div className="space-y-2">
+                                      <p className="text-[10px] font-semibold text-neutral-600">Pilih slot waktu (MYT)</p>
+                                      {isLoadingScheduleSlots ? (
+                                        <div className="flex items-center gap-2 py-2 text-[10px] text-neutral-500">
+                                          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Memeriksa jadwal yang sudah ada...
+                                        </div>
+                                      ) : availableScheduleSlots.length > 0 ? (
+                                        <div className="grid grid-cols-3 gap-2">
+                                          {CALENDAR_SLOTS.map((slot) => {
+                                            const isAvailable = availableScheduleSlots.includes(slot);
+                                            const isSelected = selectedScheduleSlot === slot;
+                                            return (
+                                              <button
+                                                key={slot}
+                                                type="button"
+                                                disabled={!isAvailable || isScheduling}
+                                                onClick={() => setSelectedScheduleSlot(slot)}
+                                                className={`h-9 rounded-lg border text-xs font-semibold transition ${!isAvailable ? 'bg-neutral-100 border-neutral-100 text-neutral-300 line-through' : isSelected ? 'bg-black border-black text-white' : 'bg-white border-neutral-200 text-neutral-700'} disabled:cursor-not-allowed`}
+                                              >
+                                                {slot}
+                                                {!isAvailable ? ' · Penuh' : ''}
+                                              </button>
+                                            );
+                                          })}
+                                        </div>
+                                      ) : (
+                                        <p className="text-[10px] text-amber-700 bg-amber-50 rounded-lg p-2">
+                                          Semua slot pada tanggal ini sudah terisi.
+                                        </p>
+                                      )}
+                                    </div>
                                     <div className="flex gap-2">
                                       <button
                                         type="button"
                                         onClick={() => handleScheduleRecord(record)}
-                                        disabled={isScheduling || !record.image_url || !record.caption}
+                                        disabled={isScheduling || isLoadingScheduleSlots || !selectedScheduleSlot || !record.image_url || !record.caption}
                                         className="flex-1 h-9 rounded-lg bg-black text-white text-xs font-semibold disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
                                       >
                                         {isScheduling ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
@@ -987,8 +1045,10 @@ export default function App() {
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      setScheduleDate(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur' }).format(new Date()));
+                                      const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur' }).format(new Date());
+                                      setScheduleDate(today);
                                       setScheduleRecordId(record.id);
+                                      loadScheduleAvailability(today);
                                     }}
                                     disabled={!record.image_url || !record.caption || isScheduling}
                                     className="w-full h-10 rounded-lg bg-black text-white text-xs font-semibold disabled:opacity-40"
