@@ -23,7 +23,7 @@ import {
 
 // Exact Edge Function Endpoints
 const CRUD_MAKE_PROMPT_URL = 'https://jhpbtooefyzdndstlzva.supabase.co/functions/v1/crud-make-prompt';
-const UPLOAD_IMAGE_URL = 'https://jhpbtooefyzdndstlzva.supabase.co/functions/v1/upload-image';
+const UPLOAD_IMAGE_URL = `${CRUD_MAKE_PROMPT_URL}/upload`;
 const DEFAULT_LOGO_URL = 'https://jhpbtooefyzdndstlzva.supabase.co/storage/v1/object/public/apple/logo.png';
 
 // Exact 10 Variable Keys (preserving exact spelling including 'typographhy')
@@ -413,6 +413,13 @@ export default function App() {
 
     try {
       const imageFile = base64ToImageFile(base64Data, mimeType);
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(imageFile.type)) {
+        throw new Error('crud-make-prompt only accepts JPEG, PNG, or WEBP images.');
+      }
+      if (imageFile.size > 10 * 1024 * 1024) {
+        throw new Error('Image size must not exceed 10 MB.');
+      }
       const formData = new FormData();
       formData.append('file', imageFile);
 
@@ -849,7 +856,7 @@ export default function App() {
           </section>
 
           {/* Generation Status & Result Viewer */}
-          {(activePreviewSrc || isGenerating || isUploading || isSavingUrl || generationError || uploadError) && (
+          {(activePreviewSrc || isGenerating || isUploading || isSavingUrl || generationError || uploadError || saveUrlError) && (
             <section className="bg-white rounded-2xl border border-neutral-200 p-4 space-y-3.5 shadow-2xs">
               <div className="flex items-center justify-between">
                 <div>
@@ -872,9 +879,20 @@ export default function App() {
                       Uploading
                     </span>
                   )}
-                  {uploadedImageUrl && !isUploading && (
+                  {isSavingUrl && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-neutral-700 inline-flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Saving URL
+                    </span>
+                  )}
+                  {isImageUrlSaved && !isSavingUrl && (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      Saved to Supabase
+                      Saved to make_prompt
+                    </span>
+                  )}
+                  {uploadedImageUrl && !isSavingUrl && !isImageUrlSaved && !saveUrlError && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-neutral-700 border border-neutral-200">
+                      Uploaded
                     </span>
                   )}
                 </div>
@@ -890,6 +908,36 @@ export default function App() {
                     className="h-8 px-3 rounded-lg bg-black text-white text-xs font-medium"
                   >
                     Retry Generation
+                  </button>
+                </div>
+              )}
+
+              {uploadError && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-900 space-y-2">
+                  <p className="font-semibold">Image Upload Failed</p>
+                  <p className="text-red-700">{uploadError}</p>
+                  <button
+                    type="button"
+                    onClick={handleRetryUpload}
+                    disabled={!generatedImageBase64 || isUploading}
+                    className="h-8 px-3 rounded-lg bg-black text-white text-xs font-medium disabled:opacity-50"
+                  >
+                    Retry Upload
+                  </button>
+                </div>
+              )}
+
+              {saveUrlError && (
+                <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-900 space-y-2">
+                  <p className="font-semibold">Database URL Save Failed</p>
+                  <p className="text-red-700">{saveUrlError}</p>
+                  <button
+                    type="button"
+                    onClick={handleRetrySaveUrl}
+                    disabled={!selectedRecord?.id || !uploadedImageUrl || isSavingUrl}
+                    className="h-8 px-3 rounded-lg bg-black text-white text-xs font-medium disabled:opacity-50"
+                  >
+                    Retry Save URL
                   </button>
                 </div>
               )}
