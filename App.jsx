@@ -613,8 +613,8 @@ export default function App() {
     (generatedImageBase64 ? `data:${generatedImageMimeType};base64,${generatedImageBase64}` : null);
 
   return (
-    <div className="h-full w-full bg-[#F5F5F7] flex justify-center overflow-hidden">
-      <div className="w-full max-w-[500px] h-full bg-white flex flex-col border-x border-neutral-200 overflow-hidden relative">
+    <div className="h-[100vh] w-full bg-[#F5F5F7] flex justify-center overflow-hidden">
+      <div className="w-full max-w-[500px] h-[100vh] bg-white flex flex-col border-x border-neutral-200 overflow-hidden relative">
         {/* ============================================================
             A. SIMPLIFIED HEADER WITH TOP-LEFT LOGO UPLOAD
            ============================================================ */}
