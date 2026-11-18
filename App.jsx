@@ -24,6 +24,7 @@ import {
 // Exact Edge Function Endpoints
 const CRUD_MAKE_PROMPT_URL = 'https://jhpbtooefyzdndstlzva.supabase.co/functions/v1/crud-make-prompt';
 const UPLOAD_IMAGE_URL = 'https://jhpbtooefyzdndstlzva.supabase.co/functions/v1/upload-image';
+const DEFAULT_LOGO_URL = 'https://jhpbtooefyzdndstlzva.supabase.co/storage/v1/object/public/apple/logo.png';
 
 // Exact 10 Variable Keys (preserving exact spelling including 'typographhy')
 const VARIABLE_KEYS = [
@@ -186,7 +187,7 @@ export default function App() {
 
   // Logo upload state
   const [logoFile, setLogoFile] = useState(null);
-  const [logoPreviewUrl, setLogoPreviewUrl] = useState(null);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState(DEFAULT_LOGO_URL);
 
   // Records state
   const [records, setRecords] = useState([]);
@@ -476,9 +477,24 @@ export default function App() {
     try {
       let logoInstruction = '';
       let logoBase64Data = null;
-      if (logoFile) {
-        logoBase64Data = await fileToBase64(logoFile);
-        logoInstruction = `brand_logo_placement: Include the provided brand logo cleanly positioned at the top-left corner of the advertisement canvas.`;
+      let logoMimeType = 'image/png';
+      try {
+        let logoSourceFile = logoFile;
+        if (!logoSourceFile) {
+          const logoResponse = await fetch(DEFAULT_LOGO_URL);
+          if (!logoResponse.ok) {
+            throw new Error(`Unable to load default brand logo (HTTP ${logoResponse.status}).`);
+          }
+          const logoBlob = await logoResponse.blob();
+          logoSourceFile = new File([logoBlob], 'apple-store-malaysia-logo.png', {
+            type: logoBlob.type || 'image/png'
+          });
+        }
+        logoBase64Data = await fileToBase64(logoSourceFile);
+        logoMimeType = logoSourceFile.type || 'image/png';
+        logoInstruction = `brand_logo_placement: Use the provided original brand logo exactly as supplied. Preserve its original shape, proportions, colors, and details without redesigning, recreating, distorting, or altering it. Position it cleanly at the top-left corner of the advertisement canvas.`;
+      } catch (logoError) {
+        throw new Error(`Brand logo could not be loaded: ${logoError.message}`);
       }
 
       const promptToSend = buildMasterPrompt(currentVars, logoInstruction);
@@ -486,10 +502,10 @@ export default function App() {
       const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${apiKey}`;
 
       const userParts = [{ text: promptToSend }];
-      if (logoBase64Data && logoFile) {
+      if (logoBase64Data) {
         userParts.push({
           inlineData: {
-            mimeType: logoFile.type || 'image/png',
+            mimeType: logoMimeType,
             data: logoBase64Data
           }
         });
