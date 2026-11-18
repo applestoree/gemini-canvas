@@ -189,6 +189,7 @@ export default function App() {
   const [historyRecords, setHistoryRecords] = useState([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [historyError, setHistoryError] = useState(null);
+  const [selectedHistoryId, setSelectedHistoryId] = useState(null);
 
   // Logo upload state
   const [logoFile, setLogoFile] = useState(null);
@@ -804,95 +805,6 @@ export default function App() {
           </div>
         )}
 
-        {/* Generated Image History */}
-        {showHistory && (
-          <div className="absolute inset-0 z-40 bg-black/40 flex items-center justify-center p-4">
-            <section className="w-full max-h-[85%] bg-white rounded-2xl shadow-xl flex flex-col overflow-hidden">
-              <div className="shrink-0 px-4 py-3 border-b border-neutral-200 flex items-center justify-between">
-                <div>
-                  <h2 className="text-sm font-semibold text-black">Image History</h2>
-                  <p className="text-[11px] text-neutral-500">
-                    {historyRecords.length} completed products
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowHistory(false)}
-                  className="w-8 h-8 rounded-lg hover:bg-neutral-100 flex items-center justify-center"
-                  aria-label="Close history"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3">
-                {isLoadingHistory && (
-                  <div className="py-8 flex items-center justify-center gap-2 text-xs text-neutral-500">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Loading history...
-                  </div>
-                )}
-                {!isLoadingHistory && historyError && (
-                  <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800 space-y-2">
-                    <p>{historyError}</p>
-                    <button
-                      type="button"
-                      onClick={loadHistory}
-                      className="h-8 px-3 rounded-lg bg-black text-white"
-                    >
-                      Retry
-                    </button>
-                  </div>
-                )}
-                {!isLoadingHistory && !historyError && historyRecords.length === 0 && (
-                  <div className="py-8 text-center text-xs text-neutral-500">
-                    No completed products found.
-                  </div>
-                )}
-                {!isLoadingHistory && !historyError && historyRecords.map((record) => (
-                  <article key={record.id} className="rounded-xl border border-neutral-200 overflow-hidden">
-                    <div className="p-3 space-y-2">
-                      <h3 className="text-xs font-semibold text-black">
-                        {serializeFieldForEditor(record.product) || 'Untitled Product'}
-                      </h3>
-                      {record.image_url ? (
-                        <a href={record.image_url} target="_blank" rel="noopener noreferrer" className="block">
-                          <img
-                            src={record.image_url}
-                            alt={serializeFieldForEditor(record.product) || 'Generated product'}
-                            className="w-full max-h-72 object-contain rounded-lg bg-neutral-50 border border-neutral-100"
-                            loading="lazy"
-                          />
-                        </a>
-                      ) : (
-                        <div className="p-6 rounded-lg bg-neutral-50 text-center text-[11px] text-neutral-400">
-                          No image URL available
-                        </div>
-                      )}
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500">Caption</p>
-                        <p className="text-xs text-neutral-700 whitespace-pre-wrap break-words">
-                          {serializeFieldForEditor(record.caption) || 'No caption'}
-                        </p>
-                      </div>
-                      {record.image_url && (
-                        <a
-                          href={record.image_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[11px] font-medium text-blue-700 hover:underline break-all"
-                        >
-                          Open image_url
-                        </a>
-                      )}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
-          </div>
-        )}
-
         {/* Toast Notification Banner */}
         {toast && (
           <div className="absolute top-16 left-4 right-4 z-30 pointer-events-none flex justify-center">
@@ -916,7 +828,106 @@ export default function App() {
         {/* ============================================================
             B. MAIN CONTENT AREA (SIMPLIFIED & STREAMLINED)
            ============================================================ */}
-        <main className={`flex-1 min-h-0 overflow-x-hidden bg-[#F5F5F7] p-4 flex flex-col ${selectedRecordId ? "overflow-y-auto" : "overflow-hidden"}`}>
+        <main className={`flex-1 min-h-0 overflow-x-hidden bg-[#F5F5F7] p-4 flex flex-col ${showHistory || selectedRecordId ? "overflow-y-auto" : "overflow-hidden"}`}>
+          {showHistory ? (
+            <section className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl border border-neutral-200 p-3 shadow-2xs">
+              <div className="shrink-0 flex items-center justify-between gap-3 pb-3 border-b border-neutral-200">
+                <div className="min-w-0">
+                  <h2 className="text-sm font-semibold text-black">Image History</h2>
+                  <p className="text-[11px] text-neutral-500">
+                    {historyRecords.length} completed products
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowHistory(false);
+                    setSelectedHistoryId(null);
+                  }}
+                  className="h-8 px-3 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-xs font-medium text-neutral-700 inline-flex items-center gap-1.5 shrink-0"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  Back
+                </button>
+              </div>
+
+              <div className="flex-1 min-h-0 overflow-y-auto pt-3">
+                {isLoadingHistory && (
+                  <div className="py-8 flex items-center justify-center gap-2 text-xs text-neutral-500">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Loading history...
+                  </div>
+                )}
+                {!isLoadingHistory && historyError && (
+                  <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800 space-y-2">
+                    <p>{historyError}</p>
+                    <button
+                      type="button"
+                      onClick={loadHistory}
+                      className="h-8 px-3 rounded-lg bg-black text-white"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                )}
+                {!isLoadingHistory && !historyError && historyRecords.length === 0 && (
+                  <div className="py-8 text-center text-xs text-neutral-500">
+                    No completed products found.
+                  </div>
+                )}
+                {!isLoadingHistory && !historyError && historyRecords.length > 0 && (
+                  <div className="grid grid-cols-2 gap-3">
+                    {historyRecords.map((record) => {
+                      const isCaptionVisible = selectedHistoryId === record.id;
+                      const productName = serializeFieldForEditor(record.product) || 'Untitled Product';
+                      const captionText = serializeFieldForEditor(record.caption) || 'No caption';
+                      return (
+                        <article key={record.id} className="min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedHistoryId(isCaptionVisible ? null : record.id)}
+                            aria-expanded={isCaptionVisible}
+                            aria-label={`${productName}. ${isCaptionVisible ? 'Hide' : 'Show'} caption`}
+                            className="relative block w-full aspect-[4/5] overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 text-left"
+                          >
+                            {record.image_url ? (
+                              <img
+                                src={record.image_url}
+                                alt={productName}
+                                className="absolute inset-0 w-full h-full object-cover"
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="absolute inset-0 flex items-center justify-center px-2 text-center text-[10px] text-neutral-400">
+                                No image available
+                              </div>
+                            )}
+                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-2.5 pt-8 pb-2.5">
+                              <p className="text-[11px] leading-tight font-semibold text-white line-clamp-2">
+                                {productName}
+                              </p>
+                            </div>
+                            {isCaptionVisible && (
+                              <div className="absolute inset-0 flex flex-col justify-end bg-black/85 p-2.5">
+                                <p className="text-[9px] font-semibold uppercase tracking-wide text-white/70 mb-1">
+                                  Caption
+                                </p>
+                                <p className="max-h-[72%] overflow-y-auto whitespace-pre-wrap break-words text-[10px] leading-relaxed text-white">
+                                  {captionText}
+                                </p>
+                                <p className="mt-2 text-[9px] text-white/60">Tap to close</p>
+                              </div>
+                            )}
+                          </button>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </section>
+          ) : (
+            <>
           {/* Template Selection Cards: fill available height and hide after selection */}
           {!selectedRecordId && (
           <section className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl border border-neutral-200 p-4 space-y-3 shadow-2xs">
@@ -1195,6 +1206,8 @@ export default function App() {
                 </button>
               </div>
             </section>
+          )}
+            </>
           )}
         </main>
 
