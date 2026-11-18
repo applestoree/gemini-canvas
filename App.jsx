@@ -755,9 +755,10 @@ export default function App() {
         {/* ============================================================
             B. MAIN CONTENT AREA (SIMPLIFIED & STREAMLINED)
            ============================================================ */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-[#F5F5F7] p-4 space-y-4">
-          {/* Template Selection Cards */}
-          <section className="bg-white rounded-2xl border border-neutral-200 p-4 space-y-3 shadow-2xs">
+        <main className={`flex-1 min-h-0 overflow-x-hidden bg-[#F5F5F7] p-4 flex flex-col ${selectedRecordId ? "overflow-y-auto" : "overflow-hidden"}`}>
+          {/* Template Selection Cards: fill available height and hide after selection */}
+          {!selectedRecordId && (
+          <section className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl border border-neutral-200 p-4 space-y-3 shadow-2xs">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-semibold text-black">Select Product Template</h2>
@@ -811,7 +812,7 @@ export default function App() {
             )}
 
             {!isLoadingRecords && !recordsError && records.length > 0 && (
-              <div className="space-y-2 max-h-[280px] overflow-y-auto pr-0.5">
+              <div className="flex-1 min-h-0 space-y-2 overflow-y-auto pr-0.5">
                 {records.map((rec) => {
                   const isSelected = selectedRecordId === rec.id;
                   const productName = rec.product || rec.name || rec.id;
@@ -854,6 +855,7 @@ export default function App() {
               </div>
             )}
           </section>
+          )}
 
           {/* Generation Status & Result Viewer */}
           {(activePreviewSrc || isGenerating || isUploading || isSavingUrl || generationError || uploadError || saveUrlError) && (
