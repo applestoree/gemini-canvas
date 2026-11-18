@@ -37,7 +37,6 @@
     const CALENDAR_SLOTS = ['09:00', '13:00', '19:00'];
     const UPLOAD_IMAGE_URL = `${CRUD_MAKE_PROMPT_URL}/upload`;
     const DEFAULT_LOGO_URL = 'https://jhpbtooefyzdndstlzva.supabase.co/storage/v1/object/public/apple/logo.png';
-    const GITHUB_UPDATE_URL = 'https://raw.githubusercontent.com/applestoree/gemini-canvas/refs/heads/main/index.html';
 
     const EMPTY_VARIABLES = {
       product: '',
@@ -81,9 +80,6 @@
       isGeneratingPrompt: false,
       promptGeneratorError: null,
       promptGeneratorCopied: false,
-      isUpdatingApp: false,
-      appUpdateError: null,
-      appUpdateLastChecked: null,
       records: [],
       isLoadingRecords: true,
       recordsError: null,
@@ -94,10 +90,6 @@
       generationError: null,
       generatedImageBase64: null,
       generatedImageMimeType: 'image/png',
-      generatedCaption: '',
-      isGeneratingCaption: false,
-      captionError: null,
-      captionCopied: false,
       isUploading: false,
       uploadError: null,
       uploadedImageUrl: null,
@@ -664,10 +656,6 @@ RULES:
       state.uploadError = null;
       state.saveUrlError = null;
       state.generatedImageBase64 = null;
-      state.generatedCaption = '';
-      state.isGeneratingCaption = false;
-      state.captionError = null;
-      state.captionCopied = false;
       state.uploadedImageUrl = null;
       state.isImageUrlSaved = false;
       render();
@@ -712,7 +700,7 @@ RULES:
           {
             method: 'PATCH',
             headers: getEdgeHeaders(true),
-            body: JSON.stringify({ image_url: imageUrl, caption: state.generatedCaption, is_ready: true })
+            body: JSON.stringify({ image_url: imageUrl, is_ready: true })
           }
         );
 
@@ -734,10 +722,10 @@ RULES:
 
         state.isImageUrlSaved = true;
         if (state.selectedRecord && state.selectedRecord.id === recordId) {
-          state.selectedRecord = { ...state.selectedRecord, ...payload, image_url: imageUrl, caption: state.generatedCaption, is_ready: true };
+          state.selectedRecord = { ...state.selectedRecord, ...payload, image_url: imageUrl, is_ready: true };
         }
         state.records = state.records.map((item) =>
-          item.id === recordId ? { ...item, ...payload, image_url: imageUrl, caption: state.generatedCaption, is_ready: true } : item
+          item.id === recordId ? { ...item, ...payload, image_url: imageUrl, is_ready: true } : item
         );
         showToast('success', 'image_url saved to prompt record.');
       } catch (err) {
@@ -821,57 +809,9 @@ RULES:
       }
     }
 
-    async function generateCaptionForImage(base64Data, mimeType, currentVars) {
-      state.isGeneratingCaption = true;
-      state.captionError = null;
-      state.generatedCaption = '';
-      render();
-      try {
-        const prompt = [
-          'You are a professional Instagram copywriter for Apple The Exchange TRX (@appletheexchangetrx), Malaysia.',
-          'Write one polished Instagram caption in Bahasa Melayu Malaysia based on the attached generated advertisement image and the product information below.',
-          '',
-          'PRODUCT: ' + (currentVars.product || 'Apple product'),
-          'HEADLINE: ' + (currentVars.headline || ''),
-          'SUBHEADLINE: ' + (currentVars.subheadline || ''),
-          'FEATURES: ' + (currentVars.feature_items || ''),
-          '',
-          'Rules:',
-          '- Describe only details visible in the image or explicitly provided above.',
-          '- Never invent specifications, prices, discounts, promotions, availability, or warranty claims.',
-          '- Use natural Bahasa Melayu Malaysia, in a premium, warm and engaging tone.',
-          '- Include a concise opening, product value, and a CTA to visit Apple The Exchange TRX or send a DM.',
-          '- Add 4 to 7 relevant hashtags, including #AppleTheExchangeTRX.',
-          '- Return only the caption, without a heading or commentary.'
-        ].join('\n');
-        const captionUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash:generateContent?key=';
-        const response = await fetchWithBackoff(captionUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ role: 'user', parts: [{ text: prompt }, { inlineData: { mimeType: mimeType, data: base64Data } }] }],
-            generationConfig: { responseModalities: ['TEXT'], temperature: 0.7 }
-          })
-        });
-        const result = await response.json().catch(() => null);
-        if (!response.ok || !result) throw new Error(result?.error?.message || 'Gemini caption generation failed (HTTP ' + response.status + ').');
-        const caption = result?.candidates?.[0]?.content?.parts?.filter((part) => typeof part.text === 'string').map((part) => part.text).join('\n').trim();
-        if (!caption) throw new Error('Gemini returned an empty caption.');
-        state.generatedCaption = caption;
-      } catch (err) {
-        state.captionError = err.message || 'Caption generation failed.';
-        throw err;
-      } finally {
-        state.isGeneratingCaption = false;
-        render();
-      }
-    }
-
     async function executeGeneration(currentVars, recordId = state.selectedRecord?.id) {
       state.isGenerating = true;
       state.generationError = null;
-      state.captionError = null;
-      state.generatedCaption = '';
       state.uploadError = null;
       state.uploadedImageUrl = null;
       render();
@@ -959,12 +899,11 @@ RULES:
         state.isGenerating = false;
         render();
 
-        await generateCaptionForImage(b64, mime, currentVars);
         await uploadGeneratedImageToEdge(b64, mime, recordId);
       } catch (err) {
         state.isGenerating = false;
         state.generationError = err.message || 'Image generation failed.';
-        showToast('error', state.captionError ? 'Image generated, but caption generation failed.' : 'Image generation failed.');
+        showToast('error', 'Image generation failed.');
         render();
       }
     }
@@ -983,48 +922,6 @@ RULES:
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    }
-
-    async function handleUpdateAppFromGithub() {
-      state.isUpdatingApp = true;
-      state.appUpdateError = null;
-      render();
-
-      try {
-        const cacheBusterUrl = `${GITHUB_UPDATE_URL}?t=${Date.now()}`;
-        const response = await fetch(cacheBusterUrl, {
-          method: 'GET',
-          cache: 'no-store'
-        });
-
-        if (!response.ok) {
-          throw new Error(`Gagal mengambil pembaruan dari GitHub (HTTP ${response.status}).`);
-        }
-
-        const remoteHtml = await response.text();
-        if (!remoteHtml || !remoteHtml.includes('<!DOCTYPE html>')) {
-          throw new Error('Format file pembaruan dari GitHub tidak valid.');
-        }
-
-        state.appUpdateLastChecked = new Date().toLocaleTimeString('id-ID', {
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        });
-        state.isUpdatingApp = false;
-        showToast('success', 'Pembaruan ditemukan! Memuat ulang aplikasi...');
-
-        setTimeout(() => {
-          document.open();
-          document.write(remoteHtml);
-          document.close();
-        }, 700);
-      } catch (err) {
-        state.isUpdatingApp = false;
-        state.appUpdateError = err.message || 'Gagal memperbarui aplikasi dari GitHub.';
-        showToast('error', 'Pembaruan gagal.');
-        render();
-      }
     }
 
     // =========================================================================
@@ -1304,45 +1201,6 @@ RULES:
           </div>
 
           <div class="rounded-xl border border-neutral-200 p-4 space-y-3">
-            <div class="flex items-center justify-between gap-2">
-              <div class="flex items-center gap-2">
-                <i data-lucide="download-cloud" class="w-4 h-4 text-neutral-700"></i>
-                <div>
-                  <h3 class="text-xs font-semibold text-black">App Update</h3>
-                  <p class="text-[10px] text-neutral-500">
-                    Ambil versi terbaru langsung dari repositori GitHub
-                  </p>
-                </div>
-              </div>
-              ${
-                state.appUpdateLastChecked
-                  ? `<span class="text-[10px] text-neutral-400">Cek: ${escapeHtml(state.appUpdateLastChecked)}</span>`
-                  : ''
-              }
-            </div>
-
-            <div class="p-2 rounded-lg bg-neutral-50 border border-neutral-200 font-mono text-[10px] text-neutral-600 break-all">
-              ${escapeHtml(GITHUB_UPDATE_URL)}
-            </div>
-
-            <button
-              type="button"
-              data-action="update-app-github"
-              ${state.isUpdatingApp ? 'disabled' : ''}
-              class="w-full h-10 rounded-lg bg-black text-white text-xs font-semibold inline-flex items-center justify-center gap-2 hover:bg-neutral-800 disabled:opacity-50 transition"
-            >
-              <i data-lucide="${state.isUpdatingApp ? 'loader-2' : 'refresh-cw'}" class="w-3.5 h-3.5 ${state.isUpdatingApp ? 'animate-spin' : ''}"></i>
-              <span>${state.isUpdatingApp ? 'Mengunduh Pembaruan...' : 'Update Sekarang'}</span>
-            </button>
-
-            ${
-              state.appUpdateError
-                ? `<div class="rounded-lg border border-red-200 bg-red-50 p-2.5 text-[11px] text-red-700">${escapeHtml(state.appUpdateError)}</div>`
-                : ''
-            }
-          </div>
-
-          <div class="rounded-xl border border-neutral-200 p-4 space-y-3">
             <div class="flex items-center gap-2">
               <i data-lucide="sparkles" class="w-4 h-4 text-neutral-700"></i>
               <div>
@@ -1426,9 +1284,6 @@ RULES:
         state.isUploading ||
         state.isSavingUrl ||
         state.generationError ||
-        state.isGeneratingCaption ||
-        state.captionError ||
-        state.generatedCaption ||
         state.uploadError ||
         state.saveUrlError
       );
@@ -1596,23 +1451,6 @@ RULES:
                     <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
                     <span>View Full</span>
                   </button>
-                </div>`
-              : ''
-          }
-
-          ${
-            state.isGeneratingCaption || state.captionError || state.generatedCaption
-              ? `<div class="p-3 rounded-xl bg-white border border-neutral-200 space-y-2">
-                  <div class="flex items-center justify-between gap-2">
-                    <span class="text-[11px] font-semibold text-neutral-800">AI Generated Caption</span>
-                    ${state.isGeneratingCaption ? '<span class="text-[10px] text-neutral-500">Creating caption from image...</span>' : ''}
-                  </div>
-                  ${state.captionError ? `<p class="text-xs text-red-600">${escapeHtml(state.captionError)}</p>` : ''}
-                  ${state.generatedCaption ? `<textarea readonly rows="7" class="w-full rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-xs leading-relaxed text-neutral-800 resize-y">${escapeHtml(state.generatedCaption)}</textarea>
-                    <button type="button" data-action="copy-caption" class="w-full h-9 rounded-xl bg-black text-white text-xs font-semibold inline-flex items-center justify-center gap-1.5">
-                      <i data-lucide="${state.captionCopied ? 'check' : 'copy'}" class="w-3.5 h-3.5"></i>
-                      <span>${state.captionCopied ? 'Caption Copied' : 'Copy Caption'}</span>
-                    </button>` : ''}
                 </div>`
               : ''
           }
@@ -1947,15 +1785,6 @@ RULES:
           }
           break;
 
-        case 'copy-caption':
-          if (state.generatedCaption) {
-            const copied = copyTextToClipboard(state.generatedCaption);
-            state.captionCopied = copied;
-            showToast(copied ? 'success' : 'error', copied ? 'Caption berhasil disalin.' : 'Tidak dapat menyalin caption.');
-            if (copied) setTimeout(() => { state.captionCopied = false; render(); }, 2000);
-          }
-          break;
-
         case 'copy-image-url':
           if (state.uploadedImageUrl) {
             if (copyTextToClipboard(state.uploadedImageUrl)) {
@@ -2054,10 +1883,6 @@ RULES:
 
         case 'generate-prompt':
           handleGeneratePrompt();
-          break;
-
-        case 'update-app-github':
-          handleUpdateAppFromGithub();
           break;
 
         case 'copy-generated-prompt':
