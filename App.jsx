@@ -743,105 +743,9 @@ export default function App() {
   return (
     <div className="h-[100vh] w-full bg-[#F5F5F7] flex justify-center overflow-hidden">
       <div className="w-full max-w-[500px] h-[100vh] bg-white flex flex-col border-x border-neutral-200 overflow-hidden relative">
-        {/* ============================================================
-            A. SIMPLIFIED HEADER WITH TOP-LEFT LOGO UPLOAD
-           ============================================================ */}
-        <header className="shrink-0 bg-white border-b border-neutral-200 px-4 py-3 flex items-center justify-between z-20">
-          <div className="flex items-center gap-3">
-            {/* Top-Left Logo Upload Input */}
-            <div className="relative group">
-              <label
-                htmlFor="logo-upload-input"
-                className={`w-10 h-10 rounded-xl border flex items-center justify-center cursor-pointer transition overflow-hidden shadow-2xs ${
-                  logoPreviewUrl
-                    ? 'border-black bg-neutral-900 text-white'
-                    : 'border-dashed border-neutral-300 bg-neutral-50 hover:bg-neutral-100 text-neutral-600'
-                }`}
-                title="Upload Brand Logo (Top-Left Position)"
-              >
-                {logoPreviewUrl ? (
-                  <img
-                    src={logoPreviewUrl}
-                    alt="Logo"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <CloudUpload className="w-4 h-4" />
-                )}
-              </label>
-              <input
-                id="logo-upload-input"
-                type="file"
-                accept="image/*"
-                onChange={handleLogoChange}
-                className="hidden"
-              />
-            </div>
-
-            <div className="min-w-0">
-              <h1 className="text-sm font-semibold tracking-tight text-black truncate">
-                Apple Ad Studio
-              </h1>
-              <p className="text-[11px] text-neutral-500 truncate">
-                {logoFile ? logoFile.name : 'Tap logo to attach'}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              type="button"
-              onClick={loadRecords}
-              disabled={isLoadingRecords}
-              className="h-8 px-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200/80 text-black text-[11px] font-medium flex items-center gap-1 transition disabled:opacity-50"
-              aria-label="Refresh templates"
-            >
-              <RefreshCw className={`w-3 h-3 ${isLoadingRecords ? 'animate-spin' : ''}`} />
-              <span>Sync</span>
-            </button>
-          </div>
-        </header>
-
-        {/* Optional Supabase Anon Key Drawer */}
-        {showKeyConfig && (
-          <div className="shrink-0 bg-neutral-50 border-b border-neutral-200 px-4 py-3 space-y-2 z-20">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-black">
-                Supabase Anon Key (Optional)
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowKeyConfig(false)}
-                className="text-neutral-400 hover:text-black"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <div className="flex gap-2">
-              <input
-                type="password"
-                value={anonKey}
-                onChange={(e) => setAnonKey(e.target.value)}
-                placeholder="Paste Supabase anon key..."
-                className="flex-1 h-9 px-3 rounded-xl bg-white border border-neutral-300 text-xs text-black placeholder-neutral-400 focus:outline-none focus:border-black"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setShowKeyConfig(false);
-                  loadRecords();
-                }}
-                className="h-9 px-3.5 rounded-xl bg-black text-white text-xs font-medium"
-              >
-                Save
-              </button>
-            </div>
-          </div>
-        )}
-
         {/* Toast Notification Banner */}
         {toast && (
-          <div className="absolute top-16 left-4 right-4 z-30 pointer-events-none flex justify-center">
+          <div className="absolute top-4 left-4 right-4 z-30 pointer-events-none flex justify-center">
             <div
               className={`pointer-events-auto flex items-center gap-2 px-3.5 py-2.5 rounded-2xl border shadow-sm text-xs font-medium max-w-full ${
                 toast.type === 'error'
@@ -1062,16 +966,46 @@ export default function App() {
           {/* Template Selection Cards: fill available height and hide after selection */}
           {!selectedRecordId && (
           <section className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl border border-neutral-200 p-4 space-y-3 shadow-2xs">
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
                 <h2 className="text-sm font-semibold text-black">Select Product Template</h2>
                 <p className="text-[11px] text-neutral-500">
                   Tap any template below to instantly generate its ad
                 </p>
+                <p className="mt-1 text-[10px] text-neutral-400">
+                  {records.length} available
+                </p>
               </div>
-              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600">
-                {records.length} available
-              </span>
+              <div className="flex items-center gap-2 shrink-0">
+                <label
+                  htmlFor="logo-upload-input"
+                  title={logoFile ? logoFile.name : 'Upload brand logo'}
+                  className="w-9 h-9 rounded-xl border border-neutral-200 bg-white flex items-center justify-center cursor-pointer overflow-hidden"
+                >
+                  {logoPreviewUrl ? (
+                    <img src={logoPreviewUrl} alt="Brand logo" className="w-full h-full object-cover" />
+                  ) : (
+                    <CloudUpload className="w-4 h-4 text-neutral-500" />
+                  )}
+                </label>
+                <input
+                  id="logo-upload-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoChange}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={loadRecords}
+                  disabled={isLoadingRecords}
+                  className="w-9 h-9 rounded-xl border border-neutral-200 bg-white flex items-center justify-center text-neutral-600 disabled:opacity-50"
+                  aria-label="Refresh templates"
+                  title="Refresh templates"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isLoadingRecords ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
             </div>
 
             {isLoadingRecords && (
