@@ -214,6 +214,15 @@ export default function App() {
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState(DEFAULT_LOGO_URL);
 
+  // AI Prompt Generator state (Gemini Canvas native runtime)
+  const [promptGeneratorProduct, setPromptGeneratorProduct] = useState('');
+  const [promptGeneratorInstructions, setPromptGeneratorInstructions] = useState('');
+  const [generatedPrompt, setGeneratedPrompt] = useState('');
+  const [promptReferenceCount, setPromptReferenceCount] = useState(0);
+  const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
+  const [promptGeneratorError, setPromptGeneratorError] = useState(null);
+  const [promptGeneratorCopied, setPromptGeneratorCopied] = useState(false);
+
   // Records state
   const [records, setRecords] = useState([]);
   const [isLoadingRecords, setIsLoadingRecords] = useState(true);
@@ -495,6 +504,132 @@ export default function App() {
       setLogoFile(file);
       setLogoPreviewUrl(URL.createObjectURL(file));
       showToast('success', 'Brand logo attached successfully.');
+    }
+  };
+
+  // Generate a new prompt using every available make_prompt row as reference.
+  // Gemini Canvas injects its runtime authentication; keep apiKey intentionally empty.
+  const handleGeneratePrompt = async () => {
+    const product = promptGeneratorProduct.trim();
+    if (!product) {
+      setPromptGeneratorError('Masukkan nama produk terlebih dahulu.');
+      return;
+    }
+
+    setIsGeneratingPrompt(true);
+    setPromptGeneratorError(null);
+    setGeneratedPrompt('');
+    setPromptGeneratorCopied(false);
+
+    try {
+      const referenceResponse = await fetch(CRUD_MAKE_PROMPT_URL, {
+        method: 'GET',
+        headers: getEdgeHeaders(false)
+      });
+
+      if (!referenceResponse.ok) {
+        const errorPayload = await referenceResponse.json().catch(() => ({}));
+        throw new Error(
+          errorPayload.error || `Gagal membaca referensi make_prompt (HTTP ${referenceResponse.status}).`
+        );
+      }
+
+      const referenceRows = await referenceResponse.json();
+      if (!Array.isArray(referenceRows) || referenceRows.length === 0) {
+        throw new Error('Data referensi make_prompt tidak ditemukan.');
+      }
+
+      const referenceData = referenceRows.map((record) => ({
+        product: record.product ?? '',
+        style: record.style ?? '',
+        visual_style: record.visual_style ?? '',
+        headline: record.headline ?? '',
+        subheadline: record.subheadline ?? '',
+        feature_items: record.feature_items ?? '',
+        composition: record.composition ?? '',
+        background: record.background ?? '',
+        typographhy: record.typographhy ?? record.typography ?? '',
+        lighting: record.lighting ?? ''
+      }));
+
+      setPromptReferenceCount(referenceData.length);
+
+      const instruction = `You are an expert AI Prompt Engineer specializing in premium Apple product advertising visuals for Apple The Exchange TRX.
+
+TASK:
+Create one complete, production-ready image-generation prompt for the requested product. First analyze the supplied make_prompt reference records to learn their creative patterns, field structure, composition logic, visual direction, typography, lighting, and level of detail. Use those records as reference examples, not as content to copy verbatim.
+
+PRODUCT:
+${product}
+
+ADDITIONAL USER INSTRUCTIONS:
+${promptGeneratorInstructions.trim() || 'No additional instructions.'}
+
+REFERENCE RECORDS FROM public.make_prompt:
+${JSON.stringify(referenceData, null, 2)}
+
+RULES:
+- Return only the finished prompt. Do not include analysis, preamble, markdown fences, or explanations.
+- Preserve the visual quality and useful creative patterns found in the references while creating an original prompt for the requested product.
+- Do not invent product specifications, technical features, prices, claims, or promotional offers. If the user did not provide a fact, avoid stating it as fact.
+- Make the product the clear visual hero, with premium Apple-inspired art direction and a refined commercial-advertising finish.
+- Include specific direction for product appearance, composition, environment/background, lighting, typography, headline/subheadline treatment, feature presentation, color and mood, camera/render quality, and negative constraints where appropriate.
+- Ensure all visible text requested in the prompt is spelled exactly and is readable.
+- Keep the output directly usable by an image-generation model and sufficiently detailed.
+- Follow any explicit additional user instructions unless they conflict with the rules above.`;
+
+      const apiKey = '';
+      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash:generateContent?key=${apiKey}`;
+      const response = await fetchWithBackoff(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: instruction }] }],
+          generationConfig: {
+            temperature: 0.8,
+            maxOutputTokens: 8192
+          }
+        })
+      });
+
+      const result = await response.json().catch(() => null);
+      if (!response.ok || !result) {
+        throw new Error(
+          result?.error?.message || `Gemini Prompt Generator gagal (HTTP ${response.status}).`
+        );
+      }
+
+      const output = result?.candidates?.[0]?.content?.parts
+        ?.map((part) => part.text || '')
+        .join('')
+        .trim();
+
+      if (!output) {
+        const blockReason = result?.promptFeedback?.blockReason;
+        throw new Error(
+          blockReason
+            ? `Permintaan tidak dapat diproses: ${blockReason}.`
+            : 'Gemini tidak mengembalikan prompt. Silakan coba lagi.'
+        );
+      }
+
+      setGeneratedPrompt(output);
+      showToast('success', `Prompt berhasil dibuat menggunakan ${referenceData.length} referensi.`);
+    } catch (err) {
+      setPromptGeneratorError(err.message || 'Gagal membuat prompt.');
+    } finally {
+      setIsGeneratingPrompt(false);
+    }
+  };
+
+  const handleCopyGeneratedPrompt = () => {
+    if (!generatedPrompt) return;
+    if (copyTextToClipboard(generatedPrompt)) {
+      setPromptGeneratorCopied(true);
+      showToast('success', 'Generated prompt berhasil disalin.');
+      setTimeout(() => setPromptGeneratorCopied(false), 2000);
+    } else {
+      showToast('error', 'Tidak dapat menyalin prompt.');
     }
   };
 
@@ -1136,6 +1271,95 @@ export default function App() {
                 <p className="text-[10px] leading-relaxed text-neutral-400">
                   The selected logo is used for image generation in this app session.
                 </p>
+              </div>
+
+              <div className="rounded-xl border border-neutral-200 p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-neutral-700" />
+                  <div>
+                    <h3 className="text-xs font-semibold text-black">AI Prompt Generator</h3>
+                    <p className="text-[10px] text-neutral-500">
+                      Gemini membaca seluruh data make_prompt sebagai referensi.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label htmlFor="prompt-generator-product" className="block text-[11px] font-medium text-neutral-700">
+                    Product
+                  </label>
+                  <input
+                    id="prompt-generator-product"
+                    type="text"
+                    value={promptGeneratorProduct}
+                    onChange={(event) => setPromptGeneratorProduct(event.target.value)}
+                    placeholder="Contoh: Apple Watch Series 11"
+                    className="w-full h-10 rounded-lg border border-neutral-200 bg-white px-3 text-xs text-neutral-800 outline-none focus:border-neutral-500"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label htmlFor="prompt-generator-instructions" className="block text-[11px] font-medium text-neutral-700">
+                    Additional Instructions <span className="font-normal text-neutral-400">(optional)</span>
+                  </label>
+                  <textarea
+                    id="prompt-generator-instructions"
+                    value={promptGeneratorInstructions}
+                    onChange={(event) => setPromptGeneratorInstructions(event.target.value)}
+                    placeholder="Tambahkan arahan visual, headline, background, atau detail khusus..."
+                    rows={3}
+                    className="w-full resize-y rounded-lg border border-neutral-200 bg-white p-3 text-xs text-neutral-800 outline-none focus:border-neutral-500"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleGeneratePrompt}
+                  disabled={isGeneratingPrompt || !promptGeneratorProduct.trim()}
+                  className="w-full h-10 rounded-lg bg-black text-white text-xs font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isGeneratingPrompt ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="w-3.5 h-3.5" />
+                  )}
+                  {isGeneratingPrompt ? 'Analyzing References & Generating...' : 'Generate Prompt'}
+                </button>
+
+                {promptGeneratorError && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-[11px] text-red-700">
+                    {promptGeneratorError}
+                  </div>
+                )}
+
+                {generatedPrompt && (
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11px] font-semibold text-neutral-800">Generated Prompt</p>
+                      <span className="text-[10px] text-neutral-400">
+                        {promptReferenceCount} references analyzed
+                      </span>
+                    </div>
+                    <textarea
+                      value={generatedPrompt}
+                      readOnly
+                      rows={12}
+                      className="w-full resize-y rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-[11px] leading-relaxed text-neutral-800"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCopyGeneratedPrompt}
+                      className="w-full h-9 rounded-lg border border-neutral-200 bg-white text-xs font-semibold inline-flex items-center justify-center gap-2 hover:bg-neutral-50"
+                    >
+                      {promptGeneratorCopied ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                      {promptGeneratorCopied ? 'Copied' : 'Copy Prompt'}
+                    </button>
+                  </div>
+                )}
               </div>
             </section>
           ) : (
