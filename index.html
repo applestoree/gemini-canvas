@@ -1080,17 +1080,38 @@
         async function editSchedule(id) {
             const record = calendarRecords.find(item => item.id === id);
             if (!record) return;
+            const date = window.prompt('Tanggal jadwal (YYYY-MM-DD):', record.date);
+            if (date === null) return;
+            if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)) {
+                showToast('Format tanggal harus YYYY-MM-DD.', 'error');
+                return;
+            }
+            const time = window.prompt('Slot waktu (09:00, 13:00, atau 19:00):', normalizeTime(record.time));
+            if (time === null) return;
+            if (!ALLOWED_TIMES.includes(time)) {
+                showToast('Slot hanya boleh 09:00, 13:00, atau 19:00.', 'error');
+                return;
+            }
+            const occupied = calendarRecords.some(item =>
+                item.id !== id && item.date === date && normalizeTime(item.time) === time
+            );
+            if (occupied) {
+                showToast('Slot tanggal dan waktu tersebut sudah terisi.', 'error');
+                return;
+            }
             const caption = window.prompt('Edit caption:', record.caption || '');
             if (caption === null) return;
             const formData = new FormData();
             formData.append('id', id);
+            formData.append('date', date);
+            formData.append('time', time);
             formData.append('caption', caption);
             try {
                 const data = await calendarRequest('/patch', { method: 'PATCH', body: formData });
                 const updated = Array.isArray(data) ? data[0] : data;
                 calendarRecords = calendarRecords.map(item => item.id === id ? updated : item);
                 renderCalendar();
-                showToast('Caption jadwal berhasil diperbarui.', 'success');
+                showToast('Jadwal berhasil diperbarui.', 'success');
             } catch (error) {
                 showToast(error.message || 'Gagal memperbarui jadwal.', 'error');
             }
