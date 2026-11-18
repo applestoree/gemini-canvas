@@ -77,7 +77,8 @@
       generatedPrompt: '',
       isGeneratingPrompt: false,
       promptGeneratorError: null,
-      promptGeneratorCopied: false,
+      isSavingGeneratedPrompt: false,
+      savedGeneratedPromptId: null,
       records: [],
       isLoadingRecords: true,
       recordsError: null,
@@ -498,7 +499,7 @@ Follow all variables precisely. Do not invent additional headlines, product spec
       state.isGeneratingPrompt = true;
       state.promptGeneratorError = null;
       state.generatedPrompt = '';
-      state.promptGeneratorCopied = false;
+      state.savedGeneratedPromptId = null;
       render();
 
       try {
@@ -595,6 +596,81 @@ The user has not supplied a product name or additional instructions. Independent
         state.promptGeneratorError = err.message || 'Gagal membuat 10 field.';
       } finally {
         state.isGeneratingPrompt = false;
+        render();
+      }
+    }
+
+
+    function createMakePromptId(date) {
+      const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kuala_Lumpur',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hourCycle: 'h23'
+      }).formatToParts(date);
+      const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+      return `${values.year}${values.month}${values.day}${values.hour}${values.minute}${values.second}`;
+    }
+
+    async function handleSaveGeneratedPrompt() {
+      if (!state.generatedPrompt || state.isSavingGeneratedPrompt || state.savedGeneratedPromptId) return;
+
+      state.isSavingGeneratedPrompt = true;
+      state.promptGeneratorError = null;
+      render();
+
+      try {
+        const generatedData = JSON.parse(state.generatedPrompt);
+        const listResponse = await fetch(CRUD_MAKE_PROMPT_URL, {
+          method: 'GET',
+          headers: getEdgeHeaders(false)
+        });
+        const existingPayload = await listResponse.json().catch(() => null);
+        if (!listResponse.ok || !Array.isArray(existingPayload)) {
+          throw new Error(existingPayload?.error || `Gagal membaca ID make_prompt (HTTP ${listResponse.status}).`);
+        }
+
+        const existingIds = new Set(existingPayload.map((record) => String(record.id)));
+        let id = '';
+        for (let offset = 0; offset < 120; offset += 1) {
+          const candidate = createMakePromptId(new Date(Date.now() + offset * 1000));
+          if (!existingIds.has(candidate)) {
+            id = candidate;
+            break;
+          }
+        }
+        if (!id) throw new Error('Tidak dapat membuat ID unik untuk make_prompt. Silakan coba kembali.');
+
+        const response = await fetch(CRUD_MAKE_PROMPT_URL, {
+          method: 'POST',
+          headers: getEdgeHeaders(true),
+          body: JSON.stringify({ id, ...generatedData })
+        });
+        const responseText = await response.text();
+        let savedRecord = {};
+        try {
+          savedRecord = responseText ? JSON.parse(responseText) : {};
+        } catch {
+          throw new Error(`Respons Edge Function tidak valid (HTTP ${response.status}).`);
+        }
+
+        if (!response.ok) {
+          throw new Error(savedRecord.error || savedRecord.message || `Gagal menyimpan prompt (HTTP ${response.status}).`);
+        }
+        if (String(savedRecord.id || '') !== id) {
+          throw new Error('ID pada respons penyimpanan tidak sesuai. Periksa record make_prompt.');
+        }
+
+        state.savedGeneratedPromptId = id;
+        showToast('success', `Prompt berhasil disimpan ke make_prompt. ID: ${id}`);
+      } catch (err) {
+        state.promptGeneratorError = err.message || 'Gagal menyimpan prompt ke make_prompt.';
+      } finally {
+        state.isSavingGeneratedPrompt = false;
         render();
       }
     }
@@ -1266,9 +1342,9 @@ The user has not supplied a product name or additional instructions. Independent
                       <span class="text-[10px] text-neutral-400">Autonomous AI</span>
                     </div>
                     <textarea readonly rows="12" class="w-full resize-y rounded-lg border border-neutral-200 bg-neutral-50 p-3 text-[11px] leading-relaxed text-neutral-800">${escapeHtml(state.generatedPrompt)}</textarea>
-                    <button type="button" data-action="copy-generated-prompt" class="w-full h-9 rounded-lg border border-neutral-200 bg-white text-xs font-semibold inline-flex items-center justify-center gap-2 hover:bg-neutral-50">
-                      <i data-lucide="${state.promptGeneratorCopied ? 'check' : 'copy'}" class="w-3.5 h-3.5 ${state.promptGeneratorCopied ? 'text-emerald-600' : ''}"></i>
-                      <span>${state.promptGeneratorCopied ? 'Copied' : 'Copy Prompt'}</span>
+                    <button type="button" data-action="save-generated-prompt" ${state.isSavingGeneratedPrompt || state.savedGeneratedPromptId ? 'disabled' : ''} class="w-full h-9 rounded-lg bg-black text-white text-xs font-semibold inline-flex items-center justify-center gap-2 hover:bg-neutral-800 disabled:opacity-50">
+                      <i data-lucide="${state.isSavingGeneratedPrompt ? 'loader-2' : state.savedGeneratedPromptId ? 'check' : 'save'}" class="w-3.5 h-3.5 ${state.isSavingGeneratedPrompt ? 'animate-spin' : ''}"></i>
+                      <span>${state.isSavingGeneratedPrompt ? 'Saving to make_prompt...' : state.savedGeneratedPromptId ? `Saved • ${state.savedGeneratedPromptId}` : 'Save Prompt'}</span>
                     </button>
                   </div>`
                 : ''
@@ -1888,19 +1964,8 @@ The user has not supplied a product name or additional instructions. Independent
           handleGeneratePrompt();
           break;
 
-        case 'copy-generated-prompt':
-          if (state.generatedPrompt) {
-            if (copyTextToClipboard(state.generatedPrompt)) {
-              state.promptGeneratorCopied = true;
-              showToast('success', 'JSON 10 field berhasil disalin.');
-              setTimeout(() => {
-                state.promptGeneratorCopied = false;
-                render();
-              }, 2000);
-            } else {
-              showToast('error', 'Tidak dapat menyalin JSON.');
-            }
-          }
+        case 'save-generated-prompt':
+          handleSaveGeneratedPrompt();
           break;
       }
     });
