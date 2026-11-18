@@ -1,1227 +1,238 @@
-<!DOCTYPE html>
-<html lang="id" class="dark">
+<!doctype html>
+<html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Ad Poster Studio - Template Generator</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Inter & Plus Jakarta Sans -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        display: ['Plus Jakarta Sans', 'sans-serif'],
-                    },
-                    colors: {
-                        dark: {
-                            900: '#09090b',
-                            800: '#121215',
-                            700: '#1c1c21',
-                            600: '#27272e'
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#ffffff" />
+  <title>Apple Store Malaysia — Gemini Canvas</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.28.4/babel.min.js"></script>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.3.1",
+        "react-dom/client": "https://esm.sh/react-dom@18.3.1/client?external=react",
+        "lucide-react": "https://esm.sh/lucide-react@0.468.0?external=react"
+      }
+    }
+  </script>
+
+  <style>
+    html, body, #root { width: 100%; height: 100%; margin: 0; }
+    body { overflow: hidden; background: #fff; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    #boot-screen { position: fixed; inset: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; background: #fff; color: #171717; padding: 24px; }
+    #boot-card { width: min(100%, 360px); text-align: center; }
+    .boot-spinner { width: 28px; height: 28px; border: 3px solid #e5e5e5; border-top-color: #171717; border-radius: 50%; margin: 0 auto 18px; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #boot-error { display: none; margin-top: 16px; color: #b91c1c; font-size: 13px; line-height: 1.5; }
+    #boot-retry { display: none; margin: 16px auto 0; padding: 10px 16px; border-radius: 10px; background: #171717; color: white; font-size: 13px; font-weight: 600; }
+    #update-banner { display: none; position: fixed; z-index: 99998; top: 12px; left: 50%; transform: translateX(-50%); width: min(calc(100% - 24px), 420px); padding: 10px 12px; border: 1px solid #e5e5e5; border-radius: 14px; background: rgba(255,255,255,.96); box-shadow: 0 8px 30px rgba(0,0,0,.12); color: #171717; align-items: center; justify-content: space-between; gap: 12px; font: 12px/1.35 Inter, ui-sans-serif, system-ui, sans-serif; }
+    #update-banner button { flex: none; border-radius: 9px; padding: 8px 11px; background: #171717; color: #fff; font-weight: 600; }
+  </style>
 </head>
-<body class="bg-dark-900 text-zinc-100 min-h-screen flex flex-col font-sans antialiased selection:bg-indigo-500/30 selection:text-indigo-200">
+<body>
+  <div id="root"></div>
 
-    <!-- Navbar -->
-    <header class="sticky top-0 z-30 border-b border-zinc-800/80 bg-dark-900/80 backdrop-blur-xl">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                    <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
-                </div>
-                <div>
-                    <h1 class="font-display font-bold text-lg tracking-tight text-white">AdStudio <span class="text-indigo-400">AI</span></h1>
-                    <p class="text-[11px] text-zinc-400 hidden sm:block">Product Poster & Commercial Generator</p>
-                </div>
-            </div>
+  <div id="boot-screen">
+    <div id="boot-card">
+      <div class="boot-spinner" id="boot-spinner"></div>
+      <div style="font-size:15px;font-weight:700">Memuat aplikasi</div>
+      <div id="boot-message" style="margin-top:7px;color:#737373;font-size:12px">Mengambil versi terbaru dari GitHub…</div>
+      <div id="boot-error"></div>
+      <button id="boot-retry" type="button">Coba lagi</button>
+    </div>
+  </div>
 
-            <div class="flex items-center gap-2 sm:gap-3">
-                <button onclick="fetchTemplates()" id="refreshBtn" class="flex items-center gap-2 px-3 py-2 rounded-xl bg-dark-700 hover:bg-dark-600 border border-zinc-700/70 text-xs font-medium text-zinc-200 transition-all active:scale-95">
-                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-                    <span class="hidden sm:inline">Muat Ulang Template</span>
-                </button>
-            </div>
-        </div>
-    </header>
+  <div id="update-banner" role="status">
+    <span>Versi baru tersedia dari GitHub.</span>
+    <button id="apply-update" type="button">Terapkan update</button>
+  </div>
 
-    <!-- Notification Toast Container -->
-    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+  <script type="module">
+    import React from 'react';
+    import { createRoot } from 'react-dom/client';
+    import * as LucideReact from 'lucide-react';
 
-    <!-- Main Workspace -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        
-        <!-- Content Calendar & Schedule -->
-        <section class="mb-6 bg-dark-800/60 border border-zinc-800/80 rounded-2xl p-4 sm:p-5">
-            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-                <div>
-                    <h2 class="text-base font-display font-bold text-white flex items-center gap-2"><i data-lucide="calendar-days" class="w-4 h-4 text-indigo-400"></i> Content Calendar</h2>
-                    <p class="text-xs text-zinc-400 mt-1">Pilih tanggal dan slot publikasi sebelum membuat gambar.</p>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button type="button" onclick="changeCalendarMonth(-1)" class="p-2 rounded-lg bg-dark-700 border border-zinc-700 hover:bg-dark-600" aria-label="Bulan sebelumnya"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
-                    <span id="calendarMonthLabel" class="min-w-32 text-center text-sm font-semibold text-white"></span>
-                    <button type="button" onclick="changeCalendarMonth(1)" class="p-2 rounded-lg bg-dark-700 border border-zinc-700 hover:bg-dark-600" aria-label="Bulan berikutnya"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 lg:grid-cols-5 gap-5">
-                <div class="lg:col-span-3">
-                    <div class="grid grid-cols-7 gap-1 mb-2 text-center text-[10px] font-semibold text-zinc-500">
-                        <span>MIN</span><span>SEN</span><span>SEL</span><span>RAB</span><span>KAM</span><span>JUM</span><span>SAB</span>
-                    </div>
-                    <div id="calendarGrid" class="grid grid-cols-7 gap-1" aria-label="Kalender bulanan"></div>
-                    <p class="text-[10px] text-zinc-500 mt-3">Titik hijau menandakan tanggal memiliki jadwal. Maksimal 3 jadwal per tanggal.</p>
-                </div>
-                <div class="lg:col-span-2 bg-dark-900/70 border border-zinc-800 rounded-xl p-3.5">
-                    <div class="flex items-center justify-between gap-2 mb-3">
-                        <h3 class="text-xs font-semibold text-zinc-200">Jadwal Tanggal Terpilih</h3>
-                        <span id="selectedDateLabel" class="text-[10px] text-indigo-300"></span>
-                    </div>
-                    <div id="scheduleSlots" class="space-y-2"></div>
-                    <div class="mt-4 mb-1.5 flex items-center justify-between gap-2">
-                        <label for="scheduleCaption" class="text-[11px] font-medium text-zinc-300">Caption Otomatis</label>
-                        <span class="text-[10px] text-indigo-300">AI Generated</span>
-                    </div>
-                    <textarea id="scheduleCaption" rows="4" readonly placeholder="Caption akan dibuat otomatis setelah gambar berhasil di-generate..." class="w-full px-3 py-2 bg-dark-800 border border-zinc-700 rounded-lg text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none resize-y"></textarea>
-                    <p class="text-[10px] text-zinc-500 mt-1">Caption dibuat otomatis dan disimpan bersama gambar.</p>
-                    <p class="text-[10px] text-zinc-500 mt-2">Timezone: Asia/Kuala_Lumpur</p>
-                    <button id="retryScheduleSaveBtn" type="button" onclick="saveGeneratedSchedule()" class="hidden w-full mt-3 py-2.5 rounded-lg bg-amber-600/20 border border-amber-600/50 text-amber-200 text-xs font-semibold hover:bg-amber-600/30">Coba Simpan Hasil Gambar Terakhir</button>
-                </div>
-            </div>
-            <div class="mt-5 border-t border-zinc-800 pt-4">
-                <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-xs font-semibold text-zinc-200">Schedule List</h3>
-                    <button type="button" onclick="fetchCalendar()" class="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1"><i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh</button>
-                </div>
-                <div id="scheduleList" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
-                    <p class="text-xs text-zinc-500">Memuat jadwal...</p>
-                </div>
-            </div>
-        </section>
+    const SOURCE_URL = 'https://raw.githubusercontent.com/applestoree/gemini-canvas/refs/heads/main/App.jsx';
+    const CACHE_KEY = 'gemini_canvas_app_source_v1';
+    const rootElement = document.getElementById('root');
+    const bootScreen = document.getElementById('boot-screen');
+    const bootMessage = document.getElementById('boot-message');
+    const bootError = document.getElementById('boot-error');
+    const bootRetry = document.getElementById('boot-retry');
+    const bootSpinner = document.getElementById('boot-spinner');
+    const updateBanner = document.getElementById('update-banner');
+    const applyUpdateButton = document.getElementById('apply-update');
 
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            
-            <!-- Left Column: Template List (3 Cols on Desktop) -->
-            <section class="lg:col-span-3 flex flex-col gap-4 bg-dark-800/60 border border-zinc-800/80 rounded-2xl p-4">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-sm font-semibold text-zinc-200 flex items-center gap-2">
-                        <i data-lucide="layout-template" class="w-4 h-4 text-indigo-400"></i>
-                        Pilih Template
-                    </h2>
-                    <span id="templateCount" class="text-xs px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-400 font-medium">0</span>
-                </div>
+    let activeHash = '';
+    let pendingSource = '';
+    let pendingHash = '';
+    let appRoot = null;
 
-                <!-- Search input -->
-                <div class="relative">
-                    <i data-lucide="search" class="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
-                    <input type="text" id="searchInput" oninput="filterTemplates()" placeholder="Cari produk..." class="w-full pl-9 pr-3 py-2 bg-dark-900 border border-zinc-800 rounded-xl text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors">
-                </div>
+    window.__GEMINI_CANVAS_REACT__ = React;
+    window.__GEMINI_CANVAS_REACT_DOM__ = { createRoot };
+    window.__GEMINI_CANVAS_LUCIDE__ = LucideReact;
 
-                <!-- Template Cards Container -->
-                <div id="templateList" class="flex flex-col gap-2.5 max-h-[320px] lg:max-h-[calc(100vh-250px)] overflow-y-auto pr-1">
-                    <!-- Loading Skeletons -->
-                    <div class="animate-pulse flex flex-col gap-2.5">
-                        <div class="h-20 bg-dark-700 rounded-xl"></div>
-                        <div class="h-20 bg-dark-700 rounded-xl"></div>
-                        <div class="h-20 bg-dark-700 rounded-xl"></div>
-                    </div>
-                </div>
-            </section>
+    function setBootError(message) {
+      bootSpinner.style.display = 'none';
+      bootMessage.textContent = 'Aplikasi belum dapat dimuat.';
+      bootError.textContent = message;
+      bootError.style.display = 'block';
+      bootRetry.style.display = 'inline-block';
+    }
 
-            <!-- Middle Column: Prompt Builder & Editor (5 Cols on Desktop) -->
-            <section class="lg:col-span-5 flex flex-col gap-5 bg-dark-800/60 border border-zinc-800/80 rounded-2xl p-5">
-                <div class="flex items-center justify-between border-b border-zinc-800/80 pb-3.5">
-                    <div>
-                        <h2 class="text-base font-display font-bold text-white">Kustomisasi Prompt</h2>
-                        <p class="text-xs text-zinc-400">Sesuaikan detail template sebelum membuat gambar</p>
-                    </div>
-                    <button onclick="resetForm()" class="text-xs text-zinc-400 hover:text-zinc-200 flex items-center gap-1 px-2.5 py-1.5 rounded-lg hover:bg-dark-700 transition-colors">
-                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reset
-                    </button>
-                </div>
+    async function hashText(value) {
+      if (window.crypto?.subtle) {
+        const bytes = new TextEncoder().encode(value);
+        const digest = await crypto.subtle.digest('SHA-256', bytes);
+        return [...new Uint8Array(digest)].map(x => x.toString(16).padStart(2, '0')).join('');
+      }
+      let hash = 2166136261;
+      for (let i = 0; i < value.length; i++) {
+        hash ^= value.charCodeAt(i);
+        hash = Math.imul(hash, 16777619);
+      }
+      return String(hash >>> 0);
+    }
 
-                <form id="promptForm" onsubmit="event.preventDefault(); generateImage();" class="flex flex-col gap-4">
-                    <!-- Product & Ratio -->
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div class="sm:col-span-2">
-                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Nama Produk</label>
-                            <input type="text" id="fieldProduct" required placeholder="Contoh: Apple AirPods Max" class="w-full px-3.5 py-2.5 bg-dark-900 border border-zinc-700/80 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Rasio Aspek</label>
-                            <select id="fieldRatio" class="w-full px-3 py-2.5 bg-dark-900 border border-zinc-700/80 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
-                                <option value="1:1">1:1 (Square)</option>
-                                <option value="4:5" selected>4:5 (Portrait IG)</option>
-                                <option value="9:16">9:16 (Story / Reels)</option>
-                                <option value="16:9">16:9 (Landscape)</option>
-                                <option value="3:4">3:4 (Poster)</option>
-                            </select>
-                        </div>
-                    </div>
+    function extractImports(source) {
+      const reactMatch = source.match(/import\\s+React\\s*,\\s*\\{([\\s\\S]*?)\\}\\s*from\\s*['"]react['"]\\s*;?/);
+      const iconMatch = source.match(/import\\s*\\{([\\s\\S]*?)\\}\\s*from\\s*['"]lucide-react['"]\\s*;?/);
+      if (!reactMatch || !iconMatch) {
+        throw new Error('Struktur import App.jsx tidak dikenali. Pastikan React dan lucide-react masih menggunakan named import.');
+      }
 
-                    <!-- Brand Logo Upload (Top-Left Placement) -->
-                    <div>
-                        <label class="block text-xs font-medium text-zinc-300 mb-1.5">
-                            Logo Brand <span class="text-zinc-500 font-normal">(Opsional — ditempatkan di sudut kiri atas)</span>
-                        </label>
-                        <!-- Input URL Logo Otomatis -->
-                        <div class="flex items-center gap-2 mb-2">
-                            <div class="relative flex-1">
-                                <i data-lucide="link" class="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
-                                <input type="url" id="fieldLogoUrl" value="https://jhpbtooefyzdndstlzva.supabase.co/storage/v1/object/public/apple/logo.png" placeholder="https://example.com/logo.png" onchange="loadLogoFromUrl(this.value)" class="w-full pl-8 pr-3 py-2 bg-dark-900 border border-zinc-700/80 rounded-xl text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors">
-                            </div>
-                            <button type="button" onclick="loadLogoFromUrl(document.getElementById('fieldLogoUrl').value, true)" class="px-3 py-2 rounded-xl bg-dark-700 hover:bg-dark-600 border border-zinc-700/80 text-xs font-medium text-zinc-200 transition-colors shrink-0 flex items-center gap-1.5" title="Muat Logo dari URL">
-                                <i data-lucide="download-cloud" class="w-3.5 h-3.5 text-indigo-400"></i>
-                                <span>Muat URL</span>
-                            </button>
-                        </div>
-                        <!-- File Upload & Preview Box -->
-                        <div class="flex items-center gap-3 p-2.5 bg-dark-900 border border-zinc-700/80 rounded-xl">
-                            <div id="logoPreviewBox" class="w-11 h-11 rounded-lg bg-dark-800 border border-zinc-700/70 flex items-center justify-center overflow-hidden shrink-0">
-                                <i data-lucide="image" id="logoPlaceholderIcon" class="w-5 h-5 text-zinc-500"></i>
-                                <img id="logoPreviewImg" src="" alt="Logo Preview" class="hidden w-full h-full object-contain p-1" />
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <input type="file" id="fieldLogo" accept="image/png, image/jpeg, image/webp, image/svg+xml" onchange="handleLogoUpload(event)" class="block w-full text-xs text-zinc-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:bg-indigo-600/20 file:text-indigo-300 hover:file:bg-indigo-600/30 file:cursor-pointer cursor-pointer">
-                                <p id="logoFileName" class="text-[11px] text-zinc-500 mt-1 truncate">Belum ada logo dipilih (PNG transparan disarankan)</p>
-                            </div>
-                            <button type="button" id="removeLogoBtn" onclick="removeLogo()" title="Hapus Logo" class="hidden p-1.5 rounded-lg text-zinc-400 hover:text-rose-400 hover:bg-dark-700 transition-colors shrink-0">
-                                <i data-lucide="x" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                    </div>
+      const toBindings = value => value.split(',').map(item => item.trim()).filter(Boolean).map(item => {
+        const parts = item.split(/\\s+as\\s+/);
+        return parts.length === 2 ? parts[0] + ': ' + parts[1] : parts[0];
+      }).join(', ');
 
-                    <!-- Headline & Subheadline -->
-                    <div class="grid grid-cols-1 gap-3">
-                        <div>
-                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Headline Utama (Teks Poster)</label>
-                            <input type="text" id="fieldHeadline" placeholder="Contoh: A masterpiece of sound." class="w-full px-3.5 py-2 bg-dark-900 border border-zinc-700/80 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Subheadline</label>
-                            <input type="text" id="fieldSubheadline" placeholder="Deskripsi singkat produk..." class="w-full px-3.5 py-2 bg-dark-900 border border-zinc-700/80 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
-                        </div>
-                    </div>
+      let code = source.replace(reactMatch[0], '').replace(iconMatch[0], '');
+      if (/^\\s*import\\s/m.test(code)) {
+        throw new Error('App.jsx memiliki import tambahan yang belum didukung oleh HTML loader.');
+      }
 
-                    <!-- Features -->
-                    <div>
-                        <label class="block text-xs font-medium text-zinc-300 mb-1.5">Fitur Utama <span class="text-zinc-500 font-normal">(Pisahkan dengan koma)</span></label>
-                        <input type="text" id="fieldFeatures" placeholder="High-fidelity audio, Active Noise Cancellation, Spatial Audio" class="w-full px-3.5 py-2 bg-dark-900 border border-zinc-700/80 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
-                    </div>
+      return {
+        code,
+        reactBindings: toBindings(reactMatch[1]),
+        iconBindings: toBindings(iconMatch[1])
+      };
+    }
 
-                    <!-- Layout & Background -->
-                    <div class="grid grid-cols-1 gap-3">
-                        <div>
-                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Gaya Layout / Tema Iklan</label>
-                            <input type="text" id="fieldLayout" placeholder="Luxury audio product advertising" class="w-full px-3.5 py-2 bg-dark-900 border border-zinc-700/80 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Latar Belakang (Background)</label>
-                            <textarea id="fieldBackground" rows="2" placeholder="Deskripsi pencahayaan dan latar belakang..." class="w-full px-3.5 py-2 bg-dark-900 border border-zinc-700/80 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors resize-none"></textarea>
-                        </div>
-                    </div>
+    async function renderSource(source) {
+      if (!window.Babel) throw new Error('Babel compiler tidak berhasil dimuat.');
 
-                    <!-- Composition & Quality -->
-                    <div class="grid grid-cols-1 gap-3">
-                        <div>
-                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Komposisi Visual</label>
-                            <textarea id="fieldComposition" rows="2" placeholder="Posisi produk, teks headline, sudut kamera..." class="w-full px-3.5 py-2 bg-dark-900 border border-zinc-700/80 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors resize-none"></textarea>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Kualitas & Rendering</label>
-                            <textarea id="fieldQuality" rows="2" placeholder="Photorealistic, sharp focus, studio lighting..." class="w-full px-3.5 py-2 bg-dark-900 border border-zinc-700/80 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors resize-none"></textarea>
-                        </div>
-                    </div>
+      const imports = extractImports(source);
+      const compiled = Babel.transform(imports.code, {
+        presets: [['react', { runtime: 'classic' }]],
+        sourceType: 'script',
+        comments: false
+      }).code;
 
-                    <!-- Compiled Prompt Preview Accordion -->
-                    <div class="bg-dark-900/90 border border-zinc-800 rounded-xl p-3">
-                        <div class="flex items-center justify-between mb-1.5">
-                            <span class="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
-                                <i data-lucide="terminal" class="w-3.5 h-3.5 text-indigo-400"></i>
-                                Preview Prompt Final
-                            </span>
-                            <button type="button" onclick="copyPromptText()" class="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors">
-                                <i data-lucide="copy" class="w-3 h-3"></i> Salin
-                            </button>
-                        </div>
-                        <p id="compiledPromptPreview" class="text-xs text-zinc-400 leading-relaxed line-clamp-3 hover:line-clamp-none transition-all cursor-pointer" title="Klik untuk melihat seluruh prompt"></p>
-                    </div>
+      const moduleSource = `
+        const React = window.__GEMINI_CANVAS_REACT__;
+        const ReactDOM = window.__GEMINI_CANVAS_REACT_DOM__;
+        const LucideReact = window.__GEMINI_CANVAS_LUCIDE__;
+        const { ${imports.reactBindings} } = React;
+        const { ${imports.iconBindings} } = LucideReact;
+        ${compiled}
+        const rootElement = document.getElementById('root');
+        if (window.__GEMINI_CANVAS_ROOT__) window.__GEMINI_CANVAS_ROOT__.unmount();
+        window.__GEMINI_CANVAS_ROOT__ = ReactDOM.createRoot(rootElement);
+        window.__GEMINI_CANVAS_ROOT__.render(React.createElement(App));
+      `;
 
-                    <!-- Generate Button -->
-                    <button type="submit" id="generateBtn" class="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-indigo-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-sm shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed">
-                        <i data-lucide="wand-2" class="w-4 h-4"></i>
-                        <span>Buat Gambar Iklan Sekarang</span>
-                    </button>
-                </form>
-            </section>
+      const blobUrl = URL.createObjectURL(new Blob([moduleSource], { type: 'text/javascript' }));
+      try {
+        await import(blobUrl);
+      } finally {
+        URL.revokeObjectURL(blobUrl);
+      }
+    }
 
-            <!-- Right Column: Result Preview & Actions (4 Cols on Desktop) -->
-            <section class="lg:col-span-4 flex flex-col gap-4 bg-dark-800/60 border border-zinc-800/80 rounded-2xl p-5 sticky top-22">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-base font-display font-bold text-white flex items-center gap-2">
-                        <i data-lucide="image" class="w-4 h-4 text-indigo-400"></i>
-                        Hasil Gambar
-                    </h2>
-                    <span id="ratioBadge" class="text-xs px-2.5 py-1 rounded-lg bg-dark-700 border border-zinc-700 text-zinc-300 font-mono">4:5</span>
-                </div>
+    async function fetchLatestSource() {
+      const response = await fetch(SOURCE_URL + '?update=' + Date.now(), {
+        method: 'GET',
+        cache: 'no-store',
+        headers: { 'Accept': 'text/plain' }
+      });
+      if (!response.ok) throw new Error('GitHub mengembalikan HTTP ' + response.status + '.');
+      const source = await response.text();
+      if (!source.trim() || !source.includes('function App')) {
+        throw new Error('File App.jsx dari GitHub kosong atau formatnya tidak sesuai.');
+      }
+      return source;
+    }
 
-                <!-- Image Stage -->
-                <div id="imageStage" class="relative w-full min-h-[360px] bg-dark-900 border-2 border-dashed border-zinc-800 rounded-2xl flex flex-col items-center justify-center overflow-hidden group">
-                    
-                    <!-- Empty State -->
-                    <div id="emptyState" class="flex flex-col items-center text-center p-6 max-w-xs">
-                        <div class="w-14 h-14 rounded-2xl bg-dark-800 border border-zinc-700/80 flex items-center justify-center mb-3 text-zinc-500">
-                            <i data-lucide="image-plus" class="w-7 h-7"></i>
-                        </div>
-                        <h3 class="text-sm font-semibold text-zinc-200 mb-1">Belum Ada Gambar</h3>
-                        <p class="text-xs text-zinc-500 leading-relaxed">Pilih salah satu template di sebelah kiri, sesuaikan teksnya, lalu klik tombol <b>Buat Gambar Iklan</b>.</p>
-                    </div>
+    async function startApplication() {
+      bootRetry.style.display = 'none';
+      bootError.style.display = 'none';
+      bootSpinner.style.display = 'block';
+      bootMessage.textContent = 'Mengambil versi terbaru dari GitHub…';
 
-                    <!-- Loading State -->
-                    <div id="loadingState" class="hidden absolute inset-0 bg-dark-900/95 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-6 text-center">
-                        <div class="relative w-16 h-16 mb-4">
-                            <div class="absolute inset-0 rounded-full border-4 border-indigo-500/20"></div>
-                            <div class="absolute inset-0 rounded-full border-4 border-indigo-500 border-t-transparent animate-spin"></div>
-                            <i data-lucide="sparkles" class="w-6 h-6 text-indigo-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse"></i>
-                        </div>
-                        <p class="text-sm font-semibold text-white mb-1">Merender Poster Iklan...</p>
-                        <p class="text-xs text-zinc-400">AI sedang menyusun komposisi, pencahayaan & tipografi</p>
-                    </div>
-
-                    <!-- Generated Image -->
-                    <img id="resultImage" src="" alt="Hasil Poster Iklan" class="hidden w-full h-auto object-contain rounded-xl shadow-2xl transition-transform duration-300" />
-                </div>
-
-                <!-- Action Buttons (Shown after image generated) -->
-                <div id="resultActions" class="hidden grid grid-cols-2 gap-3 pt-1">
-                    <button onclick="downloadImage()" class="py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all active:scale-95">
-                        <i data-lucide="download" class="w-4 h-4"></i>
-                        Unduh PNG
-                    </button>
-                    <button onclick="generateImage()" class="py-2.5 px-4 rounded-xl bg-dark-700 hover:bg-dark-600 border border-zinc-700 text-zinc-200 font-medium text-xs flex items-center justify-center gap-2 transition-all active:scale-95">
-                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                        Buat Variasi
-                    </button>
-                </div>
-            </section>
-
-        </div>
-    </main>
-
-    <script>
-        // API Configuration
-        const TEMPLATE_API_URL = "https://jhpbtooefyzdndstlzva.supabase.co/functions/v1/get-template";
-        const DEFAULT_LOGO_URL = "https://jhpbtooefyzdndstlzva.supabase.co/storage/v1/object/public/apple/logo.png";
-        const apiKey = ""; // Otomatis diisi oleh environment saat runtime
-
-        // Fallback sample data jika endpoint mengalami kendala jaringan/CORS
-        const FALLBACK_TEMPLATES = [
-            {
-                "id": "277303ee-0b3a-4a28-b599-c7821d3a40ad",
-                "product": "Apple AirPods Max",
-                "headline": "A masterpiece of sound.",
-                "subheadline": "Over-ear listening with exceptional detail and a distinctive design.",
-                "features": [
-                    "High-fidelity audio",
-                    "Active Noise Cancellation",
-                    "Spatial Audio",
-                    "Premium over-ear design"
-                ],
-                "background": "Minimal dark-to-light gradient with soft metallic highlights and atmospheric studio lighting",
-                "layout": "Luxury audio product advertising",
-                "composition": "Headphones in a large centered hero pose, ear cushions and headband clearly visible, headline above, restrained feature text below",
-                "quality": "Photorealistic luxury product photography, fine material detail, soft cinematic lighting, sharp focus",
-                "ratio": "4:5",
-                "date": "2026-11-18",
-                "time": "19:00:00"
-            }
-        ];
-
-        // State
-        let allTemplates = [];
-        let selectedTemplateId = null;
-        let currentGeneratedImageUrl = null;
-        let currentGeneratedCaption = "";
-        let uploadedLogoData = null; // { base64: string, mimeType: string, name: string }
-
-        // Calendar & schedule state
-        const CALENDAR_API_URL = "https://jhpbtooefyzdndstlzva.supabase.co/functions/v1/crud-make-webhook";
-        const APP_TIMEZONE = "Asia/Kuala_Lumpur";
-        const ALLOWED_TIMES = ["09:00", "13:00", "19:00"];
-        let calendarRecords = [];
-        let selectedDate = getTodayInAppTimezone();
-        let selectedTime = "";
-        let selectedMonth = new Date(selectedDate + "T12:00:00");
-        let pendingScheduleSave = false;
-        let scheduleSaving = false;
-
-        // DOM Elements
-        const formInputs = [
-            'fieldProduct', 'fieldRatio', 'fieldHeadline', 'fieldSubheadline',
-            'fieldFeatures', 'fieldLayout', 'fieldBackground', 'fieldComposition', 'fieldQuality'
-        ];
-
-        // Initialize Icons & App
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-            
-            // Attach real-time prompt preview listeners
-            formInputs.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) {
-                    el.addEventListener('input', updatePromptPreview);
-                    el.addEventListener('change', updatePromptPreview);
-                }
-            });
-
-            // Fetch templates from Supabase Edge Function
-            fetchTemplates();
-
-            // Load calendar schedules from the CRUD Edge Function
-            fetchCalendar();
-            renderCalendar();
-
-            // Muat logo default secara otomatis dari input url_logo
-            const defaultUrlInput = document.getElementById('fieldLogoUrl');
-            if (defaultUrlInput && defaultUrlInput.value.trim()) {
-                loadLogoFromUrl(defaultUrlInput.value.trim(), false);
-            }
-        });
-
-        // Show custom notification toast
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            
-            const colors = {
-                info: 'bg-dark-700 border-zinc-700 text-zinc-100',
-                success: 'bg-emerald-950/90 border-emerald-700/80 text-emerald-200',
-                error: 'bg-rose-950/90 border-rose-700/80 text-rose-200'
-            };
-
-            const icons = {
-                info: 'info',
-                success: 'check-circle-2',
-                error: 'alert-circle'
-            };
-
-            toast.className = `pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-xl border shadow-xl backdrop-blur-md text-xs font-medium transition-all duration-300 translate-y-2 opacity-0 ${colors[type]}`;
-            toast.innerHTML = `<i data-lucide="${icons[type]}" class="w-4 h-4 shrink-0"></i><span>${message}</span>`;
-            
-            container.appendChild(toast);
-            lucide.createIcons({ root: toast });
-
-            requestAnimationFrame(() => {
-                toast.classList.remove('translate-y-2', 'opacity-0');
-            });
-
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'translate-y-2');
-                setTimeout(() => toast.remove(), 300);
-            }, 3500);
+      try {
+        let source;
+        let loadedFromGitHub = true;
+        try {
+          source = await fetchLatestSource();
+        } catch (networkError) {
+          loadedFromGitHub = false;
+          source = localStorage.getItem(CACHE_KEY);
+          if (!source) throw networkError;
         }
 
-        // Fetch Templates from Endpoint
-        async function fetchTemplates() {
-            const refreshIcon = document.querySelector('#refreshBtn i');
-            if (refreshIcon) refreshIcon.classList.add('animate-spin');
-
-            try {
-                const response = await fetch(TEMPLATE_API_URL, {
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json' }
-                });
-
-                if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-                
-                const data = await response.json();
-                allTemplates = Array.isArray(data) ? data : (data.data || FALLBACK_TEMPLATES);
-                
-                if (allTemplates.length === 0) {
-                    allTemplates = FALLBACK_TEMPLATES;
-                }
-
-                renderTemplateList(allTemplates);
-                
-                // Select first template automatically if none selected
-                if (!selectedTemplateId && allTemplates.length > 0) {
-                    selectTemplate(allTemplates[0].id);
-                }
-                showToast(`${allTemplates.length} template berhasil dimuat`, 'success');
-            } catch (error) {
-                console.warn("Gagal mengambil data dari API, menggunakan template bawaan:", error);
-                allTemplates = FALLBACK_TEMPLATES;
-                renderTemplateList(allTemplates);
-                if (!selectedTemplateId && allTemplates.length > 0) {
-                    selectTemplate(allTemplates[0].id);
-                }
-                showToast("Menggunakan template default (offline/CORS fallback)", "info");
-            } finally {
-                if (refreshIcon) refreshIcon.classList.remove('animate-spin');
-            }
+        await renderSource(source);
+        activeHash = await hashText(source);
+        if (loadedFromGitHub) {
+          try { localStorage.setItem(CACHE_KEY, source); } catch (_) {}
+          bootMessage.textContent = 'Versi terbaru berhasil dimuat.';
+        } else {
+          bootMessage.textContent = 'Menggunakan salinan terakhir yang tersimpan.';
         }
+        bootScreen.style.display = 'none';
+      } catch (error) {
+        setBootError(error?.message || 'Terjadi kesalahan saat memuat aplikasi.');
+      }
+    }
 
-        // Render Template Cards
-        function renderTemplateList(templates) {
-            const container = document.getElementById('templateList');
-            const countBadge = document.getElementById('templateCount');
-            countBadge.textContent = templates.length;
-
-            if (templates.length === 0) {
-                container.innerHTML = `<div class="text-center py-8 text-xs text-zinc-500">Tidak ada template yang cocok.</div>`;
-                return;
-            }
-
-            container.innerHTML = templates.map(tpl => {
-                const isSelected = tpl.id === selectedTemplateId;
-                const featuresCount = Array.isArray(tpl.features) ? tpl.features.length : 0;
-                
-                return `
-                    <button type="button" onclick="selectTemplate('${tpl.id}')" 
-                        class="w-full text-left p-3.5 rounded-xl border transition-all duration-200 flex flex-col gap-1.5 group
-                        ${isSelected 
-                            ? 'bg-indigo-600/15 border-indigo-500 shadow-md shadow-indigo-500/10' 
-                            : 'bg-dark-900/70 border-zinc-800/90 hover:border-zinc-700 hover:bg-dark-700/50'}">
-                        <div class="flex items-start justify-between gap-2">
-                            <span class="font-semibold text-xs ${isSelected ? 'text-indigo-300' : 'text-zinc-200 group-hover:text-white'} line-clamp-1">
-                                ${escapeHtml(tpl.product || 'Tanpa Nama Produk')}
-                            </span>
-                            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-dark-800 text-zinc-400 border border-zinc-700/70 shrink-0">
-                                ${escapeHtml(tpl.ratio || '4:5')}
-                            </span>
-                        </div>
-                        <p class="text-[11px] text-zinc-400 line-clamp-1 italic">"${escapeHtml(tpl.headline || '')}"</p>
-                        <div class="flex items-center justify-between mt-1 pt-1.5 border-t border-zinc-800/60 text-[10px] text-zinc-500">
-                            <span class="truncate max-w-[140px]">${escapeHtml(tpl.layout || 'Commercial Ad')}</span>
-                            <span>${featuresCount} fitur</span>
-                        </div>
-                    </button>
-                `;
-            }).join('');
+    async function checkForUpdate() {
+      try {
+        const source = await fetchLatestSource();
+        const hash = await hashText(source);
+        if (activeHash && hash !== activeHash) {
+          pendingSource = source;
+          pendingHash = hash;
+          updateBanner.style.display = 'flex';
         }
-
-        // Filter Templates via Search Input
-        function filterTemplates() {
-            const query = document.getElementById('searchInput').value.toLowerCase().trim();
-            if (!query) {
-                renderTemplateList(allTemplates);
-                return;
-            }
-            const filtered = allTemplates.filter(tpl => 
-                (tpl.product && tpl.product.toLowerCase().includes(query)) ||
-                (tpl.headline && tpl.headline.toLowerCase().includes(query)) ||
-                (tpl.layout && tpl.layout.toLowerCase().includes(query))
-            );
-            renderTemplateList(filtered);
-        }
-
-        // Populate Form with Selected Template
-        function selectTemplate(id) {
-            const tpl = allTemplates.find(t => t.id === id);
-            if (!tpl) return;
-
-            selectedTemplateId = id;
-            
-            document.getElementById('fieldProduct').value = tpl.product || '';
-            
-            // Check if ratio exists in dropdown, else default to 4:5
-            const ratioSelect = document.getElementById('fieldRatio');
-            const validRatios = Array.from(ratioSelect.options).map(o => o.value);
-            ratioSelect.value = validRatios.includes(tpl.ratio) ? tpl.ratio : '4:5';
-
-            document.getElementById('fieldHeadline').value = tpl.headline || '';
-            document.getElementById('fieldSubheadline').value = tpl.subheadline || '';
-            document.getElementById('fieldFeatures').value = Array.isArray(tpl.features) ? tpl.features.join(', ') : (tpl.features || '');
-            document.getElementById('fieldLayout').value = tpl.layout || '';
-            document.getElementById('fieldBackground').value = tpl.background || '';
-            document.getElementById('fieldComposition').value = tpl.composition || '';
-            document.getElementById('fieldQuality').value = tpl.quality || '';
-
-            // Re-render list to update active state & update prompt preview
-            filterTemplates();
-            updatePromptPreview();
-        }
-
-        // Reset Form to currently selected template
-        function resetForm() {
-            if (selectedTemplateId) {
-                const logoUrlInput = document.getElementById('fieldLogoUrl');
-                if (logoUrlInput) logoUrlInput.value = DEFAULT_LOGO_URL;
-                loadLogoFromUrl(DEFAULT_LOGO_URL, false);
-                selectTemplate(selectedTemplateId);
-                showToast("Form dikembalikan ke template asli", "info");
-            }
-        }
-
-        // Load Logo Automatically from URL and convert to Base64
-        async function loadLogoFromUrl(url, notify = true) {
-            const cleanUrl = (url || '').trim();
-            if (!cleanUrl) return;
-
-            const fileNameLabel = document.getElementById('logoFileName');
-            if (fileNameLabel) {
-                fileNameLabel.textContent = 'Mengunduh logo dari URL...';
-                fileNameLabel.classList.remove('text-zinc-500', 'text-indigo-300');
-                fileNameLabel.classList.add('text-amber-300');
-            }
-
-            try {
-                const response = await fetch(cleanUrl, { mode: 'cors' });
-                if (!response.ok) throw new Error(`Gagal memuat gambar (${response.status})`);
-
-                const blob = await response.blob();
-                if (!blob.type.startsWith('image/')) {
-                    throw new Error('URL tidak mengarah ke file gambar yang valid');
-                }
-
-                const reader = new FileReader();
-                reader.onloadend = function() {
-                    const dataUrl = reader.result;
-                    const [header, base64Data] = dataUrl.split(',');
-                    const mimeMatch = header.match(/:(.*?);/);
-                    const mimeType = mimeMatch ? mimeMatch[1] : (blob.type || 'image/png');
-                    const extractedName = cleanUrl.split('/').pop().split('?')[0] || 'logo-url.png';
-
-                    uploadedLogoData = {
-                        base64: base64Data,
-                        mimeType: mimeType,
-                        name: extractedName
-                    };
-
-                    // Update UI preview
-                    const previewImg = document.getElementById('logoPreviewImg');
-                    const placeholderIcon = document.getElementById('logoPlaceholderIcon');
-                    const removeBtn = document.getElementById('removeLogoBtn');
-                    const fileInput = document.getElementById('fieldLogo');
-
-                    if (fileInput) fileInput.value = '';
-                    previewImg.src = dataUrl;
-                    previewImg.classList.remove('hidden');
-                    placeholderIcon.classList.add('hidden');
-                    fileNameLabel.textContent = `${extractedName} (dari URL)`;
-                    fileNameLabel.classList.remove('text-zinc-500', 'text-amber-300');
-                    fileNameLabel.classList.add('text-indigo-300');
-                    removeBtn.classList.remove('hidden');
-
-                    updatePromptPreview();
-                    if (notify) {
-                        showToast("Logo dari URL berhasil dimuat!", "success");
-                    }
-                };
-                reader.readAsDataURL(blob);
-            } catch (error) {
-                console.error("Error loading logo from URL:", error);
-                if (fileNameLabel) {
-                    fileNameLabel.textContent = 'Gagal memuat logo dari URL (periksa CORS/URL)';
-                    fileNameLabel.classList.remove('text-amber-300', 'text-indigo-300');
-                    fileNameLabel.classList.add('text-rose-400');
-                }
-                if (notify) {
-                    showToast(error.message || "Gagal memuat logo dari URL", "error");
-                }
-            }
-        }
-
-        // Handle Logo File Upload
-        function handleLogoUpload(event) {
-            const file = event.target.files?.[0];
-            if (!file) return;
-
-            if (!file.type.startsWith('image/')) {
-                showToast("Harap pilih file gambar yang valid (PNG, JPG, WebP, SVG)", "error");
-                event.target.value = '';
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const dataUrl = e.target.result;
-                const [header, base64Data] = dataUrl.split(',');
-                const mimeMatch = header.match(/:(.*?);/);
-                const mimeType = mimeMatch ? mimeMatch[1] : file.type;
-
-                uploadedLogoData = {
-                    base64: base64Data,
-                    mimeType: mimeType,
-                    name: file.name
-                };
-
-                // Update UI preview
-                const previewImg = document.getElementById('logoPreviewImg');
-                const placeholderIcon = document.getElementById('logoPlaceholderIcon');
-                const fileNameLabel = document.getElementById('logoFileName');
-                const removeBtn = document.getElementById('removeLogoBtn');
-                const urlInput = document.getElementById('fieldLogoUrl');
-
-                if (urlInput) urlInput.value = '';
-                previewImg.src = dataUrl;
-                previewImg.classList.remove('hidden');
-                placeholderIcon.classList.add('hidden');
-                fileNameLabel.textContent = file.name;
-                fileNameLabel.classList.remove('text-zinc-500', 'text-amber-300', 'text-rose-400');
-                fileNameLabel.classList.add('text-indigo-300');
-                removeBtn.classList.remove('hidden');
-
-                updatePromptPreview();
-                showToast("Logo berhasil ditambahkan untuk sudut kiri atas", "success");
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // Remove Uploaded Logo
-        function removeLogo() {
-            uploadedLogoData = null;
-            const fileInput = document.getElementById('fieldLogo');
-            const urlInput = document.getElementById('fieldLogoUrl');
-            const previewImg = document.getElementById('logoPreviewImg');
-            const placeholderIcon = document.getElementById('logoPlaceholderIcon');
-            const fileNameLabel = document.getElementById('logoFileName');
-            const removeBtn = document.getElementById('removeLogoBtn');
-
-            if (fileInput) fileInput.value = '';
-            if (urlInput) urlInput.value = '';
-            if (previewImg) {
-                previewImg.src = '';
-                previewImg.classList.add('hidden');
-            }
-            if (placeholderIcon) placeholderIcon.classList.remove('hidden');
-            if (fileNameLabel) {
-                fileNameLabel.textContent = 'Belum ada logo dipilih (PNG transparan disarankan)';
-                fileNameLabel.classList.add('text-zinc-500');
-                fileNameLabel.classList.remove('text-indigo-300', 'text-amber-300', 'text-rose-400');
-            }
-            if (removeBtn) removeBtn.classList.add('hidden');
-
-            updatePromptPreview();
-        }
-
-        // Build Rich Prompt String from Fields
-        function buildPrompt() {
-            const product = document.getElementById('fieldProduct').value.trim();
-            const headline = document.getElementById('fieldHeadline').value.trim();
-            const subheadline = document.getElementById('fieldSubheadline').value.trim();
-            const featuresRaw = document.getElementById('fieldFeatures').value.trim();
-            const layout = document.getElementById('fieldLayout').value.trim();
-            const background = document.getElementById('fieldBackground').value.trim();
-            const composition = document.getElementById('fieldComposition').value.trim();
-            const quality = document.getElementById('fieldQuality').value.trim();
-
-            let parts = [];
-            if (layout) parts.push(`Style: ${layout}.`);
-            if (product) parts.push(`Featured Product: ${product}.`);
-            if (uploadedLogoData) {
-                parts.push(`Brand Logo Placement: Place the provided brand logo cleanly and prominently in the top-left corner of the poster with appropriate padding, preserving its original design and proportions.`);
-            }
-            if (composition) parts.push(`Composition: ${composition}.`);
-            if (background) parts.push(`Background & Lighting: ${background}.`);
-            
-            // Typography instructions
-            let textInstructions = [];
-            if (headline) textInstructions.push(`Main Headline text reading "${headline}"`);
-            if (subheadline) textInstructions.push(`Subheadline text reading "${subheadline}"`);
-            if (featuresRaw) {
-                const featureList = featuresRaw.split(',').map(f => f.trim()).filter(Boolean);
-                if (featureList.length > 0) {
-                    textInstructions.push(`Clean minimal feature callouts highlighting: ${featureList.join(' • ')}`);
-                }
-            }
-            if (textInstructions.length > 0) {
-                parts.push(`Typography & Text Elements: ${textInstructions.join(', ')}. Ensure all text is sharp, legible, and professionally typeset.`);
-            }
-
-            if (quality) parts.push(`Visual Quality: ${quality}.`);
-
-            return parts.join(' ');
-        }
-
-        // Update Live Prompt Preview & Aspect Ratio Badge
-        function updatePromptPreview() {
-            const promptText = buildPrompt();
-            document.getElementById('compiledPromptPreview').textContent = promptText || 'Isi form di atas untuk melihat prompt...';
-            
-            const ratio = document.getElementById('fieldRatio').value;
-            document.getElementById('ratioBadge').textContent = ratio;
-        }
-
-        // Copy Prompt to Clipboard (using execCommand fallback for iFrame safety)
-        function copyPromptText() {
-            const text = buildPrompt();
-            if (!text) return;
-
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            textarea.style.position = 'fixed';
-            textarea.style.opacity = '0';
-            document.body.appendChild(textarea);
-            textarea.select();
-            try {
-                document.execCommand('copy');
-                showToast("Prompt berhasil disalin ke clipboard!", "success");
-            } catch (err) {
-                showToast("Gagal menyalin prompt", "error");
-            }
-            document.body.removeChild(textarea);
-        }
-
-        // Exponential Backoff Fetch Helper
-        async function fetchWithRetry(url, options, maxRetries = 4) {
-            let delay = 1000;
-            for (let attempt = 0; attempt <= maxRetries; attempt++) {
-                try {
-                    const response = await fetch(url, options);
-                    if (response.ok) return response;
-                    if (response.status !== 429 && response.status < 500) {
-                        return response; // Don't retry client errors (400, 401, etc.)
-                    }
-                } catch (err) {
-                    if (attempt === maxRetries) throw err;
-                }
-                if (attempt < maxRetries) {
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    delay *= 2;
-                }
-            }
-            throw new Error("Gagal terhubung ke server setelah beberapa percobaan.");
-        }
-
-        // Generate a social caption automatically from the selected product and poster content.
-        async function generateAutomaticCaption() {
-            const product = document.getElementById('fieldProduct').value.trim();
-            const headline = document.getElementById('fieldHeadline').value.trim();
-            const subheadline = document.getElementById('fieldSubheadline').value.trim();
-            const features = document.getElementById('fieldFeatures').value.trim();
-            const layout = document.getElementById('fieldLayout').value.trim();
-            const captionField = document.getElementById('scheduleCaption');
-
-            // Gunakan mekanisme autentikasi/proxy Gemini yang sama dengan proses generate gambar di Gemini Canvas.
-            // Jangan menghentikan proses hanya karena apiKey tidak tersedia sebagai variabel JavaScript di browser.
-
-            const prompt = [
-                'Tulis caption media sosial untuk Apple Store Malaysia dalam Bahasa Melayu Malaysia.',
-                'Hasilkan 2 hingga 4 ayat yang natural, menarik, profesional dan sesuai untuk Instagram.',
-                'Tambahkan 3 hingga 5 hashtag relevan di akhir caption.',
-                'Gunakan hanya informasi produk yang diberikan. Jangan mereka harga, promosi, spesifikasi, atau klaim yang tidak tersedia.',
-                'Jangan gunakan markdown, label, atau penjelasan. Kembalikan caption sahaja.',
-                '',
-                'Produk: ' + (product || 'Produk Apple'),
-                'Headline poster: ' + (headline || '-'),
-                'Subheadline: ' + (subheadline || '-'),
-                'Fitur: ' + (features || '-'),
-                'Gaya visual: ' + (layout || '-')
-            ].join('\n');
-
-            if (captionField) captionField.value = 'Sedang membuat caption otomatis...';
-
-            const response = await fetchWithRetry(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-                        generationConfig: { temperature: 0.7, maxOutputTokens: 220 }
-                    })
-                }
-            );
-
-            const result = await response.json();
-            if (!response.ok) {
-                throw new Error(result?.error?.message || 'Gagal membuat caption otomatis.');
-            }
-
-            const caption = (result?.candidates?.[0]?.content?.parts || [])
-                .map(part => part.text || '')
-                .join('\n')
-                .trim();
-
-            if (!caption) throw new Error('AI tidak mengembalikan caption. Silakan coba lagi.');
-
-            currentGeneratedCaption = caption;
-            if (captionField) captionField.value = caption;
-            return caption;
-        }
-
-        // Generate Image using Gemini 3.1 Flash Image API
-        async function generateImage() {
-            try { validateSchedule(); } catch (error) {
-                showToast(error.message, "error");
-                return;
-            }
-            const prompt = buildPrompt();
-            const ratio = document.getElementById('fieldRatio').value || "4:5";
-
-            if (!prompt) {
-                showToast("Harap isi detail produk terlebih dahulu", "error");
-                return;
-            }
-
-            // UI Loading States
-            const generateBtn = document.getElementById('generateBtn');
-            const loadingState = document.getElementById('loadingState');
-            const emptyState = document.getElementById('emptyState');
-            const resultImage = document.getElementById('resultImage');
-            const resultActions = document.getElementById('resultActions');
-
-            generateBtn.disabled = true;
-            loadingState.classList.remove('hidden');
-
-            try {
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${apiKey}`;
-                
-                // Susun parts untuk API (teks prompt + inlineData logo jika diunggah)
-                const requestParts = [{ text: prompt }];
-                if (uploadedLogoData) {
-                    requestParts.push({
-                        inlineData: {
-                            mimeType: uploadedLogoData.mimeType,
-                            data: uploadedLogoData.base64
-                        }
-                    });
-                }
-
-                const payload = {
-                    contents: [{
-                        role: 'user',
-                        parts: requestParts
-                    }],
-                    generationConfig: {
-                        responseModalities: ['IMAGE'],
-                        imageConfig: { aspectRatio: ratio }
-                    }
-                };
-
-                const response = await fetchWithRetry(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    const errMsg = result?.error?.message || "Terjadi kesalahan saat memproses gambar.";
-                    throw new Error(errMsg);
-                }
-
-                const part = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
-                
-                if (!part || !part.inlineData?.data) {
-                    throw new Error("Model tidak mengembalikan data gambar. Coba sesuaikan kembali prompt Anda.");
-                }
-
-                const mimeType = part.inlineData.mimeType || 'image/png';
-                currentGeneratedImageUrl = `data:${mimeType};base64,${part.inlineData.data}`;
-                currentGeneratedCaption = "";
-                const captionField = document.getElementById('scheduleCaption');
-                if (captionField) captionField.value = "";
-
-                // Update Preview Stage
-                resultImage.src = currentGeneratedImageUrl;
-                resultImage.classList.remove('hidden');
-                emptyState.classList.add('hidden');
-                resultActions.classList.remove('hidden');
-                
-                pendingScheduleSave = true;
-                const retrySaveButton = document.getElementById('retryScheduleSaveBtn');
-                if (retrySaveButton) retrySaveButton.classList.remove('hidden');
-                showToast("Poster berhasil dibuat. Menyimpan jadwal...", "success");
-                try {
-                    await saveGeneratedSchedule();
-                } catch (saveError) {
-                    console.error("Schedule save error:", saveError);
-                    showToast(saveError.message || "Gambar berhasil dibuat, tetapi jadwal belum tersimpan. Coba simpan kembali.", "error");
-                }
-
-            } catch (error) {
-                console.error("Image Generation Error:", error);
-                showToast(error.message || "Gagal membuat gambar", "error");
-            } finally {
-                generateBtn.disabled = false;
-                loadingState.classList.add('hidden');
-            }
-        }
-
-
-        // Calendar helpers: use local calendar date strings to avoid UTC date shifts.
-        function getTodayInAppTimezone() {
-            return new Intl.DateTimeFormat('en-CA', {
-                timeZone: APP_TIMEZONE, year: 'numeric', month: '2-digit', day: '2-digit'
-            }).format(new Date());
-        }
-
-        function normalizeTime(value) {
-            return typeof value === 'string' ? value.slice(0, 5) : '';
-        }
-
-        function calendarDateKey(year, month, day) {
-            return [year, String(month + 1).padStart(2, '0'), String(day).padStart(2, '0')].join('-');
-        }
-
-        async function calendarRequest(path, options = {}) {
-            const response = await fetch(CALENDAR_API_URL + path, options);
-            let result;
-            try { result = await response.json(); } catch { throw new Error('Respons server tidak valid.'); }
-            if (!response.ok || result?.success !== true) {
-                throw new Error(result?.error || result?.details || 'Permintaan kalender gagal.');
-            }
-            return result.data;
-        }
-
-        async function fetchCalendar() {
-            const list = document.getElementById('scheduleList');
-            if (list) list.innerHTML = '<p class="text-xs text-zinc-500">Memuat jadwal...</p>';
-            try {
-                const data = await calendarRequest('/get');
-                calendarRecords = Array.isArray(data) ? data : (data ? [data] : []);
-                renderCalendar();
-                renderScheduleList();
-            } catch (error) {
-                console.error('Calendar load error:', error);
-                if (list) list.innerHTML = '<p class="text-xs text-rose-400">Gagal memuat jadwal. Periksa koneksi atau endpoint.</p>';
-                showToast(error.message || 'Gagal memuat kalender', 'error');
-            }
-        }
-
-        function changeCalendarMonth(offset) {
-            selectedMonth = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + offset, 1, 12);
-            renderCalendar();
-        }
-
-        function renderCalendar() {
-            const label = document.getElementById('calendarMonthLabel');
-            const grid = document.getElementById('calendarGrid');
-            if (!label || !grid) return;
-            label.textContent = new Intl.DateTimeFormat('id-ID', {
-                month: 'long', year: 'numeric', timeZone: APP_TIMEZONE
-            }).format(selectedMonth);
-            const year = selectedMonth.getFullYear();
-            const month = selectedMonth.getMonth();
-            const firstDay = new Date(year, month, 1, 12).getDay();
-            const daysInMonth = new Date(year, month + 1, 0, 12).getDate();
-            const cells = [];
-            for (let i = 0; i < firstDay; i++) cells.push('<div class="min-h-12"></div>');
-            for (let day = 1; day <= daysInMonth; day++) {
-                const key = calendarDateKey(year, month, day);
-                const count = calendarRecords.filter(r => r.date === key).length;
-                const isSelected = key === selectedDate;
-                const isToday = key === getTodayInAppTimezone();
-                cells.push(`
-                    <button type="button" onclick="selectCalendarDate('${key}')" class="relative min-h-12 rounded-lg border ${isSelected ? 'border-indigo-500 bg-indigo-600/20' : 'border-zinc-800 bg-dark-900 hover:border-zinc-600'} ${isToday ? 'ring-1 ring-indigo-400/50' : ''} flex flex-col items-center justify-center gap-1 transition-colors" aria-label="Pilih tanggal ${key}" aria-pressed="${isSelected}">
-                        <span class="text-xs ${isSelected ? 'text-indigo-200 font-bold' : 'text-zinc-300'}">${day}</span>
-                        <span class="flex gap-0.5 h-1.5">${Array.from({length: Math.min(count, 3)}, () => '<i class="w-1 h-1 rounded-full bg-emerald-400"></i>').join('')}</span>
-                    </button>`);
-            }
-            grid.innerHTML = cells.join('');
-            renderScheduleSlots();
-            renderScheduleList();
-            if (window.lucide) lucide.createIcons();
-        }
-
-        function selectCalendarDate(date) {
-            selectedDate = date;
-            selectedTime = '';
-            renderCalendar();
-        }
-
-        function getBookedSlots(date = selectedDate) {
-            return calendarRecords
-                .filter(record => record.date === date)
-                .map(record => normalizeTime(record.time));
-        }
-
-        function renderScheduleSlots() {
-            const container = document.getElementById('scheduleSlots');
-            const label = document.getElementById('selectedDateLabel');
-            if (!container || !label) return;
-            label.textContent = selectedDate;
-            const booked = getBookedSlots();
-            container.innerHTML = ALLOWED_TIMES.map(time => {
-                const record = calendarRecords.find(item => item.date === selectedDate && normalizeTime(item.time) === time);
-                const active = selectedTime === time;
-                return `
-                    <div class="flex items-center gap-2">
-                        <button type="button" ${record ? 'disabled' : ''} onclick="selectScheduleTime('${time}')" class="flex-1 flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg border text-xs transition-colors ${record ? 'border-emerald-900/70 bg-emerald-950/30 text-zinc-500 cursor-not-allowed' : active ? 'border-indigo-500 bg-indigo-600/20 text-indigo-200' : 'border-zinc-700 bg-dark-800 text-zinc-200 hover:border-indigo-500'}">
-                            <span class="font-mono font-semibold">${time}</span>
-                            <span>${record ? 'Booked' : active ? 'Dipilih' : 'Available'}</span>
-                        </button>
-                        ${record ? `<button type="button" onclick="editSchedule('${record.id}')" class="p-2 rounded-lg border border-zinc-700 text-zinc-400 hover:text-white" title="Edit jadwal"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>` : ''}
-                    </div>`;
-            }).join('');
-            if (window.lucide) lucide.createIcons();
-        }
-
-        function selectScheduleTime(time) {
-            if (!ALLOWED_TIMES.includes(time) || getBookedSlots().includes(time)) return;
-            selectedTime = time;
-            renderScheduleSlots();
-        }
-
-        function validateSchedule() {
-            if (!selectedDate || !/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) throw new Error('Pilih tanggal jadwal terlebih dahulu.');
-            if (!ALLOWED_TIMES.includes(selectedTime)) throw new Error('Pilih salah satu slot waktu: 09:00, 13:00, atau 19:00.');
-            if (getBookedSlots().includes(selectedTime)) throw new Error('Slot ini sudah terisi. Silakan pilih slot lain.');
-            return true;
-        }
-
-        function renderScheduleList() {
-            const container = document.getElementById('scheduleList');
-            if (!container) return;
-            const sorted = [...calendarRecords].sort((a, b) =>
-                (a.date + normalizeTime(a.time)).localeCompare(b.date + normalizeTime(b.time))
-            );
-            if (!sorted.length) {
-                container.innerHTML = '<p class="text-xs text-zinc-500">Belum ada jadwal tersimpan.</p>';
-                return;
-            }
-            container.innerHTML = sorted.map(record => `
-                <article class="flex gap-3 p-3 rounded-xl bg-dark-900 border border-zinc-800 min-w-0">
-                    <img src="${escapeHtml(record.image_url || '')}" alt="" loading="lazy" class="w-14 h-14 rounded-lg object-cover bg-dark-800 border border-zinc-700 shrink-0" onerror="this.style.display='none'">
-                    <div class="min-w-0 flex-1">
-                        <p class="text-[11px] font-semibold text-white truncate">${escapeHtml(record.date)} · ${escapeHtml(normalizeTime(record.time))}</p>
-                        <p class="text-[11px] text-zinc-400 line-clamp-2 mt-1">${escapeHtml(record.caption || 'Tanpa caption')}</p>
-                        <div class="flex gap-3 mt-2">
-                            <button type="button" onclick="editSchedule('${record.id}')" class="text-[10px] text-indigo-400 hover:text-indigo-300">Edit</button>
-                            <button type="button" onclick="deleteSchedule('${record.id}')" class="text-[10px] text-rose-400 hover:text-rose-300">Hapus</button>
-                        </div>
-                    </div>
-                </article>`).join('');
-        }
-
-        function dataUrlToFile(dataUrl, filename) {
-            const match = /^data:(image\/[a-zA-Z0-9.+-]+);base64,([\s\S]+)$/.exec(dataUrl || '');
-            if (!match) throw new Error('Data gambar hasil generate tidak valid.');
-            const binary = atob(match[2]);
-            const bytes = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-            const mimeType = match[1];
-            const extension = mimeType.split('/')[1].replace('jpeg', 'jpg');
-            return new File([bytes], filename + '.' + extension, { type: mimeType });
-        }
-
-        async function saveGeneratedSchedule() {
-            if (scheduleSaving) return;
-            if (!currentGeneratedImageUrl) throw new Error('Belum ada gambar hasil generate untuk disimpan.');
-            validateSchedule();
-            scheduleSaving = true;
-            const retryButton = document.getElementById('retryScheduleSaveBtn');
-            if (retryButton) { retryButton.disabled = true; retryButton.textContent = 'Menyimpan...'; }
-            try {
-                const caption = currentGeneratedCaption || await generateAutomaticCaption();
-                const imageFile = dataUrlToFile(currentGeneratedImageUrl, 'gemini-' + selectedDate + '-' + selectedTime.replace(':', ''));
-                const formData = new FormData();
-                formData.append('image_url', imageFile);
-                formData.append('caption', caption);
-                formData.append('date', selectedDate);
-                formData.append('time', selectedTime);
-                const data = await calendarRequest('/post', { method: 'POST', body: formData });
-                const saved = Array.isArray(data) ? data[0] : data;
-                if (!saved?.id) throw new Error('Server tidak mengembalikan ID jadwal.');
-                calendarRecords.push(saved);
-                pendingScheduleSave = false;
-                selectedTime = '';
-                if (retryButton) retryButton.classList.add('hidden');
-                renderCalendar();
-                showToast('Gambar dan jadwal berhasil disimpan.', 'success');
-                return saved;
-            } finally {
-                scheduleSaving = false;
-                if (retryButton) { retryButton.disabled = false; retryButton.textContent = 'Coba Simpan Hasil Gambar Terakhir'; }
-            }
-        }
-
-        async function editSchedule(id) {
-            const record = calendarRecords.find(item => item.id === id);
-            if (!record) return;
-            const date = window.prompt('Tanggal jadwal (YYYY-MM-DD):', record.date);
-            if (date === null) return;
-            if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(date)) {
-                showToast('Format tanggal harus YYYY-MM-DD.', 'error');
-                return;
-            }
-            const time = window.prompt('Slot waktu (09:00, 13:00, atau 19:00):', normalizeTime(record.time));
-            if (time === null) return;
-            if (!ALLOWED_TIMES.includes(time)) {
-                showToast('Slot hanya boleh 09:00, 13:00, atau 19:00.', 'error');
-                return;
-            }
-            const occupied = calendarRecords.some(item =>
-                item.id !== id && item.date === date && normalizeTime(item.time) === time
-            );
-            if (occupied) {
-                showToast('Slot tanggal dan waktu tersebut sudah terisi.', 'error');
-                return;
-            }
-            const caption = window.prompt('Edit caption:', record.caption || '');
-            if (caption === null) return;
-            const formData = new FormData();
-            formData.append('id', id);
-            formData.append('date', date);
-            formData.append('time', time);
-            formData.append('caption', caption);
-            try {
-                const data = await calendarRequest('/patch', { method: 'PATCH', body: formData });
-                const updated = Array.isArray(data) ? data[0] : data;
-                calendarRecords = calendarRecords.map(item => item.id === id ? updated : item);
-                renderCalendar();
-                showToast('Jadwal berhasil diperbarui.', 'success');
-            } catch (error) {
-                showToast(error.message || 'Gagal memperbarui jadwal.', 'error');
-            }
-        }
-
-        async function deleteSchedule(id) {
-            if (!window.confirm('Hapus jadwal ini beserta gambar yang tersimpan?')) return;
-            try {
-                await calendarRequest('/deleted', {
-                    method: 'DELETE',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id })
-                });
-                calendarRecords = calendarRecords.filter(item => item.id !== id);
-                renderCalendar();
-                showToast('Jadwal berhasil dihapus.', 'success');
-            } catch (error) {
-                showToast(error.message || 'Gagal menghapus jadwal.', 'error');
-            }
-        }
-
-        // Download Generated Image
-        function downloadImage() {
-            if (!currentGeneratedImageUrl) return;
-            const productName = (document.getElementById('fieldProduct').value || 'ad-poster')
-                .toLowerCase()
-                .replace(/[^a-z0-9]+/g, '-');
-            
-            const link = document.createElement('a');
-            link.href = currentGeneratedImageUrl;
-            link.download = `${productName}-${Date.now()}.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            showToast("Gambar sedang diunduh", "success");
-        }
-
-        // Utility: Escape HTML to prevent XSS
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-    </script>
+      } catch (_) {
+        // Keep the currently running application when GitHub is temporarily unavailable.
+      }
+    }
+
+    applyUpdateButton.addEventListener('click', async () => {
+      if (!pendingSource) return;
+      applyUpdateButton.disabled = true;
+      applyUpdateButton.textContent = 'Memuat…';
+      try {
+        await renderSource(pendingSource);
+        activeHash = pendingHash;
+        try { localStorage.setItem(CACHE_KEY, pendingSource); } catch (_) {}
+        pendingSource = '';
+        pendingHash = '';
+        updateBanner.style.display = 'none';
+      } catch (error) {
+        applyUpdateButton.disabled = false;
+        applyUpdateButton.textContent = 'Coba terapkan lagi';
+        console.error('Gagal menerapkan update:', error);
+      }
+    });
+
+    bootRetry.addEventListener('click', startApplication);
+
+    await startApplication();
+    window.setInterval(checkForUpdate, 90000);
+  </script>
 </body>
 </html>
