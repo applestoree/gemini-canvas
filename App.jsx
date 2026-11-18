@@ -296,7 +296,7 @@ export default function App() {
       });
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || `Failed to load history (HTTP ${response.status}).`);
+        throw new Error(errData.error || `Failed to load schedule (HTTP ${response.status}).`);
       }
       const data = await response.json();
       if (!Array.isArray(data)) {
@@ -304,7 +304,7 @@ export default function App() {
       }
       setHistoryRecords(data.filter((record) => record?.is_ready === true));
     } catch (err) {
-      setHistoryError(err.message || 'Failed to load image history.');
+      setHistoryError(err.message || 'Failed to load schedule.');
     } finally {
       setIsLoadingHistory(false);
     }
@@ -867,7 +867,7 @@ export default function App() {
             <section className="flex-1 min-h-0 flex flex-col bg-white rounded-2xl border border-neutral-200 p-3 shadow-2xs">
               <div className="shrink-0 flex items-center justify-between gap-3 pb-3 border-b border-neutral-200">
                 <div className="min-w-0">
-                  <h2 className="text-sm font-semibold text-black">Image History</h2>
+                  <h2 className="text-sm font-semibold text-black">Jadwal</h2>
                   <p className="text-[11px] text-neutral-500">
                     {historyRecords.length} completed products
                   </p>
@@ -889,7 +889,7 @@ export default function App() {
                 {isLoadingHistory && (
                   <div className="py-8 flex items-center justify-center gap-2 text-xs text-neutral-500">
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    Loading history...
+                    Loading schedule...
                   </div>
                 )}
                 {!isLoadingHistory && historyError && (
@@ -1360,7 +1360,7 @@ export default function App() {
             className={`min-w-[76px] h-full flex flex-col items-center justify-center gap-1 text-[10px] font-medium transition disabled:opacity-50 ${showHistory ? 'text-black' : 'text-neutral-400 hover:text-neutral-700'}`}
           >
             <History className="w-5 h-5" />
-            <span>History</span>
+            <span>Jadwal</span>
           </button>
           <button
             type="button"
