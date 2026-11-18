@@ -804,7 +804,8 @@
             const layout = document.getElementById('fieldLayout').value.trim();
             const captionField = document.getElementById('scheduleCaption');
 
-            if (!apiKey) throw new Error('Gemini API key tidak tersedia untuk membuat caption otomatis.');
+            // Gunakan mekanisme autentikasi/proxy Gemini yang sama dengan proses generate gambar di Gemini Canvas.
+            // Jangan menghentikan proses hanya karena apiKey tidak tersedia sebagai variabel JavaScript di browser.
 
             const prompt = [
                 'Tulis caption media sosial untuk Apple Store Malaysia dalam Bahasa Melayu Malaysia.',
