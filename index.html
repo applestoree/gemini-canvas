@@ -61,6 +61,51 @@
 
     <!-- Main Workspace -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        <!-- Content Calendar & Schedule -->
+        <section class="mb-6 bg-dark-800/60 border border-zinc-800/80 rounded-2xl p-4 sm:p-5">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                <div>
+                    <h2 class="text-base font-display font-bold text-white flex items-center gap-2"><i data-lucide="calendar-days" class="w-4 h-4 text-indigo-400"></i> Content Calendar</h2>
+                    <p class="text-xs text-zinc-400 mt-1">Pilih tanggal dan slot publikasi sebelum membuat gambar.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button type="button" onclick="changeCalendarMonth(-1)" class="p-2 rounded-lg bg-dark-700 border border-zinc-700 hover:bg-dark-600" aria-label="Bulan sebelumnya"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                    <span id="calendarMonthLabel" class="min-w-32 text-center text-sm font-semibold text-white"></span>
+                    <button type="button" onclick="changeCalendarMonth(1)" class="p-2 rounded-lg bg-dark-700 border border-zinc-700 hover:bg-dark-600" aria-label="Bulan berikutnya"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-5">
+                <div class="lg:col-span-3">
+                    <div class="grid grid-cols-7 gap-1 mb-2 text-center text-[10px] font-semibold text-zinc-500">
+                        <span>MIN</span><span>SEN</span><span>SEL</span><span>RAB</span><span>KAM</span><span>JUM</span><span>SAB</span>
+                    </div>
+                    <div id="calendarGrid" class="grid grid-cols-7 gap-1" aria-label="Kalender bulanan"></div>
+                    <p class="text-[10px] text-zinc-500 mt-3">Titik hijau menandakan tanggal memiliki jadwal. Maksimal 3 jadwal per tanggal.</p>
+                </div>
+                <div class="lg:col-span-2 bg-dark-900/70 border border-zinc-800 rounded-xl p-3.5">
+                    <div class="flex items-center justify-between gap-2 mb-3">
+                        <h3 class="text-xs font-semibold text-zinc-200">Jadwal Tanggal Terpilih</h3>
+                        <span id="selectedDateLabel" class="text-[10px] text-indigo-300"></span>
+                    </div>
+                    <div id="scheduleSlots" class="space-y-2"></div>
+                    <label for="scheduleCaption" class="block text-[11px] font-medium text-zinc-300 mt-4 mb-1.5">Caption (opsional)</label>
+                    <textarea id="scheduleCaption" rows="2" placeholder="Tulis caption untuk konten ini..." class="w-full px-3 py-2 bg-dark-800 border border-zinc-700 rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 resize-y"></textarea>
+                    <p class="text-[10px] text-zinc-500 mt-2">Timezone: Asia/Kuala_Lumpur</p>
+                    <button id="retryScheduleSaveBtn" type="button" onclick="saveGeneratedSchedule()" class="hidden w-full mt-3 py-2.5 rounded-lg bg-amber-600/20 border border-amber-600/50 text-amber-200 text-xs font-semibold hover:bg-amber-600/30">Coba Simpan Hasil Gambar Terakhir</button>
+                </div>
+            </div>
+            <div class="mt-5 border-t border-zinc-800 pt-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-xs font-semibold text-zinc-200">Schedule List</h3>
+                    <button type="button" onclick="fetchCalendar()" class="text-[11px] text-indigo-400 hover:text-indigo-300 flex items-center gap-1"><i data-lucide="refresh-cw" class="w-3 h-3"></i> Refresh</button>
+                </div>
+                <div id="scheduleList" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+                    <p class="text-xs text-zinc-500">Memuat jadwal...</p>
+                </div>
+            </div>
+        </section>
+
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
             <!-- Left Column: Template List (3 Cols on Desktop) -->
@@ -305,6 +350,17 @@
         let currentGeneratedImageUrl = null;
         let uploadedLogoData = null; // { base64: string, mimeType: string, name: string }
 
+        // Calendar & schedule state
+        const CALENDAR_API_URL = "https://jhpbtooefyzdndstlzva.supabase.co/functions/v1/crud-make-webhook";
+        const APP_TIMEZONE = "Asia/Kuala_Lumpur";
+        const ALLOWED_TIMES = ["09:00", "13:00", "19:00"];
+        let calendarRecords = [];
+        let selectedDate = getTodayInAppTimezone();
+        let selectedTime = "";
+        let selectedMonth = new Date(selectedDate + "T12:00:00");
+        let pendingScheduleSave = false;
+        let scheduleSaving = false;
+
         // DOM Elements
         const formInputs = [
             'fieldProduct', 'fieldRatio', 'fieldHeadline', 'fieldSubheadline',
@@ -326,6 +382,10 @@
 
             // Fetch templates from Supabase Edge Function
             fetchTemplates();
+
+            // Load calendar schedules from the CRUD Edge Function
+            fetchCalendar();
+            renderCalendar();
 
             // Muat logo default secara otomatis dari input url_logo
             const defaultUrlInput = document.getElementById('fieldLogoUrl');
@@ -732,6 +792,10 @@
 
         // Generate Image using Gemini 3.1 Flash Image API
         async function generateImage() {
+            try { validateSchedule(); } catch (error) {
+                showToast(error.message, "error");
+                return;
+            }
             const prompt = buildPrompt();
             const ratio = document.getElementById('fieldRatio').value || "4:5";
 
@@ -803,7 +867,16 @@
                 emptyState.classList.add('hidden');
                 resultActions.classList.remove('hidden');
                 
-                showToast("Poster iklan berhasil dibuat!", "success");
+                pendingScheduleSave = true;
+                const retrySaveButton = document.getElementById('retryScheduleSaveBtn');
+                if (retrySaveButton) retrySaveButton.classList.remove('hidden');
+                showToast("Poster berhasil dibuat. Menyimpan jadwal...", "success");
+                try {
+                    await saveGeneratedSchedule();
+                } catch (saveError) {
+                    console.error("Schedule save error:", saveError);
+                    showToast(saveError.message || "Gambar berhasil dibuat, tetapi jadwal belum tersimpan. Coba simpan kembali.", "error");
+                }
 
             } catch (error) {
                 console.error("Image Generation Error:", error);
@@ -811,6 +884,231 @@
             } finally {
                 generateBtn.disabled = false;
                 loadingState.classList.add('hidden');
+            }
+        }
+
+
+        // Calendar helpers: use local calendar date strings to avoid UTC date shifts.
+        function getTodayInAppTimezone() {
+            return new Intl.DateTimeFormat('en-CA', {
+                timeZone: APP_TIMEZONE, year: 'numeric', month: '2-digit', day: '2-digit'
+            }).format(new Date());
+        }
+
+        function normalizeTime(value) {
+            return typeof value === 'string' ? value.slice(0, 5) : '';
+        }
+
+        function calendarDateKey(year, month, day) {
+            return [year, String(month + 1).padStart(2, '0'), String(day).padStart(2, '0')].join('-');
+        }
+
+        async function calendarRequest(path, options = {}) {
+            const response = await fetch(CALENDAR_API_URL + path, options);
+            let result;
+            try { result = await response.json(); } catch { throw new Error('Respons server tidak valid.'); }
+            if (!response.ok || result?.success !== true) {
+                throw new Error(result?.error || result?.details || 'Permintaan kalender gagal.');
+            }
+            return result.data;
+        }
+
+        async function fetchCalendar() {
+            const list = document.getElementById('scheduleList');
+            if (list) list.innerHTML = '<p class="text-xs text-zinc-500">Memuat jadwal...</p>';
+            try {
+                const data = await calendarRequest('/get');
+                calendarRecords = Array.isArray(data) ? data : (data ? [data] : []);
+                renderCalendar();
+                renderScheduleList();
+            } catch (error) {
+                console.error('Calendar load error:', error);
+                if (list) list.innerHTML = '<p class="text-xs text-rose-400">Gagal memuat jadwal. Periksa koneksi atau endpoint.</p>';
+                showToast(error.message || 'Gagal memuat kalender', 'error');
+            }
+        }
+
+        function changeCalendarMonth(offset) {
+            selectedMonth = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + offset, 1, 12);
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const label = document.getElementById('calendarMonthLabel');
+            const grid = document.getElementById('calendarGrid');
+            if (!label || !grid) return;
+            label.textContent = new Intl.DateTimeFormat('id-ID', {
+                month: 'long', year: 'numeric', timeZone: APP_TIMEZONE
+            }).format(selectedMonth);
+            const year = selectedMonth.getFullYear();
+            const month = selectedMonth.getMonth();
+            const firstDay = new Date(year, month, 1, 12).getDay();
+            const daysInMonth = new Date(year, month + 1, 0, 12).getDate();
+            const cells = [];
+            for (let i = 0; i < firstDay; i++) cells.push('<div class="min-h-12"></div>');
+            for (let day = 1; day <= daysInMonth; day++) {
+                const key = calendarDateKey(year, month, day);
+                const count = calendarRecords.filter(r => r.date === key).length;
+                const isSelected = key === selectedDate;
+                const isToday = key === getTodayInAppTimezone();
+                cells.push(`
+                    <button type="button" onclick="selectCalendarDate('${key}')" class="relative min-h-12 rounded-lg border ${isSelected ? 'border-indigo-500 bg-indigo-600/20' : 'border-zinc-800 bg-dark-900 hover:border-zinc-600'} ${isToday ? 'ring-1 ring-indigo-400/50' : ''} flex flex-col items-center justify-center gap-1 transition-colors" aria-label="Pilih tanggal ${key}" aria-pressed="${isSelected}">
+                        <span class="text-xs ${isSelected ? 'text-indigo-200 font-bold' : 'text-zinc-300'}">${day}</span>
+                        <span class="flex gap-0.5 h-1.5">${Array.from({length: Math.min(count, 3)}, () => '<i class="w-1 h-1 rounded-full bg-emerald-400"></i>').join('')}</span>
+                    </button>`);
+            }
+            grid.innerHTML = cells.join('');
+            renderScheduleSlots();
+            renderScheduleList();
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function selectCalendarDate(date) {
+            selectedDate = date;
+            selectedTime = '';
+            renderCalendar();
+        }
+
+        function getBookedSlots(date = selectedDate) {
+            return calendarRecords
+                .filter(record => record.date === date)
+                .map(record => normalizeTime(record.time));
+        }
+
+        function renderScheduleSlots() {
+            const container = document.getElementById('scheduleSlots');
+            const label = document.getElementById('selectedDateLabel');
+            if (!container || !label) return;
+            label.textContent = selectedDate;
+            const booked = getBookedSlots();
+            container.innerHTML = ALLOWED_TIMES.map(time => {
+                const record = calendarRecords.find(item => item.date === selectedDate && normalizeTime(item.time) === time);
+                const active = selectedTime === time;
+                return `
+                    <div class="flex items-center gap-2">
+                        <button type="button" ${record ? 'disabled' : ''} onclick="selectScheduleTime('${time}')" class="flex-1 flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg border text-xs transition-colors ${record ? 'border-emerald-900/70 bg-emerald-950/30 text-zinc-500 cursor-not-allowed' : active ? 'border-indigo-500 bg-indigo-600/20 text-indigo-200' : 'border-zinc-700 bg-dark-800 text-zinc-200 hover:border-indigo-500'}">
+                            <span class="font-mono font-semibold">${time}</span>
+                            <span>${record ? 'Booked' : active ? 'Dipilih' : 'Available'}</span>
+                        </button>
+                        ${record ? `<button type="button" onclick="editSchedule('${record.id}')" class="p-2 rounded-lg border border-zinc-700 text-zinc-400 hover:text-white" title="Edit jadwal"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>` : ''}
+                    </div>`;
+            }).join('');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function selectScheduleTime(time) {
+            if (!ALLOWED_TIMES.includes(time) || getBookedSlots().includes(time)) return;
+            selectedTime = time;
+            renderScheduleSlots();
+        }
+
+        function validateSchedule() {
+            if (!selectedDate || !/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)) throw new Error('Pilih tanggal jadwal terlebih dahulu.');
+            if (!ALLOWED_TIMES.includes(selectedTime)) throw new Error('Pilih salah satu slot waktu: 09:00, 13:00, atau 19:00.');
+            if (getBookedSlots().includes(selectedTime)) throw new Error('Slot ini sudah terisi. Silakan pilih slot lain.');
+            return true;
+        }
+
+        function renderScheduleList() {
+            const container = document.getElementById('scheduleList');
+            if (!container) return;
+            const sorted = [...calendarRecords].sort((a, b) =>
+                (a.date + normalizeTime(a.time)).localeCompare(b.date + normalizeTime(b.time))
+            );
+            if (!sorted.length) {
+                container.innerHTML = '<p class="text-xs text-zinc-500">Belum ada jadwal tersimpan.</p>';
+                return;
+            }
+            container.innerHTML = sorted.map(record => `
+                <article class="flex gap-3 p-3 rounded-xl bg-dark-900 border border-zinc-800 min-w-0">
+                    <img src="${escapeHtml(record.image_url || '')}" alt="" loading="lazy" class="w-14 h-14 rounded-lg object-cover bg-dark-800 border border-zinc-700 shrink-0" onerror="this.style.display='none'">
+                    <div class="min-w-0 flex-1">
+                        <p class="text-[11px] font-semibold text-white truncate">${escapeHtml(record.date)} · ${escapeHtml(normalizeTime(record.time))}</p>
+                        <p class="text-[11px] text-zinc-400 line-clamp-2 mt-1">${escapeHtml(record.caption || 'Tanpa caption')}</p>
+                        <div class="flex gap-3 mt-2">
+                            <button type="button" onclick="editSchedule('${record.id}')" class="text-[10px] text-indigo-400 hover:text-indigo-300">Edit</button>
+                            <button type="button" onclick="deleteSchedule('${record.id}')" class="text-[10px] text-rose-400 hover:text-rose-300">Hapus</button>
+                        </div>
+                    </div>
+                </article>`).join('');
+        }
+
+        function dataUrlToFile(dataUrl, filename) {
+            const match = /^data:(image\/[a-zA-Z0-9.+-]+);base64,([\s\S]+)$/.exec(dataUrl || '');
+            if (!match) throw new Error('Data gambar hasil generate tidak valid.');
+            const binary = atob(match[2]);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            const mimeType = match[1];
+            const extension = mimeType.split('/')[1].replace('jpeg', 'jpg');
+            return new File([bytes], filename + '.' + extension, { type: mimeType });
+        }
+
+        async function saveGeneratedSchedule() {
+            if (scheduleSaving) return;
+            if (!currentGeneratedImageUrl) throw new Error('Belum ada gambar hasil generate untuk disimpan.');
+            validateSchedule();
+            scheduleSaving = true;
+            const retryButton = document.getElementById('retryScheduleSaveBtn');
+            if (retryButton) { retryButton.disabled = true; retryButton.textContent = 'Menyimpan...'; }
+            try {
+                const product = document.getElementById('fieldProduct').value.trim() || 'Generated Image';
+                const captionInput = document.getElementById('scheduleCaption');
+                const caption = (captionInput?.value || '').trim() || product;
+                const imageFile = dataUrlToFile(currentGeneratedImageUrl, 'gemini-' + selectedDate + '-' + selectedTime.replace(':', ''));
+                const formData = new FormData();
+                formData.append('image_url', imageFile);
+                formData.append('caption', caption);
+                formData.append('date', selectedDate);
+                formData.append('time', selectedTime);
+                const data = await calendarRequest('/post', { method: 'POST', body: formData });
+                const saved = Array.isArray(data) ? data[0] : data;
+                if (!saved?.id) throw new Error('Server tidak mengembalikan ID jadwal.');
+                calendarRecords.push(saved);
+                pendingScheduleSave = false;
+                selectedTime = '';
+                if (retryButton) retryButton.classList.add('hidden');
+                renderCalendar();
+                showToast('Gambar dan jadwal berhasil disimpan.', 'success');
+                return saved;
+            } finally {
+                scheduleSaving = false;
+                if (retryButton) { retryButton.disabled = false; retryButton.textContent = 'Coba Simpan Hasil Gambar Terakhir'; }
+            }
+        }
+
+        async function editSchedule(id) {
+            const record = calendarRecords.find(item => item.id === id);
+            if (!record) return;
+            const caption = window.prompt('Edit caption:', record.caption || '');
+            if (caption === null) return;
+            const formData = new FormData();
+            formData.append('id', id);
+            formData.append('caption', caption);
+            try {
+                const data = await calendarRequest('/patch', { method: 'PATCH', body: formData });
+                const updated = Array.isArray(data) ? data[0] : data;
+                calendarRecords = calendarRecords.map(item => item.id === id ? updated : item);
+                renderCalendar();
+                showToast('Caption jadwal berhasil diperbarui.', 'success');
+            } catch (error) {
+                showToast(error.message || 'Gagal memperbarui jadwal.', 'error');
+            }
+        }
+
+        async function deleteSchedule(id) {
+            if (!window.confirm('Hapus jadwal ini beserta gambar yang tersimpan?')) return;
+            try {
+                await calendarRequest('/deleted', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                });
+                calendarRecords = calendarRecords.filter(item => item.id !== id);
+                renderCalendar();
+                showToast('Jadwal berhasil dihapus.', 'success');
+            } catch (error) {
+                showToast(error.message || 'Gagal menghapus jadwal.', 'error');
             }
         }
 
