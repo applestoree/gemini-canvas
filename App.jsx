@@ -19,6 +19,7 @@ import {
   FileText,
   CloudUpload,
   Key
+  ArrowLeft,
 } from 'lucide-react';
 
 // Exact Edge Function Endpoints
@@ -260,7 +261,7 @@ export default function App() {
         throw new Error('Invalid response format: expected an array of prompt records.');
       }
 
-      setRecords(data);
+      setRecords(data.filter((record) => record?.is_ready === false));
     } catch (err) {
       setRecordsError(err.message || 'Failed to connect to crud-make-prompt Edge Function.');
     } finally {
@@ -297,6 +298,46 @@ export default function App() {
   };
 
   // Automatically trigger generation when a record is selected
+  // Return to template selection only after confirming the record is_ready in the database.
+  const handleBackToTemplates = async () => {
+    if (!selectedRecordId || isGenerating || isUploading || isSavingUrl) return;
+
+    try {
+      const response = await fetch(
+        `${CRUD_MAKE_PROMPT_URL}?id=${encodeURIComponent(selectedRecordId)}`,
+        {
+          method: 'GET',
+          headers: getEdgeHeaders(false)
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Unable to verify template readiness (HTTP ${response.status}).`);
+      }
+
+      const payload = await response.json();
+      const record = Array.isArray(payload) ? payload[0] : payload;
+
+      if (!record || record.is_ready !== true) {
+        showToast('error', 'Template is not marked as ready yet. Please wait and try again.');
+        return;
+      }
+
+      setSelectedRecordId(null);
+      setSelectedRecord(null);
+      setGeneratedImageBase64(null);
+      setUploadedImageUrl(null);
+      setIsImageUrlSaved(false);
+      setGenerationError(null);
+      setUploadError(null);
+      setSaveUrlError(null);
+      setIsFullViewOpen(false);
+      await loadRecords();
+    } catch (err) {
+      showToast('error', err.message || 'Failed to verify template readiness.');
+    }
+  };
+
   const handleSelectRecord = async (recordItem) => {
     setSelectedRecordId(recordItem.id);
     setGenerationError(null);
@@ -368,7 +409,7 @@ export default function App() {
         {
           method: 'PATCH',
           headers: getEdgeHeaders(true),
-          body: JSON.stringify({ image_url: imageUrl })
+          body: JSON.stringify({ image_url: imageUrl, is_ready: true })
         }
       );
 
@@ -390,11 +431,11 @@ export default function App() {
 
       setIsImageUrlSaved(true);
       setSelectedRecord((prev) =>
-        prev && prev.id === recordId ? { ...prev, ...payload, image_url: imageUrl } : prev
+        prev && prev.id === recordId ? { ...prev, ...payload, image_url: imageUrl, is_ready: true } : prev
       );
       setRecords((prev) =>
         prev.map((item) =>
-          item.id === recordId ? { ...item, ...payload, image_url: imageUrl } : item
+          item.id === recordId ? { ...item, ...payload, image_url: imageUrl, is_ready: true } : item
         )
       );
       showToast('success', 'image_url saved to prompt record.');
@@ -869,6 +910,16 @@ export default function App() {
                 </div>
 
                 <div className="flex items-center gap-1.5">
+                  {isImageUrlSaved && selectedRecord?.is_ready === true && !isSavingUrl && (
+                    <button
+                      type="button"
+                      onClick={handleBackToTemplates}
+                      className="h-8 px-3 rounded-lg border border-neutral-200 bg-white text-xs font-semibold text-black inline-flex items-center gap-1.5 hover:bg-neutral-50 transition"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      <span>Back</span>
+                    </button>
+                  )}
                   {isGenerating && (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-neutral-800 inline-flex items-center gap-1">
                       <Loader2 className="w-3 h-3 animate-spin" />
