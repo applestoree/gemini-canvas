@@ -140,8 +140,7 @@
         const { ${imports.iconBindings} } = LucideReact;
         ${compiled}
         const rootElement = document.getElementById('root');
-        if (window.__GEMINI_CANVAS_ROOT__) window.__GEMINI_CANVAS_ROOT__.unmount();
-        window.__GEMINI_CANVAS_ROOT__ = ReactDOM.createRoot(rootElement);
+        if (!window.__GEMINI_CANVAS_ROOT__) window.__GEMINI_CANVAS_ROOT__ = ReactDOM.createRoot(rootElement);
         window.__GEMINI_CANVAS_ROOT__.render(React.createElement(App));
       `;
 
