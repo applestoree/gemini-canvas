@@ -58,26 +58,13 @@ Create a concise, memorable advertising headline in natural Bahasa Melayu Malays
 Write a concise supporting line that complements the headline without merely repeating it.
 
 ### `feature_items`
-Return a JSON object using the `ai_auto` mode with one global card default and exactly 3 feature items.
+Return a JSON array containing exactly 3 feature objects.
 
-Required structure:
-- `mode`: must be the string `"ai_auto"`.
-- `global`: an object containing `card`, which defines the shared default card presentation for all feature items.
-- `items`: an array containing exactly 3 feature objects.
+Each feature object must contain exactly:
+- `icon`: a concise, relevant Lucide icon name that visually represents the feature (for example: `camera`, `battery-full`, or `cpu`). Return the icon name only, without HTML or SVG markup.
+- `title`: a concise feature label, maximum 4 words. Use clear product-feature terminology, such as `Apple M-Series Performance`, `Liquid Retina XDR Display`, or `All-Day Battery Life`.
 
-Each feature object must contain:
-- `icon`: a concise, relevant Lucide icon name that visually represents the feature (for example: `camera`, `battery-charging`, or `cpu`). Return the icon name only, without HTML or SVG markup.
-- `title`: short feature label, maximum 4 words.
-- `visual_feature`: concise visual direction describing a supporting visual element, detail, or visual metaphor that communicates the feature. This is visual art direction, not a textual description or a claim to print verbatim.
-- `card` (optional): an object containing feature-specific card presentation overrides, such as enabled state, visual style, surface/background, border, corner radius, shadow, and lighting.
-
-Card resolution:
-- Treat `global.card` as the default card configuration shared by all three feature items.
-- For each item, apply only the properties present in its optional `card` object as overrides to the global default.
-- If an item has no `card` object, use the global default without modification.
-- AI automatically decides whether an item needs a card override. Keep all items consistent unless a meaningful feature-specific treatment improves the visual concept.
-- Do not add properties other than `mode`, `global`, and `items` to the `feature_items` object.
-- The `global` object must contain only `card`.
+Do not include `mode`, `global`, `items`, `visual_feature`, `card`, or any other properties. Each object must contain only `icon` and `title`.
 
 Select the 3 most relevant and distinct features for the selected product. Use only facts confidently known to be real for the selected model. Do not transfer features from another generation or variant. Never invent specifications to fill the three items.
 
@@ -124,17 +111,11 @@ Return valid JSON only. No Markdown fences, preambles, explanations, comments, o
   "product": "string",
   "headline": "string",
   "subheadline": "string",
-  "feature_items": {
-    "mode": "ai_auto",
-    "global": {
-      "card": {}
-    },
-    "items": [
-      {"icon": "string", "title": "string", "visual_feature": "string"},
-      {"icon": "string", "title": "string", "visual_feature": "string", "card": {}},
-      {"icon": "string", "title": "string", "visual_feature": "string"}
-    ]
-  },
+  "feature_items": [
+    {"icon": "cpu", "title": "Apple M-Series Performance"},
+    {"icon": "monitor", "title": "Liquid Retina XDR Display"},
+    {"icon": "battery-full", "title": "All-Day Battery Life"}
+  ],
   "style": "string",
   "composition": "string",
   "background": "string",
@@ -146,17 +127,12 @@ Return valid JSON only. No Markdown fences, preambles, explanations, comments, o
 Validation:
 - All 10 keys must be present exactly as named.
 - All values except `feature_items` must be non-empty strings.
-- `feature_items` must be an object with exactly these three keys: `mode`, `global`, and `items`.
-- `feature_items.mode` must equal `"ai_auto"`.
-- `feature_items.global` must be an object containing exactly one key: `card`.
-- `feature_items.global.card` must be an object.
-- `feature_items.items` must be an array containing exactly 3 feature objects.
-- Each feature object must contain non-empty string fields `icon`, `title`, and `visual_feature`; `card` is optional and must be an object when present.
+- `feature_items` must be an array containing exactly 3 objects.
+- Each feature object must contain exactly two non-empty string fields: `icon` and `title`.
 - Each `title` must contain no more than 4 words.
-- Each `visual_feature` must be concise, actionable visual direction, not a sentence intended to be rendered as copy.
 - Each `icon` must be a relevant Lucide icon name, without markup.
-- Resolve each item's card by applying its optional `card` properties over `global.card`; otherwise use the global default.
-- Do not add keys other than the 10 top-level keys or the allowed `feature_items` structure.
+- Do not add `mode`, `global`, `items`, `visual_feature`, `card`, or any other property to a feature object.
+- Do not add keys other than the 10 top-level keys or the allowed `feature_items` array structure.
 - No null values or additional keys, including `additional_instructions`.
 - Escape JSON strings correctly.
 
@@ -167,10 +143,10 @@ Silently verify:
 3. No specification or feature has been invented or transferred from another model.
 4. The internal creative brief is reflected consistently across all fields.
 5. Headline and subheadline are distinct, concise, and suitable for the audience.
-6. feature_items uses the required ai_auto object structure with global.card and exactly 3 feature objects.
-7. Every feature object has a relevant icon, a title of at most 4 words, actionable visual_feature direction, and an optional card object only when needed.
-8. Feature items are distinct, visually meaningful, and contain no unsupported factual claims.
+6. feature_items is a JSON array containing exactly 3 feature objects.
+7. Every feature object contains only a relevant Lucide icon name and a concise title of at most 4 words.
+8. Feature items are distinct, relevant to the selected product, and contain no unsupported factual claims.
 9. All visual-direction fields are actionable and coherent.
-10. The output satisfies the strict 10-field JSON schema and the database feature_items array constraint.
+10. The output satisfies the strict 10-field JSON schema and feature_items array structure.
 
 Return only the final JSON object.
