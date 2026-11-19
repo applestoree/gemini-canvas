@@ -1825,15 +1825,6 @@ The user has not supplied a product name or additional instructions. Independent
         };
       }
 
-      const scheduleDateInput = document.getElementById('schedule-date-input');
-      if (scheduleDateInput) {
-        scheduleDateInput.onchange = (e) => {
-          const nextDate = e.target.value;
-          state.scheduleDate = nextDate;
-          loadScheduleAvailability(nextDate);
-        };
-      }
-
       const modalBackdrop = document.getElementById('schedule-modal-backdrop');
       if (modalBackdrop) {
         modalBackdrop.onclick = (e) => {
