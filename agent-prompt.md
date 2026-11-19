@@ -59,8 +59,11 @@ Write a concise supporting line that complements the headline without merely rep
 
 ### `feature_items`
 Return exactly 3 feature objects, each containing:
-- `title`: short feature label.
-- `description`: concise supporting explanation.
+- `icon`: a concise, relevant Lucide icon name that visually represents the feature (for example: `camera`, `battery-charging`, or `cpu`). Choose an icon that exists in the Lucide icon library. Return the icon name only, without HTML or SVG markup.
+- `title`: short feature label, maximum 4 words.
+- `description`: one concise supporting sentence, maximum 14 words.
+
+Select only the 3 most relevant and distinct features for the selected product. Give each feature one clear benefit; avoid repetition, lengthy technical explanations, and unnecessary details. Keep the copy short enough to fit a compact visual feature callout.
 
 Use only features and specifications confidently known to be real for the selected model. Do not transfer features from another generation or variant. If a technical detail is uncertain, avoid it and use truthful, non-technical benefit-oriented wording. Never invent specifications to fill the three items.
 
@@ -108,9 +111,9 @@ Return valid JSON only. No Markdown fences, preambles, explanations, comments, o
   "headline": "string",
   "subheadline": "string",
   "feature_items": [
-    {"title": "string", "description": "string"},
-    {"title": "string", "description": "string"},
-    {"title": "string", "description": "string"}
+    {"icon": "string", "title": "string", "description": "string"},
+    {"icon": "string", "title": "string", "description": "string"},
+    {"icon": "string", "title": "string", "description": "string"}
   ],
   "style": "string",
   "composition": "string",
@@ -124,7 +127,10 @@ Validation:
 - All 10 keys must be present exactly as named.
 - All values except `feature_items` must be non-empty strings.
 - `feature_items` must contain exactly 3 objects.
-- Each feature object must contain exactly `title` and `description`, both non-empty strings.
+- Each feature object must contain exactly `icon`, `title`, and `description`; all three must be non-empty strings.
+- Each `title` must contain no more than 4 words.
+- Each `description` must contain no more than 14 words and must be one concise sentence.
+- Each `icon` must be a relevant Lucide icon name, without markup.
 - No null values or additional keys, including `additional_instructions`.
 - Escape JSON strings correctly.
 
@@ -135,8 +141,9 @@ Silently verify:
 3. No specification or feature has been invented or transferred from another model.
 4. The internal creative brief is reflected consistently across all fields.
 5. Headline and subheadline are distinct, concise, and suitable for the audience.
-6. Exactly 3 feature items exist and contain no unsupported factual claims.
-7. All visual-direction fields are actionable and coherent.
-8. The output satisfies the strict 10-field JSON schema.
+6. Exactly 3 feature items exist; each has a relevant icon, a title of at most 4 words, and a description of at most 14 words.
+7. Feature items are distinct, concise, readable, and contain no unsupported factual claims.
+8. All visual-direction fields are actionable and coherent.
+9. The output satisfies the strict 10-field JSON schema.
 
 Return only the final JSON object.
