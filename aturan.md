@@ -16,7 +16,7 @@ Dokumen ini adalah sumber aturan wajib untuk setiap pekerjaan pada repository `a
 
 Setiap kali diminta mengaudit, memeriksa, menganalisis, atau meninjau `index.html`, AI agent/developer WAJIB:
 
-1. Membaca seluruh dokumen `aturan.md) terlebih dahulu.
+1. Membaca seluruh dokumen `aturan.md` terlebih dahulu.
 2. Membaca `README.md` untuk memahami dokumentasi, fitur, dan arsitektur proyek.
 3. Mengambil versi terbaru `index.html` dari branch yang sedang diaudit.
 4. Melakukan audit dengan menjadikan aturan dalam dokumen ini sebagai batasan dan sumber acuan.
