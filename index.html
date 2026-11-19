@@ -594,7 +594,7 @@ The user has not supplied a product name or additional instructions. Independent
           typeof item === 'object' &&
           !Array.isArray(item) &&
           typeof item.icon === 'string' && item.icon.trim() &&
-          typeof item.title === 'string' && item.title.trim() &&
+          typeof item.title === 'string' && item.title.trim() && item.title.trim().split(/\\s+/).length <= 4 &&
           typeof item.visual_feature === 'string' && item.visual_feature.trim() &&
           (!('card' in item) || validCardConfig(item.card)) &&
           Object.keys(item).every((key) => ['icon', 'title', 'visual_feature', 'card'].includes(key));
