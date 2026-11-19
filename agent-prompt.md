@@ -58,19 +58,26 @@ Create a concise, memorable advertising headline in natural Bahasa Melayu Malays
 Write a concise supporting line that complements the headline without merely repeating it.
 
 ### `feature_items`
-Return a JSON array containing exactly 3 feature objects. The database column `public.make_prompt.feature_items` is JSONB with a constraint that accepts only an array containing 2 to 5 elements. Therefore, never return an object wrapper, `mode`, `global`, or `items` property around this array.
+Return a JSON object using the `ai_auto` mode with one global card default and exactly 3 feature items.
 
-Each of the exactly 3 feature objects must contain:
+Required structure:
+- `mode`: must be the string `"ai_auto"`.
+- `global`: an object containing `card`, which defines the shared default card presentation for all feature items.
+- `items`: an array containing exactly 3 feature objects.
+
+Each feature object must contain:
 - `icon`: a concise, relevant Lucide icon name that visually represents the feature (for example: `camera`, `battery-charging`, or `cpu`). Return the icon name only, without HTML or SVG markup.
 - `title`: short feature label, maximum 4 words.
 - `visual_feature`: concise visual direction describing a supporting visual element, detail, or visual metaphor that communicates the feature. This is visual art direction, not a textual description or a claim to print verbatim.
-- `card` (optional): an object containing card presentation instructions for this feature, such as enabled state, visual style, surface/background, border, corner radius, shadow, and lighting. Include only when a feature needs a distinct card treatment; otherwise omit it and use the shared visual treatment established by the overall creative direction.
+- `card` (optional): an object containing feature-specific card presentation overrides, such as enabled state, visual style, surface/background, border, corner radius, shadow, and lighting.
 
-Feature card consistency:
-- Use one coherent shared card treatment across all three features by default.
-- Add an item's optional `card` object only when a meaningful feature-specific treatment is needed.
-- Do not use `mode`, `global`, or `items` wrapper properties.
-- The array must contain exactly 3 feature objects, which is within the database constraint of 2 to 5 elements.
+Card resolution:
+- Treat `global.card` as the default card configuration shared by all three feature items.
+- For each item, apply only the properties present in its optional `card` object as overrides to the global default.
+- If an item has no `card` object, use the global default without modification.
+- AI automatically decides whether an item needs a card override. Keep all items consistent unless a meaningful feature-specific treatment improves the visual concept.
+- Do not add properties other than `mode`, `global`, and `items` to the `feature_items` object.
+- The `global` object must contain only `card`.
 
 Select the 3 most relevant and distinct features for the selected product. Use only facts confidently known to be real for the selected model. Do not transfer features from another generation or variant. Never invent specifications to fill the three items.
 
@@ -117,11 +124,17 @@ Return valid JSON only. No Markdown fences, preambles, explanations, comments, o
   "product": "string",
   "headline": "string",
   "subheadline": "string",
-  "feature_items": [
-    {"icon": "string", "title": "string", "visual_feature": "string", "card": {}},
-    {"icon": "string", "title": "string", "visual_feature": "string"},
-    {"icon": "string", "title": "string", "visual_feature": "string"}
-  ],
+  "feature_items": {
+    "mode": "ai_auto",
+    "global": {
+      "card": {}
+    },
+    "items": [
+      {"icon": "string", "title": "string", "visual_feature": "string"},
+      {"icon": "string", "title": "string", "visual_feature": "string", "card": {}},
+      {"icon": "string", "title": "string", "visual_feature": "string"}
+    ]
+  },
   "style": "string",
   "composition": "string",
   "background": "string",
@@ -133,14 +146,17 @@ Return valid JSON only. No Markdown fences, preambles, explanations, comments, o
 Validation:
 - All 10 keys must be present exactly as named.
 - All values except `feature_items` must be non-empty strings.
-- `feature_items` must be a JSON array containing exactly 3 objects. The database accepts arrays containing 2 to 5 elements.
-- Do not wrap the array in an object and do not include `mode`, `global`, or `items` wrapper properties.
+- `feature_items` must be an object with exactly these three keys: `mode`, `global`, and `items`.
+- `feature_items.mode` must equal `"ai_auto"`.
+- `feature_items.global` must be an object containing exactly one key: `card`.
+- `feature_items.global.card` must be an object.
+- `feature_items.items` must be an array containing exactly 3 feature objects.
 - Each feature object must contain non-empty string fields `icon`, `title`, and `visual_feature`; `card` is optional and must be an object when present.
 - Each `title` must contain no more than 4 words.
 - Each `visual_feature` must be concise, actionable visual direction, not a sentence intended to be rendered as copy.
 - Each `icon` must be a relevant Lucide icon name, without markup.
-- Keep one coherent shared card treatment by default; use an item's optional `card` object only for a meaningful feature-specific treatment.
-- Do not add keys other than the 10 top-level keys.
+- Resolve each item's card by applying its optional `card` properties over `global.card`; otherwise use the global default.
+- Do not add keys other than the 10 top-level keys or the allowed `feature_items` structure.
 - No null values or additional keys, including `additional_instructions`.
 - Escape JSON strings correctly.
 
@@ -151,7 +167,7 @@ Silently verify:
 3. No specification or feature has been invented or transferred from another model.
 4. The internal creative brief is reflected consistently across all fields.
 5. Headline and subheadline are distinct, concise, and suitable for the audience.
-6. feature_items is a JSON array containing exactly 3 feature objects, which satisfies the database constraint of 2 to 5 elements.
+6. feature_items uses the required ai_auto object structure with global.card and exactly 3 feature objects.
 7. Every feature object has a relevant icon, a title of at most 4 words, actionable visual_feature direction, and an optional card object only when needed.
 8. Feature items are distinct, visually meaningful, and contain no unsupported factual claims.
 9. All visual-direction fields are actionable and coherent.
