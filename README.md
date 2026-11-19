@@ -6,6 +6,17 @@ Aplikasi utama berada di `index.html` dan ditulis menggunakan HTML, CSS, serta V
 
 > **Catatan penting tentang AI runtime:** kode `index.html` saat ini belum memanggil Gemini Canvas Native API Runtime. Dua fitur AI masih mengirim HTTP request langsung ke Google Gemini Generative Language API. Nilai API key di kode saat ini adalah string kosong (`''`). Karena itu, README ini tidak menyatakan bahwa integrasi AI sudah berjalan tanpa API key atau sudah menggunakan native runtime.
 
+## Prosedur Wajib Sebelum Audit `index.html`
+
+**WAJIB:** Setiap audit, pemeriksaan, analisis, atau review terhadap `index.html` harus dimulai dengan membaca [`aturan.md`](aturan.md) secara lengkap. Setelah itu baca `README.md` untuk memahami dokumentasi proyek, lalu ambil versi terbaru `index.html` dari branch yang sedang diperiksa. Jangan memulai audit sebelum membaca kedua dokumen tersebut.
+
+Ketentuan audit:
+- Jadikan `aturan.md` sebagai aturan kerja dan batasan utama.
+- Pisahkan fakta yang diverifikasi dari dugaan atau hal yang belum dapat diuji.
+- Audit tidak otomatis memberi izin untuk mengubah kode.
+- Jangan mengubah arsitektur runtime atau menambahkan kebutuhan Gemini API Key yang dikelola aplikasi; ikuti ketentuan runtime dalam `aturan.md`.
+- Jika menemukan konflik antara kode/dokumentasi dan `aturan.md`, laporkan konflik dan minta konfirmasi sebelum perubahan arsitektural.
+
 ## Fitur Aplikasi
 
 ### Templates
