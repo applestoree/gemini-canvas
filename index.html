@@ -179,10 +179,12 @@ Create a premium product-focused Instagram advertisement with a sophisticated Ap
 - Use precise product details and realistic materials.
 - Integrate headline and subheadline naturally.
 - Present exactly three product features as compact, elegant visual callouts.
-- For each feature item, render its `icon` as a visible visual icon beside its `title` and `description`.
+- Interpret `feature_items.mode` as AI auto-selection. Resolve each feature card by applying `feature_items.global.card` as the default, then overriding only matching properties supplied in that item's optional `card` object.
+- Render exactly three feature items. For each, render its `icon` as a visible visual icon beside its `title`, supported by the visual concept described in `visual_feature`.
 - Use the icon name as a visual reference; do not print the icon identifier as text.
-- Keep each feature title to a maximum of 4 words and each description to a maximum of 14 words.
-- Keep icon, title, and description visually grouped, aligned, legible, and consistent.
+- Treat `visual_feature` as visual art direction: create the supporting visual element/detail/metaphor rather than printing the instruction as text.
+- Keep each feature title to a maximum of 4 words.
+- Keep icon, title, supporting visual, and card treatment visually grouped, aligned, legible, and coherent.
 - Avoid unnecessary decorative elements.
 - Maintain generous negative space.
 - Ensure excellent readability on mobile screens.
@@ -584,14 +586,34 @@ The user has not supplied a product name or additional instructions. Independent
           throw new Error(`Field harus berupa string yang tidak kosong: ${invalidStringKeys.join(', ')}.`);
         }
 
-        if (!Array.isArray(generatedData.feature_items) || generatedData.feature_items.length !== 3 ||
-            generatedData.feature_items.some((item) =>
-              !item || typeof item.title !== 'string' || typeof item.description !== 'string' ||
-              !item.title.trim() || !item.description.trim() ||
-              Object.keys(item).some((key) => !['title', 'description'].includes(key)) ||
-              !['title', 'description'].every((key) => key in item)
-            )) {
-          throw new Error('Format feature_items tidak valid. Harus berisi tepat 3 objek title dan description.');
+        const featureItems = generatedData.feature_items;
+        const validCardConfig = (card) =>
+          card !== null && typeof card === 'object' && !Array.isArray(card);
+        const validFeatureItem = (item) =>
+          item &&
+          typeof item === 'object' &&
+          !Array.isArray(item) &&
+          typeof item.icon === 'string' && item.icon.trim() &&
+          typeof item.title === 'string' && item.title.trim() &&
+          typeof item.visual_feature === 'string' && item.visual_feature.trim() &&
+          (!('card' in item) || validCardConfig(item.card)) &&
+          Object.keys(item).every((key) => ['icon', 'title', 'visual_feature', 'card'].includes(key));
+        if (
+          !featureItems ||
+          typeof featureItems !== 'object' ||
+          Array.isArray(featureItems) ||
+          featureItems.mode !== 'ai_auto' ||
+          !featureItems.global ||
+          typeof featureItems.global !== 'object' ||
+          Array.isArray(featureItems.global) ||
+          !validCardConfig(featureItems.global.card) ||
+          !Array.isArray(featureItems.items) ||
+          featureItems.items.length !== 3 ||
+          !featureItems.items.every(validFeatureItem) ||
+          Object.keys(featureItems).some((key) => !['mode', 'global', 'items'].includes(key)) ||
+          Object.keys(featureItems.global).some((key) => key !== 'card')
+        ) {
+          throw new Error('Format feature_items tidak valid. Harus menggunakan mode ai_auto, global.card, dan tepat 3 items dengan icon, title, visual_feature, serta card override opsional.');
         }
 
         state.generatedPrompt = JSON.stringify(generatedData, null, 2);
