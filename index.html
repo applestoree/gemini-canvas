@@ -48,7 +48,7 @@
       feature_items: '',
       composition: '',
       background: '',
-      typographhy: '',
+      typography: '',
       lighting: ''
     };
 
@@ -131,7 +131,7 @@
     function extractVariablesFromRecord(record) {
       if (!record || typeof record !== 'object') return { ...EMPTY_VARIABLES };
       const typographySource =
-        record.typographhy !== undefined ? record.typographhy : record.typography;
+        record.typography !== undefined ? record.typography : record.typographhy;
 
       return {
         product: serializeFieldForEditor(record.product),
@@ -142,7 +142,7 @@
         feature_items: serializeFieldForEditor(record.feature_items),
         composition: serializeFieldForEditor(record.composition),
         background: serializeFieldForEditor(record.background),
-        typographhy: serializeFieldForEditor(typographySource),
+        typography: serializeFieldForEditor(typographySource),
         lighting: serializeFieldForEditor(record.lighting)
       };
     }
@@ -167,8 +167,8 @@ composition
 ${vars.composition}
 background
 ${vars.background}
-typographhy
-${vars.typographhy}
+typography
+${vars.typography}
 lighting
 ${vars.lighting}
 CREATIVE DIRECTION:
@@ -220,24 +220,42 @@ Follow all variables precisely. Do not invent additional headlines, product spec
       return ok;
     }
 
-    async function fetchWithBackoff(url, options, retries = 3) {
+    async function fetchWithBackoff(url, options = {}, retries = 3) {
+      const maxRetries = Math.max(1, Number(retries) || 1);
+      const timeoutMs = 30000;
+      const maxRetryDelay = 30000;
       let delay = 1000;
-      for (let i = 0; i < retries; i++) {
+
+      const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      const getRetryAfterMs = (response) => {
+        const retryAfter = response.headers?.get('Retry-After');
+        if (!retryAfter) return null;
+        const seconds = Number(retryAfter);
+        if (Number.isFinite(seconds)) return Math.max(0, seconds * 1000);
+        const retryDate = Date.parse(retryAfter);
+        return Number.isNaN(retryDate) ? null : Math.max(0, retryDate - Date.now());
+      };
+
+      for (let i = 0; i < maxRetries; i += 1) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(new Error('Request timed out after 30 seconds.')), timeoutMs);
+
         try {
-          const response = await fetch(url, options);
+          const response = await fetch(url, { ...options, signal: controller.signal });
+          clearTimeout(timeoutId);
           if (response.ok) return response;
-          if (response.status === 429 || response.status >= 500) {
-            if (i < retries - 1) {
-              await new Promise((r) => setTimeout(r, delay));
-              delay *= 2;
-              continue;
-            }
-          }
-          return response;
+
+          const shouldRetry = response.status === 429 || response.status >= 500;
+          if (!shouldRetry || i === maxRetries - 1) return response;
+
+          const retryAfterMs = getRetryAfterMs(response);
+          await wait(Math.min(retryAfterMs ?? delay, maxRetryDelay));
+          delay = Math.min(delay * 2, maxRetryDelay);
         } catch (err) {
-          if (i === retries - 1) throw err;
-          await new Promise((r) => setTimeout(r, delay));
-          delay *= 2;
+          clearTimeout(timeoutId);
+          if (i === maxRetries - 1) throw err;
+          await wait(Math.min(delay, maxRetryDelay));
+          delay = Math.min(delay * 2, maxRetryDelay);
         }
       }
     }
@@ -1818,6 +1836,9 @@ The user has not supplied a product name or additional instructions. Independent
         logoInput.onchange = (e) => {
           const file = e.target.files?.[0];
           if (file) {
+            if (state.logoPreviewUrl?.startsWith('blob:')) {
+              URL.revokeObjectURL(state.logoPreviewUrl);
+            }
             state.logoFile = file;
             state.logoPreviewUrl = URL.createObjectURL(file);
             showToast('success', 'Brand logo attached successfully.');
@@ -2013,6 +2034,14 @@ The user has not supplied a product name or additional instructions. Independent
         case 'save-generated-prompt':
           handleSaveGeneratedPrompt();
           break;
+      }
+    });
+
+    window.addEventListener('pagehide', () => {
+      if (state.logoPreviewUrl?.startsWith('blob:')) {
+        URL.revokeObjectURL(state.logoPreviewUrl);
+        state.logoPreviewUrl = DEFAULT_LOGO_URL;
+        state.logoFile = null;
       }
     });
 
